@@ -7,6 +7,9 @@ import {
   getStoredParticipant,
   saveStoredParticipant,
 } from "@/lib/participant-storage";
+import { isValidEmail } from "@/lib/validation";
+import { isValidWhatsappValue } from "@/lib/phone-countries";
+import PhoneInput from "@/components/PhoneInput";
 
 export default function QuizIdentificationPage() {
   const router = useRouter();
@@ -18,6 +21,7 @@ export default function QuizIdentificationPage() {
   const [loading, setLoading] = useState(false);
   const [checkingQuiz, setCheckingQuiz] = useState(true);
   const [error, setError] = useState("");
+  const [phoneInputKey, setPhoneInputKey] = useState("initial");
 
   useEffect(() => {
     const key = getOrCreateDeviceKey();
@@ -29,6 +33,7 @@ export default function QuizIdentificationPage() {
       setParish(stored.parish || "");
       setEmail(stored.email || "");
       setWhatsapp(stored.whatsapp || "");
+      setPhoneInputKey(`stored-${stored.whatsapp || ""}`);
     }
 
     fetch(`/api/participant?deviceKey=${encodeURIComponent(key)}`, { cache: "no-store" })
@@ -39,6 +44,7 @@ export default function QuizIdentificationPage() {
           setParish(data.participant.parish || "");
           setEmail(data.participant.email || "");
           setWhatsapp(data.participant.whatsapp || "");
+          setPhoneInputKey(`fetched-${data.participant.whatsapp || ""}`);
         }
       })
       .catch(() => {});
@@ -59,6 +65,16 @@ export default function QuizIdentificationPage() {
 
     if (!name.trim() || !parish.trim() || !email.trim()) {
       setError("Le nom, la paroisse et l'email sont requis.");
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError("Le format de l'email n'est pas valide (ex : nom@exemple.com).");
+      return;
+    }
+
+    if (!isValidWhatsappValue(whatsapp)) {
+      setError("Le format du numéro WhatsApp n'est pas valide.");
       return;
     }
 
@@ -156,12 +172,11 @@ export default function QuizIdentificationPage() {
             <label className="label-field" htmlFor="whatsapp">
               Numéro WhatsApp
             </label>
-            <input
+            <PhoneInput
+              key={phoneInputKey}
               id="whatsapp"
-              className="input-field"
-              value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
-              placeholder="+229 01 XX XX XX XX"
+              initialValue={whatsapp}
+              onChange={setWhatsapp}
             />
           </div>
 

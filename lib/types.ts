@@ -5,7 +5,7 @@ export interface DailyQuiz {
   title: string;
   lesson_date: string;
   is_active: boolean;
-  time_limit_minutes: number | null;
+  duration_seconds: number | null;
   created_at: string;
 }
 

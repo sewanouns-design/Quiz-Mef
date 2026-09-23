@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("daily_quizzes")
-    .select("id, title, lesson_date, is_active, time_limit_minutes, created_at")
+    .select("id, title, lesson_date, is_active, duration_seconds, created_at")
     .order("lesson_date", { ascending: false });
 
   if (error) {

@@ -11,7 +11,7 @@ interface QuizData {
     title: string;
     lesson_date: string;
     is_active: boolean;
-    time_limit_minutes: number | null;
+    duration_seconds: number | null;
   };
   questions: PublicQuestion[];
   alreadySubmitted: boolean;
@@ -26,6 +26,58 @@ function formatTime(totalSeconds: number): string {
 }
 
 const LEAVE_THRESHOLD_MS = 5000;
+const RING_CIRCUMFERENCE = 100; // r = 15.9155 -> 2πr ≈ 100, pratique pour le %
+
+function QuizTimer({
+  remainingSeconds,
+  totalSeconds,
+}: {
+  remainingSeconds: number;
+  totalSeconds: number;
+}) {
+  const percent =
+    totalSeconds > 0 ? Math.max(0, Math.min(100, (remainingSeconds / totalSeconds) * 100)) : 0;
+  const urgent = remainingSeconds <= Math.min(30, totalSeconds * 0.15);
+  const warning = !urgent && remainingSeconds <= totalSeconds * 0.35;
+
+  const ringColor = urgent ? "#dc2626" : warning ? "#d97706" : "#0d9488";
+  const borderColor = urgent ? "border-red-400" : warning ? "border-amber-300" : "border-navy/10";
+  const textColor = urgent ? "text-red-600" : warning ? "text-amber-600" : "text-navy";
+
+  return (
+    <div className="sticky top-3 z-30 mb-6 flex justify-center">
+      <div
+        className={`flex items-center gap-3 rounded-full border-2 bg-white/95 px-4 py-2 shadow-lg backdrop-blur transition-colors ${borderColor} ${
+          urgent ? "animate-pulse" : ""
+        }`}
+      >
+        <svg width="42" height="42" viewBox="0 0 40 40" className="-rotate-90 shrink-0">
+          <circle cx="20" cy="20" r="15.9155" fill="none" stroke="#e5e7eb" strokeWidth="4" />
+          <circle
+            cx="20"
+            cy="20"
+            r="15.9155"
+            fill="none"
+            stroke={ringColor}
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeDasharray={RING_CIRCUMFERENCE}
+            strokeDashoffset={RING_CIRCUMFERENCE - percent}
+            style={{ transition: "stroke-dashoffset 1s linear, stroke 0.3s ease" }}
+          />
+        </svg>
+        <div className="text-left leading-tight">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+            Temps restant
+          </p>
+          <p className={`font-mono text-lg font-extrabold tabular-nums ${textColor}`}>
+            {formatTime(remainingSeconds)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function QuizPage() {
   const router = useRouter();
@@ -40,6 +92,7 @@ export default function QuizPage() {
   const [error, setError] = useState("");
 
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
+  const [totalDurationSeconds, setTotalDurationSeconds] = useState<number | null>(null);
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
 
   const [lessonQuestionText, setLessonQuestionText] = useState("");
@@ -53,6 +106,8 @@ export default function QuizPage() {
   const answersRef = useRef<AnswersState>({});
   const submittingRef = useRef(false);
   const deviceKeyRef = useRef("");
+  const timerStartedRef = useRef(false);
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     dataRef.current = data;
@@ -104,20 +159,17 @@ export default function QuizPage() {
     [data]
   );
 
-  function setSelectedOption(questionId: string, optionIndex: number) {
-    setAnswers((prev) => ({ ...prev, [questionId]: { selectedOption: optionIndex } }));
-  }
-
-  function setAnswerText(questionId: string, text: string) {
-    setAnswers((prev) => ({ ...prev, [questionId]: { answerText: text } }));
-  }
-
   async function handleSubmit(options?: { cancelled?: boolean; reason?: string }) {
     const currentData = dataRef.current;
     if (!currentData || submittingRef.current) return;
     submittingRef.current = true;
     setError("");
     setSubmitting(true);
+
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
 
     try {
       const currentAnswers = answersRef.current;
@@ -149,6 +201,14 @@ export default function QuizPage() {
         throw new Error(err.error || "Erreur lors de la soumission.");
       }
 
+      if (options?.reason === "time_expired") {
+        try {
+          window.sessionStorage.setItem(`quiz_time_expired_${quizId}`, "1");
+        } catch {
+          // stockage indisponible, tant pis pour le message d'info
+        }
+      }
+
       router.push(`/quiz/${quizId}/resultats`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
@@ -157,35 +217,71 @@ export default function QuizPage() {
     }
   }
 
-  // Compte à rebours
-  useEffect(() => {
-    if (!data?.quiz.time_limit_minutes || !deviceKey) return;
+  function beginTicking(deadline: number, durationSeconds: number) {
+    if (timerStartedRef.current) return;
+    timerStartedRef.current = true;
+    setTotalDurationSeconds(durationSeconds);
 
-    const storageKey = `quiz_deadline_${quizId}_${deviceKey}`;
+    function tick() {
+      const remaining = Math.max(0, Math.round((deadline - Date.now()) / 1000));
+      setRemainingSeconds(remaining);
+      if (remaining <= 0) {
+        if (timerIntervalRef.current) {
+          clearInterval(timerIntervalRef.current);
+          timerIntervalRef.current = null;
+        }
+        handleSubmit({ reason: "time_expired" });
+      }
+    }
+
+    tick();
+    timerIntervalRef.current = setInterval(tick, 1000);
+  }
+
+  function startTimerOnFirstInteraction() {
+    if (timerStartedRef.current) return;
+    const duration = dataRef.current?.quiz.duration_seconds;
+    if (!duration) return;
+
+    const storageKey = `quiz_deadline_${quizId}_${deviceKeyRef.current}`;
     let deadline = Number(window.localStorage.getItem(storageKey));
     if (!deadline || Number.isNaN(deadline)) {
-      deadline = Date.now() + data.quiz.time_limit_minutes * 60000;
+      deadline = Date.now() + duration * 1000;
       try {
         window.localStorage.setItem(storageKey, String(deadline));
       } catch {
         // stockage indisponible, le minuteur reste actif pour cette session
       }
     }
+    beginTicking(deadline, duration);
+  }
 
-    function tick() {
-      const remaining = Math.max(0, Math.round((deadline - Date.now()) / 1000));
-      setRemainingSeconds(remaining);
-      if (remaining <= 0) {
-        clearInterval(interval);
-        handleSubmit({ reason: "time_expired" });
-      }
+  // Reprend le compte à rebours s'il avait déjà démarré avant un rechargement de page.
+  useEffect(() => {
+    if (!data?.quiz.duration_seconds || !deviceKey) return;
+    const storageKey = `quiz_deadline_${quizId}_${deviceKey}`;
+    const existing = Number(window.localStorage.getItem(storageKey));
+    if (existing && !Number.isNaN(existing)) {
+      beginTicking(existing, data.quiz.duration_seconds);
     }
-
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, deviceKey, quizId]);
+
+  useEffect(() => {
+    return () => {
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    };
+  }, []);
+
+  function setSelectedOption(questionId: string, optionIndex: number) {
+    startTimerOnFirstInteraction();
+    setAnswers((prev) => ({ ...prev, [questionId]: { selectedOption: optionIndex } }));
+  }
+
+  function setAnswerText(questionId: string, text: string) {
+    startTimerOnFirstInteraction();
+    setAnswers((prev) => ({ ...prev, [questionId]: { answerText: text } }));
+  }
 
   // Détection de sortie de page (anti-triche)
   useEffect(() => {
@@ -276,17 +372,15 @@ export default function QuizPage() {
           </div>
         )}
 
-        {remainingSeconds !== null && (
-          <div
-            className={`mb-6 flex items-center justify-center gap-2 rounded-xl border-2 px-4 py-2.5 text-center font-semibold ${
-              remainingSeconds <= 60
-                ? "border-red-500 bg-red-50 text-red-700"
-                : "border-navy/20 bg-navy/5 text-navy"
-            }`}
-          >
-            <span>⏱️</span>
-            <span>Temps restant : {formatTime(remainingSeconds)}</span>
-          </div>
+        {remainingSeconds !== null && totalDurationSeconds !== null && (
+          <QuizTimer remainingSeconds={remainingSeconds} totalSeconds={totalDurationSeconds} />
+        )}
+
+        {remainingSeconds === null && data.quiz.duration_seconds && (
+          <p className="mb-6 text-center text-xs text-gray-400">
+            ⏱️ Ce quiz est chronométré ({formatTime(data.quiz.duration_seconds)}). Le compte à
+            rebours démarre dès ta première réponse.
+          </p>
         )}
 
         <div className="mb-8 text-center">

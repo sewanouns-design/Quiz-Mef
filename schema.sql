@@ -29,7 +29,7 @@ create table if not exists daily_quizzes (
   title text not null,
   lesson_date date not null unique,
   is_active boolean default false,
-  time_limit_minutes int,
+  duration_seconds int,
   created_at timestamptz default now()
 );
 

@@ -7,8 +7,19 @@ interface QuizListItem {
   title: string;
   lesson_date: string;
   is_active: boolean;
-  time_limit_minutes: number | null;
+  duration_seconds: number | null;
   created_at: string;
+}
+
+function formatDuration(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  const parts: string[] = [];
+  if (h) parts.push(`${h} h`);
+  if (m) parts.push(`${m} min`);
+  if (s) parts.push(`${s} s`);
+  return parts.join(" ") || "0 s";
 }
 
 interface EditableQuestion {
@@ -71,7 +82,9 @@ export default function QuizTab() {
   const [title, setTitle] = useState("");
   const [lessonDate, setLessonDate] = useState("");
   const [isActive, setIsActive] = useState(true);
-  const [timeLimitMinutes, setTimeLimitMinutes] = useState("");
+  const [durationHours, setDurationHours] = useState("");
+  const [durationMinutes, setDurationMinutes] = useState("");
+  const [durationSecondsPart, setDurationSecondsPart] = useState("");
   const [questionsJson, setQuestionsJson] = useState(EXAMPLE_JSON);
   const [submitting, setSubmitting] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(false);
@@ -121,7 +134,9 @@ export default function QuizTab() {
     setTitle("");
     setLessonDate("");
     setIsActive(true);
-    setTimeLimitMinutes("");
+    setDurationHours("");
+    setDurationMinutes("");
+    setDurationSecondsPart("");
     setQuestionsJson(EXAMPLE_JSON);
     setError("");
     setSuccess("");
@@ -142,9 +157,16 @@ export default function QuizTab() {
       setTitle(data.quiz.title);
       setLessonDate(data.quiz.lesson_date);
       setIsActive(data.quiz.is_active);
-      setTimeLimitMinutes(
-        data.quiz.time_limit_minutes ? String(data.quiz.time_limit_minutes) : ""
-      );
+      const totalSeconds: number = data.quiz.duration_seconds ?? 0;
+      if (totalSeconds > 0) {
+        setDurationHours(String(Math.floor(totalSeconds / 3600)));
+        setDurationMinutes(String(Math.floor((totalSeconds % 3600) / 60)));
+        setDurationSecondsPart(String(totalSeconds % 60));
+      } else {
+        setDurationHours("");
+        setDurationMinutes("");
+        setDurationSecondsPart("");
+      }
       setQuestionsJson(toEditableJson(data.questions ?? []));
       formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (err) {
@@ -172,11 +194,15 @@ export default function QuizTab() {
       return;
     }
 
-    const parsedTimeLimit = timeLimitMinutes.trim() ? Number(timeLimitMinutes) : null;
-    if (timeLimitMinutes.trim() && (!Number.isFinite(parsedTimeLimit) || (parsedTimeLimit ?? 0) <= 0)) {
-      setError("La durée limite doit être un nombre de minutes positif.");
+    const h = Number(durationHours) || 0;
+    const m = Number(durationMinutes) || 0;
+    const s = Number(durationSecondsPart) || 0;
+    if (h < 0 || m < 0 || s < 0) {
+      setError("La durée limite ne peut pas être négative.");
       return;
     }
+    const totalDurationSeconds = h * 3600 + m * 60 + s;
+    const parsedDuration = totalDurationSeconds > 0 ? totalDurationSeconds : null;
 
     setSubmitting(true);
     try {
@@ -192,7 +218,7 @@ export default function QuizTab() {
             lessonDate,
             isActive,
             questions,
-            timeLimitMinutes: parsedTimeLimit,
+            durationSeconds: parsedDuration,
           }),
         }
       );
@@ -280,21 +306,53 @@ export default function QuizTab() {
             </div>
 
             <div>
-              <label className="label-field" htmlFor="timeLimitMinutes">
-                Durée limite (minutes, optionnel)
-              </label>
-              <input
-                id="timeLimitMinutes"
-                type="number"
-                min={1}
-                className="input-field sm:max-w-[200px]"
-                value={timeLimitMinutes}
-                onChange={(e) => setTimeLimitMinutes(e.target.value)}
-                placeholder="Ex : 15"
-              />
+              <label className="label-field">Durée limite (optionnel)</label>
+              <div className="flex items-center gap-2">
+                <div>
+                  <input
+                    type="number"
+                    min={0}
+                    aria-label="Heures"
+                    className="input-field w-20 text-center"
+                    value={durationHours}
+                    onChange={(e) => setDurationHours(e.target.value)}
+                    placeholder="0"
+                  />
+                  <p className="mt-1 text-center text-[10px] text-gray-400">heures</p>
+                </div>
+                <span className="pb-4 text-gray-400">:</span>
+                <div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    aria-label="Minutes"
+                    className="input-field w-20 text-center"
+                    value={durationMinutes}
+                    onChange={(e) => setDurationMinutes(e.target.value)}
+                    placeholder="0"
+                  />
+                  <p className="mt-1 text-center text-[10px] text-gray-400">minutes</p>
+                </div>
+                <span className="pb-4 text-gray-400">:</span>
+                <div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    aria-label="Secondes"
+                    className="input-field w-20 text-center"
+                    value={durationSecondsPart}
+                    onChange={(e) => setDurationSecondsPart(e.target.value)}
+                    placeholder="0"
+                  />
+                  <p className="mt-1 text-center text-[10px] text-gray-400">secondes</p>
+                </div>
+              </div>
               <p className="mt-1 text-xs text-gray-400">
-                Un compte à rebours s&apos;affiche au participant. Le test est soumis
-                automatiquement à l&apos;expiration du temps. Laisser vide = pas de limite.
+                Un compte à rebours s&apos;affiche au participant, démarrant dès sa première
+                réponse. Le test est soumis automatiquement à l&apos;expiration du temps. Laisser
+                à 0 = pas de limite.
               </p>
             </div>
 
@@ -379,7 +437,7 @@ export default function QuizTab() {
                       {new Date(quiz.lesson_date).toLocaleDateString("fr-FR")}
                     </td>
                     <td className="py-3 pr-4 text-gray-600">
-                      {quiz.time_limit_minutes ? `${quiz.time_limit_minutes} min` : "—"}
+                      {quiz.duration_seconds ? formatDuration(quiz.duration_seconds) : "—"}
                     </td>
                     <td className="py-3 pr-4">
                       {quiz.is_active ? (

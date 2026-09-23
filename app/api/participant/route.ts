@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isSameOriginRequest } from "@/lib/auth";
+import { isValidEmail } from "@/lib/validation";
+import { isValidWhatsappValue } from "@/lib/phone-countries";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +37,17 @@ export async function POST(request: NextRequest) {
   if (!deviceKey || !name || !parish || !email) {
     return NextResponse.json(
       { error: "deviceKey, name, parish et email sont requis" },
+      { status: 400 }
+    );
+  }
+
+  if (!isValidEmail(email)) {
+    return NextResponse.json({ error: "Le format de l'email n'est pas valide." }, { status: 400 });
+  }
+
+  if (whatsapp && !isValidWhatsappValue(whatsapp)) {
+    return NextResponse.json(
+      { error: "Le format du numéro WhatsApp n'est pas valide." },
       { status: 400 }
     );
   }

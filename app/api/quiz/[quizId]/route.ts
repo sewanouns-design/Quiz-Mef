@@ -13,7 +13,7 @@ export async function GET(
 
   const { data: quiz, error: quizError } = await supabase
     .from("daily_quizzes")
-    .select("id, title, lesson_date, is_active, time_limit_minutes")
+    .select("id, title, lesson_date, is_active, duration_seconds")
     .eq("id", params.quizId)
     .maybeSingle();
 

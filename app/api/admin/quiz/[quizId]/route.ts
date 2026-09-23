@@ -67,16 +67,16 @@ export async function PUT(
   }
 
   const body = await request.json().catch(() => ({}));
-  const { title, lessonDate, questions, timeLimitMinutes } = body ?? {};
+  const { title, lessonDate, questions, durationSeconds } = body ?? {};
 
   const supabase = getSupabaseAdmin();
 
   const updates: Record<string, unknown> = {};
   if (title) updates.title = title;
   if (lessonDate) updates.lesson_date = lessonDate;
-  if (timeLimitMinutes !== undefined) {
-    updates.time_limit_minutes =
-      typeof timeLimitMinutes === "number" && timeLimitMinutes > 0 ? timeLimitMinutes : null;
+  if (durationSeconds !== undefined) {
+    updates.duration_seconds =
+      typeof durationSeconds === "number" && durationSeconds > 0 ? durationSeconds : null;
   }
 
   if (Object.keys(updates).length > 0) {

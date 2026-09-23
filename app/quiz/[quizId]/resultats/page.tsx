@@ -39,8 +39,19 @@ export default function ResultsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [participantName, setParticipantName] = useState("");
+  const [timeExpired, setTimeExpired] = useState(false);
 
   useEffect(() => {
+    try {
+      const flagKey = `quiz_time_expired_${quizId}`;
+      if (window.sessionStorage.getItem(flagKey) === "1") {
+        setTimeExpired(true);
+        window.sessionStorage.removeItem(flagKey);
+      }
+    } catch {
+      // stockage indisponible, on n'affiche simplement pas le message
+    }
+
     const participant = getStoredParticipant();
     setParticipantName(participant?.name || "");
     const key = getOrCreateDeviceKey();
@@ -97,6 +108,11 @@ export default function ResultsPage() {
           <div className="mb-6 rounded-xl border-2 border-accent bg-accent/10 px-4 py-3 text-center text-sm font-medium text-accent-dark">
             ⚠️ Ce test a été annulé automatiquement : la page a été quittée à plusieurs reprises
             pendant le quiz. Voici le détail des réponses données jusque-là.
+          </div>
+        )}
+        {!data.cancelled && timeExpired && (
+          <div className="mb-6 rounded-xl border-2 border-amber-400 bg-amber-50 px-4 py-3 text-center text-sm font-medium text-amber-700">
+            ⏱️ Ton test a été envoyé automatiquement car le temps était écoulé.
           </div>
         )}
         <div className="mb-8 text-center">

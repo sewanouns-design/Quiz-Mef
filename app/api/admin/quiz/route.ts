@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const { title, lessonDate, isActive, questions, timeLimitMinutes } = body ?? {};
+  const { title, lessonDate, isActive, questions, durationSeconds } = body ?? {};
 
   if (!title || !lessonDate) {
     return NextResponse.json(
@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const parsedTimeLimit =
-    typeof timeLimitMinutes === "number" && timeLimitMinutes > 0 ? timeLimitMinutes : null;
+  const parsedDuration =
+    typeof durationSeconds === "number" && durationSeconds > 0 ? durationSeconds : null;
 
   const supabase = getSupabaseAdmin();
 
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       title,
       lesson_date: lessonDate,
       is_active: Boolean(isActive),
-      time_limit_minutes: parsedTimeLimit,
+      duration_seconds: parsedDuration,
     })
     .select()
     .single();
