@@ -74,6 +74,35 @@ export interface QuestionImport {
   points: number;
 }
 
+export type HomeTemplate = "steps" | "minimal" | "card";
+
+export interface HomeStep {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+export interface SiteSettings {
+  id: string;
+  template: HomeTemplate;
+  color_primary: string;
+  color_primary_light: string;
+  color_primary_dark: string;
+  color_accent: string;
+  color_accent_light: string;
+  color_accent_dark: string;
+  font_family: string;
+  logo_icon: string;
+  hero_title: string;
+  hero_subtitle: string;
+  steps: HomeStep[];
+  verse_text: string;
+  verse_reference: string;
+  footer_text: string;
+  show_stats: boolean;
+  updated_at: string;
+}
+
 export interface CorrectedAnswer {
   questionId: string;
   question: string;

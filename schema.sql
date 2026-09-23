@@ -87,6 +87,37 @@ create index if not exists idx_daily_answers_submission_id on daily_answers (sub
 create index if not exists idx_daily_answers_question_id on daily_answers (question_id);
 
 -- ------------------------------------------------------------
+-- Paramètres du site (page d'accueil personnalisable)
+-- Ligne unique ("default") mise à jour depuis l'admin.
+-- ------------------------------------------------------------
+create table if not exists site_settings (
+  id text primary key default 'default',
+  template text not null default 'steps',
+  color_primary text not null default '#14213d',
+  color_primary_light text not null default '#2c4570',
+  color_primary_dark text not null default '#0a1428',
+  color_accent text not null default '#0d9488',
+  color_accent_light text not null default '#2dd4bf',
+  color_accent_dark text not null default '#0f766e',
+  font_family text not null default 'Inter',
+  logo_icon text not null default '⁉️',
+  hero_title text not null default 'Quiz Biblique du Jour',
+  hero_subtitle text not null default 'Teste tes connaissances sur la leçon du jour',
+  steps jsonb not null default '[
+    {"icon": "📝", "title": "Identifie-toi", "description": "Ton nom et ta paroisse suffisent pour commencer."},
+    {"icon": "⁉️", "title": "Réponds au quiz", "description": "Des questions sur la leçon du jour, à ton rythme."},
+    {"icon": "📊", "title": "Reçois tes résultats", "description": "Score détaillé, corrections, et un email récapitulatif."}
+  ]'::jsonb,
+  verse_text text not null default 'Sonde les écritures, car ce sont elles qui rendent témoignage de moi.',
+  verse_reference text not null default 'Jean 5:39',
+  footer_text text not null default 'Quiz Biblique MEF — Mission Évangélique de la Foi',
+  show_stats boolean not null default true,
+  updated_at timestamptz default now()
+);
+
+insert into site_settings (id) values ('default') on conflict (id) do nothing;
+
+-- ------------------------------------------------------------
 -- Row Level Security
 -- L'application n'accède à Supabase que via la clé service_role
 -- côté serveur (routes API Next.js). On active RLS sans policy
@@ -98,3 +129,4 @@ alter table daily_quizzes enable row level security;
 alter table daily_questions enable row level security;
 alter table daily_submissions enable row level security;
 alter table daily_answers enable row level security;
+alter table site_settings enable row level security;
