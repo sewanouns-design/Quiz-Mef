@@ -118,6 +118,18 @@ create table if not exists site_settings (
 insert into site_settings (id) values ('default') on conflict (id) do nothing;
 
 -- ------------------------------------------------------------
+-- Tentatives de connexion admin (protection anti brute-force)
+-- ------------------------------------------------------------
+create table if not exists login_attempts (
+  id uuid primary key default gen_random_uuid(),
+  ip text not null,
+  success boolean not null,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_login_attempts_ip_time on login_attempts (ip, created_at);
+
+-- ------------------------------------------------------------
 -- Row Level Security
 -- L'application n'accède à Supabase que via la clé service_role
 -- côté serveur (routes API Next.js). On active RLS sans policy
@@ -130,3 +142,4 @@ alter table daily_questions enable row level security;
 alter table daily_submissions enable row level security;
 alter table daily_answers enable row level security;
 alter table site_settings enable row level security;
+alter table login_attempts enable row level security;

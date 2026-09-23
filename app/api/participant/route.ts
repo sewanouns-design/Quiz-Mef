@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { isSameOriginRequest } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Requête refusée (origine invalide)" }, { status: 403 });
+  }
+
   const body = await request.json();
   const { deviceKey, name, parish, email, whatsapp } = body ?? {};
 

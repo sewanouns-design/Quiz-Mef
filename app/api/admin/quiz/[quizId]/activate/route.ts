@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { isAdminRequestAuthenticated } from "@/lib/auth";
+import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +10,9 @@ export async function POST(
 ) {
   if (!isAdminRequestAuthenticated(request)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Requête refusée (origine invalide)" }, { status: 403 });
   }
 
   const supabase = getSupabaseAdmin();

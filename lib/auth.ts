@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHash, createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 
@@ -53,3 +53,30 @@ export function isAdminRequestAuthenticated(request: NextRequest): boolean {
 }
 
 export const ADMIN_COOKIE_MAX_AGE = MAX_AGE_SECONDS;
+
+/**
+ * Compare deux chaînes en temps constant (résistant aux attaques temporelles),
+ * en passant par un hash pour neutraliser toute différence de longueur.
+ */
+export function constantTimeStringEqual(a: string, b: string): boolean {
+  const hashA = createHash("sha256").update(a).digest();
+  const hashB = createHash("sha256").update(b).digest();
+  return timingSafeEqual(hashA, hashB);
+}
+
+/**
+ * Défense en profondeur contre le CSRF : vérifie que l'en-tête Origin (envoyé
+ * par les navigateurs modernes sur les requêtes qui changent l'état) correspond
+ * bien à l'hôte de la requête. Absent d'en-tête Origin, on laisse passer : le
+ * cookie SameSite=lax reste la protection principale.
+ */
+export function isSameOriginRequest(request: NextRequest): boolean {
+  const origin = request.headers.get("origin");
+  if (!origin) return true;
+
+  try {
+    return new URL(origin).host === request.headers.get("host");
+  } catch {
+    return false;
+  }
+}

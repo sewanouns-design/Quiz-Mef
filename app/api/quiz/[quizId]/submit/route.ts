@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { isSameOriginRequest } from "@/lib/auth";
 import { sendResultsEmail } from "@/lib/email";
 import type { AnswerInput, CorrectedAnswer, DailyQuestion } from "@/lib/types";
 
@@ -39,6 +40,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { quizId: string } }
 ) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Requête refusée (origine invalide)" }, { status: 403 });
+  }
+
   const body = await request.json();
   const { deviceKey, answers } = body ?? {};
 
