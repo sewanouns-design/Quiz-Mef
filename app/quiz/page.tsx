@@ -165,7 +165,7 @@ export default function QuizIdentificationPage() {
 
           <button
             type="submit"
-            className="btn-gold w-full"
+            className="btn-accent w-full"
             disabled={loading || checkingQuiz}
           >
             {loading ? "Chargement..." : "Commencer"}

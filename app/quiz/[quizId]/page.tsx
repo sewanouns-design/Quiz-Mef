@@ -130,7 +130,7 @@ export default function QuizPage() {
     <main className="min-h-screen px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-2xl">
         <div className="mb-8 text-center">
-          <p className="text-sm font-semibold uppercase tracking-wide text-gold-dark">
+          <p className="text-sm font-semibold uppercase tracking-wide text-accent-dark">
             {new Date(data.quiz.lesson_date).toLocaleDateString("fr-FR", {
               day: "numeric",
               month: "long",
@@ -169,8 +169,8 @@ export default function QuizPage() {
                           onClick={() => setSelectedOption(question.id, optIndex)}
                           className={`w-full rounded-xl border-2 px-4 py-3 text-left transition-colors ${
                             selected
-                              ? "border-gold bg-gold/10 font-semibold text-navy"
-                              : "border-gray-200 text-gray-700 hover:border-gold/50"
+                              ? "border-accent bg-accent/10 font-semibold text-navy"
+                              : "border-gray-200 text-gray-700 hover:border-accent/50"
                           }`}
                         >
                           {option}

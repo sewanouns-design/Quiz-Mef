@@ -89,11 +89,11 @@ export default async function HomePage() {
           <div className="mt-10 mx-auto max-w-md">
             {activeQuiz ? (
               <div className="card">
-                <p className="mb-1 text-sm font-semibold uppercase tracking-wide text-gold-dark">
+                <p className="mb-1 text-sm font-semibold uppercase tracking-wide text-accent-dark">
                   Quiz du jour
                 </p>
                 <p className="mb-6 text-xl font-bold text-navy">{activeQuiz.title}</p>
-                <Link href="/quiz" className="btn-gold w-full">
+                <Link href="/quiz" className="btn-accent w-full">
                   Commencer le quiz
                 </Link>
               </div>
@@ -118,7 +118,7 @@ export default async function HomePage() {
 
         {/* Comment ça marche */}
         <div className="mt-16">
-          <h2 className="text-center text-sm font-semibold uppercase tracking-wide text-gold-dark">
+          <h2 className="text-center text-sm font-semibold uppercase tracking-wide text-accent-dark">
             Comment ça marche
           </h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
@@ -129,7 +129,7 @@ export default async function HomePage() {
                     {step.icon}
                   </div>
                 </div>
-                <p className="text-xs font-semibold text-gold-dark">Étape {index + 1}</p>
+                <p className="text-xs font-semibold text-accent-dark">Étape {index + 1}</p>
                 <p className="mt-1 font-bold text-navy">{step.title}</p>
                 <p className="mt-1 text-sm text-gray-500">{step.description}</p>
               </div>
@@ -138,11 +138,11 @@ export default async function HomePage() {
         </div>
 
         {/* Verset d'encouragement */}
-        <div className="mt-16 rounded-2xl border-2 border-gold/40 bg-gold/5 px-6 py-8 text-center">
+        <div className="mt-16 rounded-2xl border-2 border-accent/40 bg-accent/5 px-6 py-8 text-center">
           <p className="text-navy">
             « Sonde les écritures, car ce sont elles qui rendent témoignage de moi. »
           </p>
-          <p className="mt-2 text-sm font-semibold text-gold-dark">Jean 5:39</p>
+          <p className="mt-2 text-sm font-semibold text-accent-dark">Jean 5:39</p>
         </div>
 
         {/* Footer */}

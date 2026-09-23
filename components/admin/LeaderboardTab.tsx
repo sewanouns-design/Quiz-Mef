@@ -43,7 +43,7 @@ export default function LeaderboardTab() {
             <li
               key={s.id}
               className={`flex items-center justify-between rounded-xl border px-4 py-3 ${
-                index < 3 ? "border-gold bg-gold/10" : "border-gray-200"
+                index < 3 ? "border-accent bg-accent/10" : "border-gray-200"
               }`}
             >
               <div className="flex items-center gap-3">

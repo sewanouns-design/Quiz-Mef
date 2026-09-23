@@ -11,10 +11,11 @@ Génère un quiz à partir de ce contenu, au format JSON strict ci-dessous.
 
 RÈGLES :
 - Réponds UNIQUEMENT avec le tableau JSON, sans texte avant/après, sans balises markdown ```.
-- Génère entre 8 et 12 questions.
+- Génère entre 10 et 20 questions.
 - Le total des "points" de toutes les questions doit être égal à 20.
-- Types autorisés UNIQUEMENT : "mcq" et "true_false" en majorité (environ 80% du quiz), 
-  et quelques "short" en complément (environ 20%, 1 à 3 questions maximum).
+- Types autorisés UNIQUEMENT : "mcq" et "true_false", qui doivent composer la quasi-totalité 
+  du quiz.
+- AU MAXIMUM 1 seule question de type "short" dans tout le quiz (0 ou 1, jamais plus).
 - AUCUNE question de type "open" : ce type est interdit.
 - Les questions doivent porter UNIQUEMENT sur des faits présents dans le texte fourni — 
   n'invente rien et ne pioche pas dans des connaissances bibliques externes au texte.

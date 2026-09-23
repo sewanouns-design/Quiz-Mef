@@ -86,26 +86,55 @@ export default function ResultsPage() {
     );
   }
 
+  const passed = data.maxScore > 0 && data.score / data.maxScore >= 0.6;
+
   return (
     <main className="min-h-screen px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-2xl">
         <div className="mb-8 text-center">
-          <p className="text-sm font-semibold uppercase tracking-wide text-gold-dark">
-            {data.quiz.title}
-          </p>
-          {participantName && (
-            <p className="mt-1 text-gray-500">Bravo, {participantName} !</p>
+          {passed ? (
+            <div className="mx-auto max-w-md rounded-2xl bg-navy px-8 py-10 text-white shadow-lg">
+              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-accent text-3xl">
+                🎉
+              </div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-white/60">
+                {data.quiz.title}
+              </p>
+              <h2 className="mt-2 text-2xl font-extrabold">
+                Félicitations{participantName ? `, ${participantName}` : ""} !
+              </h2>
+              <p className="mt-1 text-sm text-white/70">
+                Tu as réussi le quiz avec brio.
+              </p>
+              <div className="mt-6 inline-flex flex-col items-center rounded-xl border border-white/20 px-8 py-4">
+                <span className="text-xs uppercase tracking-wide text-white/60">
+                  Score total
+                </span>
+                <span className="text-4xl font-extrabold">
+                  {data.score} / {data.maxScore}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm font-semibold uppercase tracking-wide text-accent-dark">
+                {data.quiz.title}
+              </p>
+              {participantName && (
+                <p className="mt-1 text-gray-500">Merci d&apos;avoir participé, {participantName}.</p>
+              )}
+              <div className="mx-auto mt-6 inline-flex flex-col items-center rounded-2xl border-2 border-accent bg-white px-10 py-6 shadow-sm">
+                <span className="text-sm font-medium text-gray-500">Score total</span>
+                <span className="text-4xl font-extrabold text-navy">
+                  {data.score} / {data.maxScore}
+                </span>
+              </div>
+            </>
           )}
-          <div className="mx-auto mt-6 inline-flex flex-col items-center rounded-2xl border-2 border-gold bg-white px-10 py-6 shadow-sm">
-            <span className="text-sm font-medium text-gray-500">Score total</span>
-            <span className="text-4xl font-extrabold text-navy">
-              {data.score} / {data.maxScore}
-            </span>
-          </div>
         </div>
 
         <div className="mb-8 flex justify-center">
-          <button onClick={handleShare} className="btn-gold">
+          <button onClick={handleShare} className="btn-accent">
             Partager mon score
           </button>
         </div>

@@ -57,7 +57,7 @@ export default function ResultsTab() {
                   </td>
                   <td className="py-3 pr-4 text-gray-600">{s.participant?.parish ?? "—"}</td>
                   <td className="py-3 pr-4">
-                    <span className="rounded-full bg-gold/20 px-2.5 py-1 text-xs font-semibold text-navy">
+                    <span className="rounded-full bg-accent/20 px-2.5 py-1 text-xs font-semibold text-navy">
                       {s.score} / {s.max_score}
                     </span>
                   </td>

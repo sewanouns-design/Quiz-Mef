@@ -6,7 +6,7 @@
 
 :root {
   --color-navy: #1a2e5a;
-  --color-gold: #c9a84c;
+  --color-accent: #b91c1c;
 }
 
 html {
@@ -23,8 +23,8 @@ body {
   @apply inline-flex items-center justify-center rounded-xl bg-navy px-6 py-3 font-semibold text-white transition-colors hover:bg-navy-light disabled:cursor-not-allowed disabled:opacity-50;
 }
 
-.btn-gold {
-  @apply inline-flex items-center justify-center rounded-xl bg-gold px-6 py-3 font-semibold text-navy transition-colors hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-50;
+.btn-accent {
+  @apply inline-flex items-center justify-center rounded-xl bg-accent px-6 py-3 font-semibold text-white transition-colors hover:bg-accent-light disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 .btn-secondary {
@@ -36,7 +36,7 @@ body {
 }
 
 .input-field {
-  @apply w-full rounded-xl border border-gray-300 px-4 py-3 text-navy outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/30;
+  @apply w-full rounded-xl border border-gray-300 px-4 py-3 text-navy outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/30;
 }
 
 .label-field {

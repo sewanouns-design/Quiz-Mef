@@ -46,7 +46,7 @@ export default function ParishLeaderboardTab() {
                   </p>
                   <p className="text-xs text-gray-500">{group.count} participant(s)</p>
                 </div>
-                <span className="rounded-full bg-gold/20 px-3 py-1 text-sm font-bold text-navy">
+                <span className="rounded-full bg-accent/20 px-3 py-1 text-sm font-bold text-navy">
                   Moyenne : {group.average.toFixed(1)}
                 </span>
               </div>

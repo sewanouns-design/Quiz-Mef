@@ -189,7 +189,7 @@ export default function QuizTab() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="text-sm font-semibold text-gold-dark hover:underline"
+                className="text-sm font-semibold text-accent-dark hover:underline"
               >
                 Importer un fichier JSON
               </button>
@@ -257,7 +257,7 @@ export default function QuizTab() {
                       {!quiz.is_active && (
                         <button
                           onClick={() => handleActivate(quiz.id)}
-                          className="text-sm font-semibold text-gold-dark hover:underline"
+                          className="text-sm font-semibold text-accent-dark hover:underline"
                         >
                           Activer
                         </button>

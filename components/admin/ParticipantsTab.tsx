@@ -70,7 +70,7 @@ export default function ParticipantsTab() {
                   <td className="py-3 pr-4 text-gray-600">{p.parish}</td>
                   <td className="py-3 pr-4">
                     {p.email ? (
-                      <a href={`mailto:${p.email}`} className="text-gold-dark hover:underline">
+                      <a href={`mailto:${p.email}`} className="text-accent-dark hover:underline">
                         {p.email}
                       </a>
                     ) : (
