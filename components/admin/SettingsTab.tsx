@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ColorPickerInput from "./ColorPickerInput";
+import HomePreview from "./HomePreview";
 import {
   DEFAULT_SITE_SETTINGS,
   FONT_OPTIONS,
@@ -86,7 +87,7 @@ export default function SettingsTab() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:items-start">
       <section className="card">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold" style={{ color: settings.color_primary }}>
@@ -99,7 +100,7 @@ export default function SettingsTab() {
             className="text-sm font-semibold hover:underline"
             style={{ color: settings.color_accent_dark }}
           >
-            Voir la page d&apos;accueil ↗
+            Voir la page en ligne ↗
           </a>
         </div>
 
@@ -306,6 +307,8 @@ export default function SettingsTab() {
           {saving ? "Enregistrement..." : "Enregistrer"}
         </button>
       </section>
+
+      <HomePreview settings={settings} />
     </div>
   );
 }
