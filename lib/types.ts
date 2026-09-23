@@ -1,0 +1,90 @@
+export type QuestionType = "mcq" | "true_false" | "short" | "fill_blank" | "open";
+
+export interface DailyQuiz {
+  id: string;
+  title: string;
+  lesson_date: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface DailyQuestion {
+  id: string;
+  quiz_id: string;
+  type: QuestionType;
+  question: string;
+  options: string[] | null;
+  correct_option: number | null;
+  correct_text: string | null;
+  justification: string | null;
+  points: number;
+  position: number;
+}
+
+/** Question sans les champs de correction, envoyée au participant avant soumission. */
+export type PublicQuestion = Omit<
+  DailyQuestion,
+  "correct_option" | "correct_text" | "justification"
+>;
+
+export interface Participant {
+  id: string;
+  name: string;
+  parish: string;
+  email: string | null;
+  whatsapp: string | null;
+  device_key: string;
+  created_at: string;
+}
+
+export interface DailySubmission {
+  id: string;
+  quiz_id: string;
+  participant_id: string;
+  score: number;
+  max_score: number;
+  submitted_at: string;
+}
+
+export interface DailyAnswer {
+  id: string;
+  submission_id: string;
+  question_id: string;
+  selected_option: number | null;
+  answer_text: string | null;
+  is_correct: boolean | null;
+  points_awarded: number | null;
+}
+
+/** Format d'entrée pour une réponse envoyée par le participant lors de la soumission. */
+export interface AnswerInput {
+  questionId: string;
+  selectedOption?: number;
+  answerText?: string;
+}
+
+/** Format JSON importé par l'admin pour créer les questions d'un quiz. */
+export interface QuestionImport {
+  type: QuestionType;
+  question: string;
+  options?: string[];
+  correctOption?: number;
+  correctText?: string;
+  justification?: string;
+  points: number;
+}
+
+export interface CorrectedAnswer {
+  questionId: string;
+  question: string;
+  type: QuestionType;
+  options: string[] | null;
+  participantSelectedOption: number | null;
+  participantAnswerText: string | null;
+  correctOption: number | null;
+  correctText: string | null;
+  justification: string | null;
+  isCorrect: boolean | null;
+  pointsAwarded: number;
+  points: number;
+}
