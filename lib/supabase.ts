@@ -19,5 +19,12 @@ export function getSupabaseAdmin() {
       autoRefreshToken: false,
       persistSession: false,
     },
+    global: {
+      // Next.js patche le fetch global et met en cache les requêtes GET par
+      // défaut (Data Cache), y compris celles faites en interne par le SDK
+      // Supabase. On force explicitement chaque requête à ignorer ce cache
+      // pour toujours lire les données à jour.
+      fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
+    },
   });
 }
