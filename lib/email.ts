@@ -103,7 +103,9 @@ export async function sendResultsEmail(params: {
   const from = process.env.RESEND_FROM_EMAIL;
 
   if (!apiKey || !from) {
-    console.warn("RESEND_API_KEY ou RESEND_FROM_EMAIL manquant, email non envoyé.");
+    console.warn(
+      `RESEND_API_KEY ou RESEND_FROM_EMAIL manquant (apiKey: ${apiKey ? "présent" : "absent"}, from: ${from ? "présent" : "absent"}), email non envoyé.`
+    );
     return;
   }
 
@@ -116,10 +118,16 @@ export async function sendResultsEmail(params: {
     year: "numeric",
   });
 
-  await resend.emails.send({
+  const result = await resend.emails.send({
     from,
     to: params.to,
     subject: `Tes résultats — Quiz Biblique du ${formattedDate}`,
     html,
   });
+
+  if (result.error) {
+    throw new Error(`Resend a refusé l'envoi : ${result.error.name} — ${result.error.message}`);
+  }
+
+  console.log(`Email de résultats envoyé à ${params.to} (id: ${result.data?.id})`);
 }
