@@ -57,8 +57,8 @@ export default function QuizIdentificationPage() {
     e.preventDefault();
     setError("");
 
-    if (!name.trim() || !parish.trim()) {
-      setError("Le nom et la paroisse sont requis.");
+    if (!name.trim() || !parish.trim() || !email.trim()) {
+      setError("Le nom, la paroisse et l'email sont requis.");
       return;
     }
 
@@ -145,7 +145,11 @@ export default function QuizIdentificationPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="ton.email@exemple.com"
+              required
             />
+            <p className="mt-1 text-xs text-gray-400">
+              Nécessaire pour recevoir tes résultats par email.
+            </p>
           </div>
 
           <div>

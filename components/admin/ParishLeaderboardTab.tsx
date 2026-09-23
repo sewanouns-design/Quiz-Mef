@@ -14,13 +14,24 @@ export default function ParishLeaderboardTab() {
   const [quizId, setQuizId] = useState("");
   const [parishes, setParishes] = useState<ParishGroup[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!quizId) return;
     setLoading(true);
+    setError("");
     fetch(`/api/admin/leaderboard/${quizId}`, { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data) => setParishes(data.parishes ?? []))
+      .then(async (res) => {
+        if (res.status === 401) {
+          throw new Error("Session expirée. Reconnecte-toi pour voir le classement.");
+        }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || "Erreur lors du chargement du classement.");
+        }
+        setParishes(data.parishes ?? []);
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : "Une erreur est survenue."))
       .finally(() => setLoading(false));
   }, [quizId]);
 
@@ -33,6 +44,15 @@ export default function ParishLeaderboardTab() {
 
       {loading ? (
         <p className="text-gray-500">Chargement...</p>
+      ) : error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+          <p className="text-sm font-medium text-red-600">{error}</p>
+          {error.includes("Session expirée") && (
+            <a href="/admin" className="mt-2 inline-block text-sm font-semibold text-red-700 hover:underline">
+              Se reconnecter →
+            </a>
+          )}
+        </div>
       ) : parishes.length === 0 ? (
         <p className="text-gray-500">Aucune soumission pour ce quiz.</p>
       ) : (

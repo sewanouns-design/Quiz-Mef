@@ -19,12 +19,22 @@ function toWhatsappLink(whatsapp: string): string {
 export default function ParticipantsTab() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     fetch("/api/admin/participants", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data) => setParticipants(data.participants ?? []))
+      .then(async (res) => {
+        if (res.status === 401) {
+          throw new Error("Session expirée. Reconnecte-toi pour voir les participants.");
+        }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || "Erreur lors du chargement des participants.");
+        }
+        setParticipants(data.participants ?? []);
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : "Une erreur est survenue."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -49,6 +59,15 @@ export default function ParticipantsTab() {
 
       {loading ? (
         <p className="text-gray-500">Chargement...</p>
+      ) : error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+          <p className="text-sm font-medium text-red-600">{error}</p>
+          {error.includes("Session expirée") && (
+            <a href="/admin" className="mt-2 inline-block text-sm font-semibold text-red-700 hover:underline">
+              Se reconnecter →
+            </a>
+          )}
+        </div>
       ) : filtered.length === 0 ? (
         <p className="text-gray-500">Aucun participant trouvé.</p>
       ) : (

@@ -27,9 +27,9 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { deviceKey, name, parish, email, whatsapp } = body ?? {};
 
-  if (!deviceKey || !name || !parish) {
+  if (!deviceKey || !name || !parish || !email) {
     return NextResponse.json(
-      { error: "deviceKey, name et parish sont requis" },
+      { error: "deviceKey, name, parish et email sont requis" },
       { status: 400 }
     );
   }

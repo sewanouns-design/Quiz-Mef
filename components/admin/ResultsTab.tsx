@@ -11,17 +11,33 @@ interface Submission {
   participant: { id: string; name: string; parish: string; email: string | null; whatsapp: string | null } | null;
 }
 
+function toWhatsappLink(whatsapp: string): string {
+  const digits = whatsapp.replace(/[^0-9]/g, "");
+  return `https://wa.me/${digits}`;
+}
+
 export default function ResultsTab() {
   const [quizId, setQuizId] = useState("");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!quizId) return;
     setLoading(true);
+    setError("");
     fetch(`/api/admin/results/${quizId}`, { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data) => setSubmissions(data.submissions ?? []))
+      .then(async (res) => {
+        if (res.status === 401) {
+          throw new Error("Session expirée. Reconnecte-toi pour voir les résultats.");
+        }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || "Erreur lors du chargement des résultats.");
+        }
+        setSubmissions(data.submissions ?? []);
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : "Une erreur est survenue."))
       .finally(() => setLoading(false));
   }, [quizId]);
 
@@ -34,6 +50,15 @@ export default function ResultsTab() {
 
       {loading ? (
         <p className="text-gray-500">Chargement...</p>
+      ) : error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+          <p className="text-sm font-medium text-red-600">{error}</p>
+          {error.includes("Session expirée") && (
+            <a href="/admin" className="mt-2 inline-block text-sm font-semibold text-red-700 hover:underline">
+              Se reconnecter →
+            </a>
+          )}
+        </div>
       ) : submissions.length === 0 ? (
         <p className="text-gray-500">Aucune soumission pour ce quiz.</p>
       ) : (
@@ -45,6 +70,8 @@ export default function ResultsTab() {
                 <th className="py-2 pr-4">Nom</th>
                 <th className="py-2 pr-4">Paroisse</th>
                 <th className="py-2 pr-4">Score</th>
+                <th className="py-2 pr-4">Email</th>
+                <th className="py-2 pr-4">WhatsApp</th>
                 <th className="py-2 pr-4">Soumis le</th>
               </tr>
             </thead>
@@ -60,6 +87,32 @@ export default function ResultsTab() {
                     <span className="rounded-full bg-accent/20 px-2.5 py-1 text-xs font-semibold text-navy">
                       {s.score} / {s.max_score}
                     </span>
+                  </td>
+                  <td className="py-3 pr-4">
+                    {s.participant?.email ? (
+                      <a
+                        href={`mailto:${s.participant.email}`}
+                        className="text-accent-dark hover:underline"
+                      >
+                        {s.participant.email}
+                      </a>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
+                  <td className="py-3 pr-4">
+                    {s.participant?.whatsapp ? (
+                      <a
+                        href={toWhatsappLink(s.participant.whatsapp)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-600 hover:underline"
+                      >
+                        {s.participant.whatsapp}
+                      </a>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
                   </td>
                   <td className="py-3 pr-4 text-gray-500">
                     {new Date(s.submitted_at).toLocaleString("fr-FR")}
