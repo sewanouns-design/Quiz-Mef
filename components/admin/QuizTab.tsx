@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface QuizListItem {
   id: string;
@@ -40,6 +40,31 @@ export default function QuizTab() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleFileImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError("");
+    setSuccess("");
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? "");
+      try {
+        JSON.parse(text);
+      } catch {
+        setError("Le fichier importé ne contient pas un JSON valide.");
+        return;
+      }
+      setQuestionsJson(text);
+    };
+    reader.onerror = () => setError("Impossible de lire le fichier.");
+    reader.readAsText(file);
+
+    e.target.value = "";
+  }
 
   function loadQuizzes() {
     setLoadingList(true);
@@ -157,9 +182,25 @@ export default function QuizTab() {
           </label>
 
           <div>
-            <label className="label-field" htmlFor="questionsJson">
-              Questions (JSON)
-            </label>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="label-field mb-0" htmlFor="questionsJson">
+                Questions (JSON)
+              </label>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-sm font-semibold text-gold-dark hover:underline"
+              >
+                Importer un fichier JSON
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json,application/json"
+                onChange={handleFileImport}
+                className="hidden"
+              />
+            </div>
             <textarea
               id="questionsJson"
               className="input-field min-h-[220px] font-mono text-xs"
