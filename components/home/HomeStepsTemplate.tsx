@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { SiteSettings } from "@/lib/types";
+import { getRandomVerse } from "@/lib/verses";
 
 interface Props {
   settings: SiteSettings;
@@ -31,6 +32,7 @@ function StatCard({
 export default function HomeStepsTemplate({ settings, activeQuiz, stats }: Props) {
   const primary = settings.color_primary;
   const accentDark = settings.color_accent_dark;
+  const verse = getRandomVerse();
 
   return (
     <main
@@ -122,15 +124,17 @@ export default function HomeStepsTemplate({ settings, activeQuiz, stats }: Props
         </div>
 
         <div
-          className="mt-16 rounded-2xl border-2 px-6 py-8 text-center"
+          className="mx-auto mt-10 max-w-md rounded-xl border px-4 py-3 text-center"
           style={{
-            borderColor: `${settings.color_accent}66`,
+            borderColor: `${settings.color_accent}40`,
             backgroundColor: `${settings.color_accent}0d`,
           }}
         >
-          <p style={{ color: primary }}>« {settings.verse_text} »</p>
-          <p className="mt-2 text-sm font-semibold" style={{ color: accentDark }}>
-            {settings.verse_reference}
+          <p className="text-sm" style={{ color: primary }}>
+            « {verse.text} »
+          </p>
+          <p className="mt-1 text-xs font-semibold" style={{ color: accentDark }}>
+            {verse.reference}
           </p>
         </div>
 

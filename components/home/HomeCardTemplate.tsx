@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { SiteSettings } from "@/lib/types";
+import { getRandomVerse } from "@/lib/verses";
 
 interface Props {
   settings: SiteSettings;
@@ -11,6 +12,7 @@ export default function HomeCardTemplate({ settings, activeQuiz, stats }: Props)
   const primary = settings.color_primary;
   const primaryDark = settings.color_primary_dark;
   const accent = settings.color_accent;
+  const verse = getRandomVerse();
 
   return (
     <main
@@ -82,12 +84,12 @@ export default function HomeCardTemplate({ settings, activeQuiz, stats }: Props)
           )}
         </div>
 
-        <div className="px-8 py-6 text-center" style={{ backgroundColor: `${accent}0d` }}>
-          <p className="text-sm italic" style={{ color: primary }}>
-            « {settings.verse_text} »
+        <div className="px-8 py-4 text-center" style={{ backgroundColor: `${accent}0d` }}>
+          <p className="text-xs italic" style={{ color: primary }}>
+            « {verse.text} »
           </p>
           <p className="mt-1 text-xs font-semibold" style={{ color: settings.color_accent_dark }}>
-            {settings.verse_reference}
+            {verse.reference}
           </p>
         </div>
       </div>

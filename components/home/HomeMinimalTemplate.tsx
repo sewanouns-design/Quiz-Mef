@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { SiteSettings } from "@/lib/types";
+import { getRandomVerse } from "@/lib/verses";
 
 interface Props {
   settings: SiteSettings;
@@ -10,6 +11,7 @@ interface Props {
 export default function HomeMinimalTemplate({ settings, activeQuiz }: Props) {
   const primary = settings.color_primary;
   const accentDark = settings.color_accent_dark;
+  const verse = getRandomVerse();
 
   return (
     <main
@@ -47,9 +49,9 @@ export default function HomeMinimalTemplate({ settings, activeQuiz }: Props) {
           )}
         </div>
 
-        <p className="mt-14 text-sm italic text-gray-400">« {settings.verse_text} »</p>
+        <p className="mt-14 text-xs italic text-gray-400">« {verse.text} »</p>
         <p className="mt-1 text-xs font-semibold" style={{ color: accentDark }}>
-          {settings.verse_reference}
+          {verse.reference}
         </p>
 
         <div className="mt-16">

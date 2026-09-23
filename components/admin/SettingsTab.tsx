@@ -215,30 +215,10 @@ export default function SettingsTab() {
               onChange={(e) => updateField("hero_subtitle", e.target.value)}
             />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="label-field" htmlFor="verse_text">
-                Verset (texte)
-              </label>
-              <textarea
-                id="verse_text"
-                className="input-field min-h-[80px]"
-                value={settings.verse_text}
-                onChange={(e) => updateField("verse_text", e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="label-field" htmlFor="verse_reference">
-                Verset (référence)
-              </label>
-              <input
-                id="verse_reference"
-                className="input-field"
-                value={settings.verse_reference}
-                onChange={(e) => updateField("verse_reference", e.target.value)}
-              />
-            </div>
-          </div>
+          <p className="text-xs text-gray-400">
+            Le verset affiché change automatiquement à chaque visite, tiré
+            aléatoirement d&apos;une sélection de versets encourageants.
+          </p>
           <div>
             <label className="label-field" htmlFor="footer_text">
               Texte de pied de page
