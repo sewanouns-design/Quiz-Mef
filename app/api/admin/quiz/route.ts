@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const { title, lessonDate, isActive, questions } = body ?? {};
+  const { title, lessonDate, isActive, questions, timeLimitMinutes } = body ?? {};
 
   if (!title || !lessonDate) {
     return NextResponse.json(
@@ -44,6 +44,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const parsedTimeLimit =
+    typeof timeLimitMinutes === "number" && timeLimitMinutes > 0 ? timeLimitMinutes : null;
+
   const supabase = getSupabaseAdmin();
 
   if (isActive) {
@@ -52,7 +55,12 @@ export async function POST(request: NextRequest) {
 
   const { data: quiz, error: quizError } = await supabase
     .from("daily_quizzes")
-    .insert({ title, lesson_date: lessonDate, is_active: Boolean(isActive) })
+    .insert({
+      title,
+      lesson_date: lessonDate,
+      is_active: Boolean(isActive),
+      time_limit_minutes: parsedTimeLimit,
+    })
     .select()
     .single();
 

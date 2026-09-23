@@ -45,7 +45,7 @@ export async function POST(
   }
 
   const body = await request.json();
-  const { deviceKey, answers } = body ?? {};
+  const { deviceKey, answers, cancelled, cancelReason } = body ?? {};
 
   if (!deviceKey || !Array.isArray(answers)) {
     return NextResponse.json(
@@ -155,6 +155,7 @@ export async function POST(
     });
   }
 
+  const isCancelled = cancelled === true;
   const { data: submission, error: submissionError } = await supabase
     .from("daily_submissions")
     .insert({
@@ -162,6 +163,8 @@ export async function POST(
       participant_id: participant.id,
       score,
       max_score: maxScore,
+      cancelled: isCancelled,
+      cancel_reason: isCancelled && typeof cancelReason === "string" ? cancelReason : null,
     })
     .select()
     .single();
@@ -191,6 +194,7 @@ export async function POST(
         score,
         maxScore,
         answers: corrected,
+        cancelled: isCancelled,
       });
     } catch (err) {
       console.error("Erreur envoi email de résultats :", err);
@@ -201,6 +205,7 @@ export async function POST(
     submissionId: submission.id,
     score,
     maxScore,
+    cancelled: isCancelled,
     answers: corrected,
   });
 }

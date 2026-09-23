@@ -26,7 +26,9 @@ export async function GET(
 
   const { data: submissions, error: submissionsError } = await supabase
     .from("daily_submissions")
-    .select("id, score, max_score, submitted_at, participant:participants(id, name, parish, email, whatsapp)")
+    .select(
+      "id, score, max_score, cancelled, submitted_at, participant:participants(id, name, parish, email, whatsapp)"
+    )
     .eq("quiz_id", params.quizId)
     .order("score", { ascending: false });
 

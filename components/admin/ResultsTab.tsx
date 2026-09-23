@@ -8,6 +8,7 @@ interface Submission {
   id: string;
   score: number;
   max_score: number;
+  cancelled: boolean;
   submitted_at: string;
   participant: { id: string; name: string; parish: string; email: string | null; whatsapp: string | null } | null;
 }
@@ -99,6 +100,11 @@ export default function ResultsTab() {
                     <span className="rounded-full bg-accent/20 px-2.5 py-1 text-xs font-semibold text-navy">
                       {s.score} / {s.max_score}
                     </span>
+                    {s.cancelled && (
+                      <span className="ml-2 rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-700">
+                        Annulé
+                      </span>
+                    )}
                   </td>
                   <td className="py-3 pr-4">
                     {s.participant?.email ? (

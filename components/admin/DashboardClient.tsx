@@ -8,6 +8,7 @@ import ResultsTab from "./ResultsTab";
 import LeaderboardTab from "./LeaderboardTab";
 import ParishLeaderboardTab from "./ParishLeaderboardTab";
 import SettingsTab from "./SettingsTab";
+import QuestionsTab from "./QuestionsTab";
 
 const TABS = [
   { id: "quiz", label: "Quiz du jour" },
@@ -15,6 +16,7 @@ const TABS = [
   { id: "results", label: "Résultats" },
   { id: "leaderboard", label: "Classement général" },
   { id: "parish", label: "Classement par paroisse" },
+  { id: "questions", label: "Questions sur la leçon" },
   { id: "settings", label: "Personnalisation" },
 ] as const;
 
@@ -70,6 +72,7 @@ export default function DashboardClient() {
           {activeTab === "results" && <ResultsTab />}
           {activeTab === "leaderboard" && <LeaderboardTab />}
           {activeTab === "parish" && <ParishLeaderboardTab />}
+          {activeTab === "questions" && <QuestionsTab />}
           {activeTab === "settings" && <SettingsTab />}
         </div>
       </div>

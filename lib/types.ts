@@ -5,6 +5,7 @@ export interface DailyQuiz {
   title: string;
   lesson_date: string;
   is_active: boolean;
+  time_limit_minutes: number | null;
   created_at: string;
 }
 
@@ -43,7 +44,17 @@ export interface DailySubmission {
   participant_id: string;
   score: number;
   max_score: number;
+  cancelled: boolean;
+  cancel_reason: string | null;
   submitted_at: string;
+}
+
+export interface LessonQuestion {
+  id: string;
+  quiz_id: string;
+  participant_id: string;
+  question_text: string;
+  created_at: string;
 }
 
 export interface DailyAnswer {

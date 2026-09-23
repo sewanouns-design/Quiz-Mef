@@ -5,6 +5,20 @@ import type { QuestionImport } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+function validateQuestions(questions: unknown): questions is QuestionImport[] {
+  if (!Array.isArray(questions) || questions.length === 0) return false;
+  return questions.every((q) => {
+    if (typeof q !== "object" || q === null) return false;
+    const question = q as Record<string, unknown>;
+    const validType = ["mcq", "true_false", "short", "fill_blank", "open"].includes(
+      question.type as string
+    );
+    const hasQuestionText = typeof question.question === "string" && question.question.length > 0;
+    const hasPoints = typeof question.points === "number";
+    return validType && hasQuestionText && hasPoints;
+  });
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { quizId: string } }
@@ -53,13 +67,17 @@ export async function PUT(
   }
 
   const body = await request.json().catch(() => ({}));
-  const { title, lessonDate, questions } = body ?? {};
+  const { title, lessonDate, questions, timeLimitMinutes } = body ?? {};
 
   const supabase = getSupabaseAdmin();
 
   const updates: Record<string, unknown> = {};
   if (title) updates.title = title;
   if (lessonDate) updates.lesson_date = lessonDate;
+  if (timeLimitMinutes !== undefined) {
+    updates.time_limit_minutes =
+      typeof timeLimitMinutes === "number" && timeLimitMinutes > 0 ? timeLimitMinutes : null;
+  }
 
   if (Object.keys(updates).length > 0) {
     const { error: updateError } = await supabase
@@ -72,7 +90,14 @@ export async function PUT(
     }
   }
 
-  if (Array.isArray(questions) && questions.length > 0) {
+  if (questions !== undefined) {
+    if (!validateQuestions(questions)) {
+      return NextResponse.json(
+        { error: "Le format JSON des questions est invalide." },
+        { status: 400 }
+      );
+    }
+
     const { error: deleteError } = await supabase
       .from("daily_questions")
       .delete()

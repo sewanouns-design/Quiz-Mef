@@ -95,6 +95,8 @@ export async function GET(
     quiz,
     score: submission.score,
     maxScore: submission.max_score,
+    cancelled: submission.cancelled,
+    cancelReason: submission.cancel_reason,
     answers: corrected,
   });
 }

@@ -29,6 +29,7 @@ create table if not exists daily_quizzes (
   title text not null,
   lesson_date date not null unique,
   is_active boolean default false,
+  time_limit_minutes int,
   created_at timestamptz default now()
 );
 
@@ -61,6 +62,8 @@ create table if not exists daily_submissions (
   participant_id uuid references participants(id),
   score int not null,
   max_score int not null,
+  cancelled boolean not null default false,
+  cancel_reason text,
   submitted_at timestamptz default now()
 );
 
@@ -76,7 +79,9 @@ create index if not exists idx_daily_submissions_participant_id on daily_submiss
 create table if not exists daily_answers (
   id uuid primary key default gen_random_uuid(),
   submission_id uuid references daily_submissions(id) on delete cascade,
-  question_id uuid references daily_questions(id),
+  -- on delete set null : permet de modifier/supprimer des questions d'un quiz
+  -- déjà soumis sans bloquer sur les réponses existantes.
+  question_id uuid references daily_questions(id) on delete set null,
   selected_option int,
   answer_text text,
   is_correct boolean,
@@ -85,6 +90,20 @@ create table if not exists daily_answers (
 
 create index if not exists idx_daily_answers_submission_id on daily_answers (submission_id);
 create index if not exists idx_daily_answers_question_id on daily_answers (question_id);
+
+-- ------------------------------------------------------------
+-- Questions posées par les participants sur la leçon du jour
+-- ------------------------------------------------------------
+create table if not exists lesson_questions (
+  id uuid primary key default gen_random_uuid(),
+  quiz_id uuid references daily_quizzes(id) on delete cascade,
+  participant_id uuid references participants(id),
+  question_text text not null,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_lesson_questions_quiz_id on lesson_questions (quiz_id);
+create index if not exists idx_lesson_questions_participant_id on lesson_questions (participant_id);
 
 -- ------------------------------------------------------------
 -- Paramètres du site (page d'accueil personnalisable)

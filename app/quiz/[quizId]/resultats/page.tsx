@@ -10,6 +10,8 @@ interface ResultsData {
   quiz: { id: string; title: string; lesson_date: string };
   score: number;
   maxScore: number;
+  cancelled: boolean;
+  cancelReason: string | null;
   answers: CorrectedAnswer[];
 }
 
@@ -86,11 +88,17 @@ export default function ResultsPage() {
     );
   }
 
-  const passed = data.maxScore > 0 && data.score / data.maxScore >= 0.6;
+  const passed = !data.cancelled && data.maxScore > 0 && data.score / data.maxScore >= 0.6;
 
   return (
     <main className="min-h-screen px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-2xl">
+        {data.cancelled && (
+          <div className="mb-6 rounded-xl border-2 border-accent bg-accent/10 px-4 py-3 text-center text-sm font-medium text-accent-dark">
+            ⚠️ Ce test a été annulé automatiquement : la page a été quittée à plusieurs reprises
+            pendant le quiz. Voici le détail des réponses données jusque-là.
+          </div>
+        )}
         <div className="mb-8 text-center">
           {passed ? (
             <div className="mx-auto max-w-md rounded-2xl bg-navy px-8 py-10 text-white shadow-lg">

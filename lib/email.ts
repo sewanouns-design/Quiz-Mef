@@ -65,8 +65,15 @@ export function buildResultsEmailHtml(params: {
   score: number;
   maxScore: number;
   answers: CorrectedAnswer[];
+  cancelled?: boolean;
 }): string {
-  const { participantName, quizTitle, score, maxScore, answers } = params;
+  const { participantName, quizTitle, score, maxScore, answers, cancelled } = params;
+
+  const cancelledNotice = cancelled
+    ? `<div style="background:#fef2f2;border:2px solid #b91c1c;border-radius:8px;padding:14px;margin:16px 0;color:#7f1414;font-size:14px;">
+        ⚠️ <strong>Ce test a été annulé automatiquement</strong> car la page a été quittée à plusieurs reprises pendant le quiz. Voici tout de même le détail des réponses données jusque-là.
+      </div>`
+    : "";
 
   return `
   <div style="font-family:'Inter',Arial,sans-serif;max-width:640px;margin:0 auto;background:#f7f7f7;padding:24px;">
@@ -76,6 +83,7 @@ export function buildResultsEmailHtml(params: {
     <div style="background:#ffffff;padding:24px;border-radius:0 0 12px 12px;">
       <p>Bonjour <strong>${escapeHtml(participantName)}</strong>,</p>
       <p>Voici tes résultats pour le quiz : <strong>${escapeHtml(quizTitle)}</strong></p>
+      ${cancelledNotice}
       <div style="background:#f0ede1;border:2px solid #c9a84c;border-radius:8px;padding:16px;text-align:center;margin:20px 0;">
         <div style="font-size:14px;color:#1a2e5a;">Score obtenu</div>
         <div style="font-size:32px;font-weight:700;color:#1a2e5a;">${score} / ${maxScore}</div>
@@ -98,6 +106,7 @@ export async function sendResultsEmail(params: {
   score: number;
   maxScore: number;
   answers: CorrectedAnswer[];
+  cancelled?: boolean;
 }): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL;
@@ -118,10 +127,11 @@ export async function sendResultsEmail(params: {
     year: "numeric",
   });
 
+  const subjectPrefix = params.cancelled ? "[Test annulé] " : "";
   const result = await resend.emails.send({
     from,
     to: params.to,
-    subject: `Tes résultats — Quiz Biblique du ${formattedDate}`,
+    subject: `${subjectPrefix}Tes résultats — Quiz Biblique du ${formattedDate}`,
     html,
   });
 

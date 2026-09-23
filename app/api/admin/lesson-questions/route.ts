@@ -10,14 +10,17 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = getSupabaseAdmin();
+
   const { data, error } = await supabase
-    .from("daily_quizzes")
-    .select("id, title, lesson_date, is_active, time_limit_minutes, created_at")
-    .order("lesson_date", { ascending: false });
+    .from("lesson_questions")
+    .select(
+      "id, question_text, created_at, participant:participants(id, name, parish, email, whatsapp), quiz:daily_quizzes(id, title, lesson_date)"
+    )
+    .order("created_at", { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ quizzes: data ?? [] });
+  return NextResponse.json({ questions: data ?? [] });
 }
