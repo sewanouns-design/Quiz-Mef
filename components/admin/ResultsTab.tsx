@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import QuizSelect from "./QuizSelect";
+import ParticipantDetailModal from "./ParticipantDetailModal";
 
 interface Submission {
   id: string;
@@ -21,6 +22,7 @@ export default function ResultsTab() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!quizId) return;
@@ -80,7 +82,17 @@ export default function ResultsTab() {
                 <tr key={s.id} className="border-b border-gray-100">
                   <td className="py-3 pr-4 font-semibold text-navy">{index + 1}</td>
                   <td className="py-3 pr-4 font-medium text-navy">
-                    {s.participant?.name ?? "—"}
+                    {s.participant ? (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedParticipantId(s.participant!.id)}
+                        className="hover:underline"
+                      >
+                        {s.participant.name}
+                      </button>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="py-3 pr-4 text-gray-600">{s.participant?.parish ?? "—"}</td>
                   <td className="py-3 pr-4">
@@ -122,6 +134,13 @@ export default function ResultsTab() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {selectedParticipantId && (
+        <ParticipantDetailModal
+          participantId={selectedParticipantId}
+          onClose={() => setSelectedParticipantId(null)}
+        />
       )}
     </section>
   );

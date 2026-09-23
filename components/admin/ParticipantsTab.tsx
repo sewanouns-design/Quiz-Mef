@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ParticipantDetailModal from "./ParticipantDetailModal";
 
 interface Participant {
   id: string;
@@ -21,6 +22,7 @@ export default function ParticipantsTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/participants", { cache: "no-store" })
@@ -85,7 +87,15 @@ export default function ParticipantsTab() {
             <tbody>
               {filtered.map((p) => (
                 <tr key={p.id} className="border-b border-gray-100">
-                  <td className="py-3 pr-4 font-medium text-navy">{p.name}</td>
+                  <td className="py-3 pr-4 font-medium text-navy">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedParticipantId(p.id)}
+                      className="hover:underline"
+                    >
+                      {p.name}
+                    </button>
+                  </td>
                   <td className="py-3 pr-4 text-gray-600">{p.parish}</td>
                   <td className="py-3 pr-4">
                     {p.email ? (
@@ -118,6 +128,13 @@ export default function ParticipantsTab() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {selectedParticipantId && (
+        <ParticipantDetailModal
+          participantId={selectedParticipantId}
+          onClose={() => setSelectedParticipantId(null)}
+        />
       )}
     </section>
   );
