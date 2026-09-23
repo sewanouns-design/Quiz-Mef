@@ -10,10 +10,14 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
+  const { data, error, status, statusText } = await supabase
     .from("participants")
     .select("*")
     .order("created_at", { ascending: false });
+
+  console.log(
+    `[DEBUG participants] url=${process.env.SUPABASE_URL} rows=${data?.length ?? "null"} status=${status} statusText=${statusText} error=${error ? JSON.stringify(error) : "none"}`
+  );
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
