@@ -164,6 +164,9 @@ export default function QuizTab() {
   const [success, setSuccess] = useState("");
   const [regradingQuizId, setRegradingQuizId] = useState<string | null>(null);
   const [regradeMessage, setRegradeMessage] = useState("");
+  const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null);
+  const [deactivatingQuizId, setDeactivatingQuizId] = useState<string | null>(null);
+  const [exportingQuizId, setExportingQuizId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -377,6 +380,99 @@ export default function QuizTab() {
       loadQuizzes();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    }
+  }
+
+  async function handleDeactivate(quizId: string) {
+    setError("");
+    setDeactivatingQuizId(quizId);
+    try {
+      const res = await fetch(`/api/admin/quiz/${quizId}/deactivate`, {
+        method: "POST",
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Erreur lors de la désactivation.");
+      }
+      loadQuizzes();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setDeactivatingQuizId(null);
+    }
+  }
+
+  async function handleDelete(quiz: QuizListItem) {
+    const confirmed = window.confirm(
+      `Supprimer définitivement « ${quiz.title} » ainsi que toutes les copies et réponses déjà soumises pour ce quiz ? Cette action est irréversible.`
+    );
+    if (!confirmed) return;
+
+    setError("");
+    setSuccess("");
+    setDeletingQuizId(quiz.id);
+    try {
+      const res = await fetch(`/api/admin/quiz/${quiz.id}`, {
+        method: "DELETE",
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Erreur lors de la suppression.");
+      }
+      if (editingQuizId === quiz.id) resetForm();
+      setSuccess(`« ${quiz.title} » a été supprimé.`);
+      loadQuizzes();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setDeletingQuizId(null);
+    }
+  }
+
+  async function handleExport(quiz: QuizListItem) {
+    setError("");
+    setExportingQuizId(quiz.id);
+    try {
+      const res = await fetch(`/api/admin/quiz/${quiz.id}`, { cache: "no-store" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Erreur lors de l'export.");
+      }
+      const data = await res.json();
+      const questions: EditableQuestion[] = (data.questions as StoredQuestion[]).map((q) => ({
+        type: q.type,
+        question: q.question,
+        ...(q.options ? { options: q.options } : {}),
+        ...(q.correct_option !== null ? { correctOption: q.correct_option } : {}),
+        ...(q.correct_text !== null ? { correctText: q.correct_text } : {}),
+        ...(q.justification !== null ? { justification: q.justification } : {}),
+        points: q.points,
+      }));
+
+      const exportPayload = {
+        title: data.quiz.title as string,
+        lessonDate: data.quiz.lesson_date as string,
+        durationSeconds: data.quiz.duration_seconds as number | null,
+        questions,
+      };
+
+      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `quiz-${data.quiz.lesson_date}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setExportingQuizId(null);
     }
   }
 
@@ -634,7 +730,16 @@ export default function QuizTab() {
                         >
                           Modifier
                         </button>
-                        {!quiz.is_active && (
+                        {quiz.is_active ? (
+                          <button
+                            onClick={() => handleDeactivate(quiz.id)}
+                            disabled={deactivatingQuizId === quiz.id}
+                            className="text-sm font-semibold text-gray-500 hover:underline disabled:opacity-50"
+                            title="Retire ce quiz du statut « quiz du jour » sans en activer un autre"
+                          >
+                            {deactivatingQuizId === quiz.id ? "Désactivation..." : "Désactiver"}
+                          </button>
+                        ) : (
                           <button
                             onClick={() => handleActivate(quiz.id)}
                             className="text-sm font-semibold text-accent-dark hover:underline"
@@ -649,6 +754,21 @@ export default function QuizTab() {
                           title="Réévalue toutes les copies déjà soumises avec les bonnes réponses actuelles"
                         >
                           {regradingQuizId === quiz.id ? "Recalcul..." : "🔄 Recalculer les notes"}
+                        </button>
+                        <button
+                          onClick={() => handleExport(quiz)}
+                          disabled={exportingQuizId === quiz.id}
+                          className="text-sm font-semibold text-gray-500 hover:underline disabled:opacity-50"
+                          title="Télécharge les questions de ce quiz au format JSON"
+                        >
+                          {exportingQuizId === quiz.id ? "Export..." : "⬇️ Exporter"}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(quiz)}
+                          disabled={deletingQuizId === quiz.id}
+                          className="text-sm font-semibold text-red-600 hover:underline disabled:opacity-50"
+                        >
+                          {deletingQuizId === quiz.id ? "Suppression..." : "Supprimer"}
                         </button>
                       </div>
                     </td>

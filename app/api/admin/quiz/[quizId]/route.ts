@@ -161,3 +161,42 @@ export async function PUT(
 
   return NextResponse.json({ ok: true, regrade });
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { quizId: string } }
+) {
+  if (!isAdminRequestAuthenticated(request)) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Requête refusée (origine invalide)" }, { status: 403 });
+  }
+
+  const supabase = getSupabaseAdmin();
+
+  // daily_submissions.quiz_id n'a pas de "on delete cascade" (contrairement
+  // à daily_questions et lesson_questions) : les copies déjà soumises ne
+  // disparaissent jamais silencieusement en supprimant un quiz, il faut les
+  // supprimer explicitement ici (ce qui entraîne, elles, la suppression en
+  // cascade des réponses liées dans daily_answers).
+  const { error: submissionsError } = await supabase
+    .from("daily_submissions")
+    .delete()
+    .eq("quiz_id", params.quizId);
+
+  if (submissionsError) {
+    return NextResponse.json({ error: submissionsError.message }, { status: 500 });
+  }
+
+  const { error: quizError } = await supabase
+    .from("daily_quizzes")
+    .delete()
+    .eq("id", params.quizId);
+
+  if (quizError) {
+    return NextResponse.json({ error: quizError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}

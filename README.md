@@ -102,9 +102,12 @@ openssl rand -hex 32
 ### Admin
 
 - `/admin` — connexion avec `SUPERADMIN_PASSWORD`.
-- `/admin/dashboard` — 5 onglets :
-  - **Quiz du jour** : créer un quiz et importer les questions au format
-    JSON (voir format ci-dessous), puis l'activer.
+- `/admin/dashboard` — 6 onglets :
+  - **Vue d'ensemble** : tableau de bord global (participants, tests,
+    moyenne, activité récente).
+  - **Quiz du jour** : créer un quiz (manuellement ou par import JSON, voir
+    format ci-dessous), l'activer/désactiver, le supprimer, l'exporter en
+    JSON ou recalculer les notes de toutes les copies déjà soumises.
   - **Participants** : liste de tous les participants (email et WhatsApp
     cliquables).
   - **Résultats** : soumissions d'un quiz sélectionné.
