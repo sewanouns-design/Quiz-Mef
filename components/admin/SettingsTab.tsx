@@ -50,6 +50,15 @@ export default function SettingsTab() {
     }));
   }
 
+  function updateSecondaryColor(hex: string) {
+    setSettings((prev) => ({
+      ...prev,
+      color_secondary: hex,
+      color_secondary_light: shadeHexColor(hex, 40),
+      color_secondary_dark: shadeHexColor(hex, -40),
+    }));
+  }
+
   function updateStep(index: number, field: keyof HomeStep, value: string) {
     setSettings((prev) => ({
       ...prev,
@@ -132,17 +141,35 @@ export default function SettingsTab() {
         </div>
 
         {/* Couleurs */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-2">
-          <ColorPickerInput
-            label="Couleur principale"
-            value={settings.color_primary}
-            onChange={updatePrimaryColor}
-          />
-          <ColorPickerInput
-            label="Couleur d'accent"
-            value={settings.color_accent}
-            onChange={updateAccentColor}
-          />
+        <div className="mb-6">
+          <p className="label-field">Couleurs du site</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <ColorPickerInput
+              label="Couleur principale"
+              value={settings.color_primary}
+              onChange={updatePrimaryColor}
+            />
+            <ColorPickerInput
+              label="Couleur d'accent"
+              value={settings.color_accent}
+              onChange={updateAccentColor}
+            />
+            <ColorPickerInput
+              label="Couleur secondaire"
+              value={settings.color_secondary}
+              onChange={updateSecondaryColor}
+            />
+            <ColorPickerInput
+              label="Couleur de fond"
+              value={settings.color_background}
+              onChange={(hex) => updateField("color_background", hex)}
+            />
+            <ColorPickerInput
+              label="Couleur du texte"
+              value={settings.color_text}
+              onChange={(hex) => updateField("color_text", hex)}
+            />
+          </div>
         </div>
 
         {/* Police */}

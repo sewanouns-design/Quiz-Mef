@@ -35,6 +35,11 @@ export async function PUT(request: NextRequest) {
     color_accent,
     color_accent_light,
     color_accent_dark,
+    color_secondary,
+    color_secondary_light,
+    color_secondary_dark,
+    color_background,
+    color_text,
     font_family,
     logo_icon,
     hero_title,
@@ -72,6 +77,11 @@ export async function PUT(request: NextRequest) {
   if (color_accent !== undefined) updates.color_accent = color_accent;
   if (color_accent_light !== undefined) updates.color_accent_light = color_accent_light;
   if (color_accent_dark !== undefined) updates.color_accent_dark = color_accent_dark;
+  if (color_secondary !== undefined) updates.color_secondary = color_secondary;
+  if (color_secondary_light !== undefined) updates.color_secondary_light = color_secondary_light;
+  if (color_secondary_dark !== undefined) updates.color_secondary_dark = color_secondary_dark;
+  if (color_background !== undefined) updates.color_background = color_background;
+  if (color_text !== undefined) updates.color_text = color_text;
   if (font_family !== undefined) updates.font_family = font_family;
   if (logo_icon !== undefined) updates.logo_icon = logo_icon;
   if (hero_title !== undefined) updates.hero_title = hero_title;

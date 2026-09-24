@@ -33,12 +33,16 @@ function StatCard({
 export default function HomeStepsTemplate({ settings, activeQuiz, stats }: Props) {
   const primary = settings.color_primary;
   const accentDark = settings.color_accent_dark;
+  const secondary = settings.color_secondary;
   const verse = getRandomVerse();
 
   return (
     <main
       className="min-h-screen px-6 py-16"
-      style={{ fontFamily: `'${settings.font_family}', sans-serif` }}
+      style={{
+        fontFamily: `'${settings.font_family}', sans-serif`,
+        backgroundColor: settings.color_background,
+      }}
     >
       <div className="mx-auto w-full max-w-7xl lg:grid lg:grid-cols-[1fr_min(42rem,100%)_1fr] lg:items-start lg:gap-6">
         <DesktopSideDecoration
@@ -60,7 +64,9 @@ export default function HomeStepsTemplate({ settings, activeQuiz, stats }: Props
           <h1 className="text-3xl font-extrabold sm:text-4xl" style={{ color: primary }}>
             {settings.hero_title}
           </h1>
-          <p className="mt-3 text-lg text-gray-600">{settings.hero_subtitle}</p>
+          <p className="mt-3 text-lg" style={{ color: settings.color_text }}>
+            {settings.hero_subtitle}
+          </p>
 
           <div className="mx-auto mt-10 max-w-md">
             {activeQuiz ? (
@@ -94,9 +100,9 @@ export default function HomeStepsTemplate({ settings, activeQuiz, stats }: Props
 
         {settings.show_stats && stats.submissions > 0 && (
           <div className="mt-14 grid grid-cols-3 gap-3 sm:gap-4">
-            <StatCard value={stats.participants} label="Participants" primaryColor={primary} />
-            <StatCard value={stats.submissions} label="Quiz complétés" primaryColor={primary} />
-            <StatCard value={stats.quizzes} label="Leçons publiées" primaryColor={primary} />
+            <StatCard value={stats.participants} label="Participants" primaryColor={secondary} />
+            <StatCard value={stats.submissions} label="Quiz complétés" primaryColor={secondary} />
+            <StatCard value={stats.quizzes} label="Leçons publiées" primaryColor={secondary} />
           </div>
         )}
 

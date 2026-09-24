@@ -12,6 +12,7 @@ export default function HomeCardTemplate({ settings, activeQuiz, stats }: Props)
   const primary = settings.color_primary;
   const primaryDark = settings.color_primary_dark;
   const accent = settings.color_accent;
+  const secondary = settings.color_secondary;
   const verse = getRandomVerse();
 
   return (
@@ -34,7 +35,9 @@ export default function HomeCardTemplate({ settings, activeQuiz, stats }: Props)
           <h1 className="text-2xl font-extrabold" style={{ color: primary }}>
             {settings.hero_title}
           </h1>
-          <p className="mt-2 text-gray-500">{settings.hero_subtitle}</p>
+          <p className="mt-2" style={{ color: settings.color_text }}>
+            {settings.hero_subtitle}
+          </p>
 
           <div className="mt-8">
             {activeQuiz ? (
@@ -63,19 +66,19 @@ export default function HomeCardTemplate({ settings, activeQuiz, stats }: Props)
           {settings.show_stats && stats.submissions > 0 && (
             <div className="mt-8 grid grid-cols-3 gap-2 border-t border-gray-100 pt-6 text-center">
               <div>
-                <p className="text-lg font-extrabold" style={{ color: primary }}>
+                <p className="text-lg font-extrabold" style={{ color: secondary }}>
                   {stats.participants}
                 </p>
                 <p className="text-[10px] uppercase tracking-wide text-gray-400">Participants</p>
               </div>
               <div>
-                <p className="text-lg font-extrabold" style={{ color: primary }}>
+                <p className="text-lg font-extrabold" style={{ color: secondary }}>
                   {stats.submissions}
                 </p>
                 <p className="text-[10px] uppercase tracking-wide text-gray-400">Quiz faits</p>
               </div>
               <div>
-                <p className="text-lg font-extrabold" style={{ color: primary }}>
+                <p className="text-lg font-extrabold" style={{ color: secondary }}>
                   {stats.quizzes}
                 </p>
                 <p className="text-[10px] uppercase tracking-wide text-gray-400">Leçons</p>

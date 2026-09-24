@@ -109,6 +109,11 @@ export interface SiteSettings {
   color_accent: string;
   color_accent_light: string;
   color_accent_dark: string;
+  color_secondary: string;
+  color_secondary_light: string;
+  color_secondary_dark: string;
+  color_background: string;
+  color_text: string;
   font_family: string;
   logo_icon: string;
   hero_title: string;

@@ -17,7 +17,10 @@ export default function HomeMinimalTemplate({ settings, activeQuiz }: Props) {
   return (
     <main
       className="flex min-h-screen flex-col items-center justify-center px-6 py-16"
-      style={{ fontFamily: `'${settings.font_family}', sans-serif` }}
+      style={{
+        fontFamily: `'${settings.font_family}', sans-serif`,
+        backgroundColor: settings.color_background,
+      }}
     >
       <div className="mx-auto w-full max-w-7xl lg:grid lg:grid-cols-[1fr_min(24rem,100%)_1fr] lg:items-start lg:gap-6">
         <DesktopSideDecoration
@@ -38,7 +41,9 @@ export default function HomeMinimalTemplate({ settings, activeQuiz }: Props) {
         <h1 className="text-2xl font-extrabold sm:text-3xl" style={{ color: primary }}>
           {settings.hero_title}
         </h1>
-        <p className="mt-2 text-gray-500">{settings.hero_subtitle}</p>
+        <p className="mt-2" style={{ color: settings.color_text }}>
+          {settings.hero_subtitle}
+        </p>
 
         <div className="mt-10">
           {activeQuiz ? (

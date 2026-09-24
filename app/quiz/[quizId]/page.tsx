@@ -441,13 +441,21 @@ export default function QuizPage() {
                           type="button"
                           key={optIndex}
                           onClick={() => setSelectedOption(question.id, optIndex)}
-                          className={`w-full rounded-xl border-2 px-4 py-3 text-left transition-colors ${
+                          className={`flex w-full items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-colors ${
                             selected
-                              ? "border-accent bg-accent/10 font-semibold text-navy"
-                              : "border-gray-200 text-gray-700 hover:border-accent/50"
+                              ? "border-blue-400 bg-blue-50 font-semibold text-navy"
+                              : "border-gray-200 text-gray-700 hover:border-blue-200"
                           }`}
                         >
-                          {option}
+                          <span
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                              selected ? "border-blue-500" : "border-gray-300"
+                            }`}
+                            aria-hidden="true"
+                          >
+                            {selected && <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />}
+                          </span>
+                          <span>{option}</span>
                         </button>
                       );
                     })}
