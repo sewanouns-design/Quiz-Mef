@@ -1,10 +1,13 @@
+// Cette image n'est générée que pour un score réussi (>= 60%) — voir
+// app/quiz/[quizId]/resultats/page.tsx, qui n'appelle cette fonction que
+// lorsque `passed` est vrai. Pas de variante "échec" ici.
 export interface ResultsImageParams {
   participantName: string;
   score: number;
   maxScore: number;
   quizTitle: string;
   lessonDate: string;
-  passed: boolean;
+  attemptNumber?: number;
 }
 
 const NAVY = "#14213d";
@@ -55,7 +58,7 @@ function wrapText(
 }
 
 export async function generateResultsImage(params: ResultsImageParams): Promise<Blob> {
-  const { participantName, score, maxScore, quizTitle, lessonDate, passed } = params;
+  const { participantName, score, maxScore, quizTitle, lessonDate, attemptNumber } = params;
   const width = 1080;
   const height = 1350;
 
@@ -73,50 +76,68 @@ export async function generateResultsImage(params: ResultsImageParams): Promise<
   ctx.fillRect(0, 0, width, height);
 
   // Confettis discrets
-  const dotColors = passed
-    ? [ACCENT, ACCENT_LIGHT, "#ffffff"]
-    : ["#ffffff", "#94a3b8"];
-  const dotCount = passed ? 60 : 24;
-  for (let i = 0; i < dotCount; i++) {
+  const dotColors = [ACCENT, ACCENT_LIGHT, "#ffffff"];
+  for (let i = 0; i < 55; i++) {
     const r = Math.random() * 7 + 3;
     ctx.beginPath();
     ctx.fillStyle = dotColors[Math.floor(Math.random() * dotColors.length)];
-    ctx.globalAlpha = Math.random() * 0.35 + 0.12;
+    ctx.globalAlpha = Math.random() * 0.3 + 0.1;
     ctx.arc(Math.random() * width, Math.random() * (height * 0.85), r, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
 
-  // Carte centrale
-  const cardMargin = 70;
-  const cardX = cardMargin;
-  const cardY = 210;
-  const cardW = width - cardMargin * 2;
-  const cardH = height - cardY - 130;
-  ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,0.35)";
-  ctx.shadowBlur = 50;
-  ctx.shadowOffsetY = 20;
-  roundRect(ctx, cardX, cardY, cardW, cardH, 48);
-  ctx.fillStyle = "rgba(255,255,255,0.06)";
-  ctx.fill();
-  ctx.restore();
+  // En-tête : nom du site à gauche, adresse à droite
+  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = "left";
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.font = "800 30px sans-serif";
+  ctx.fillText("⁉️ QUIZ BIBLIQUE", 64, 90);
 
-  roundRect(ctx, cardX, cardY, cardW, cardH, 48);
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = passed ? "rgba(185,28,28,0.55)" : "rgba(255,255,255,0.18)";
-  ctx.stroke();
+  ctx.textAlign = "right";
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
+  ctx.font = "600 24px sans-serif";
+  ctx.fillText("quiz.mefzogbadje.org", width - 64, 88);
 
   ctx.textAlign = "center";
 
-  // Wordmark
-  ctx.fillStyle = "rgba(255,255,255,0.75)";
-  ctx.font = "700 30px sans-serif";
-  ctx.fillText("⁉️  QUIZ BIBLIQUE MEF", width / 2, 120);
+  // Grand texte fantôme (contour) en fond, façon affiche
+  ctx.save();
+  ctx.translate(width / 2, 330);
+  ctx.rotate((-3 * Math.PI) / 180);
+  ctx.font = "900 128px sans-serif";
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 3;
+  ctx.strokeText("FÉLICITATIONS", 0, 0);
+  ctx.restore();
 
-  // Médaillon central
-  const medalCenterY = cardY + 165;
-  const medalRadius = 110;
+  // Titre
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "900 84px sans-serif";
+  ctx.fillText("FÉLICITATIONS !", width / 2, 400);
+
+  let cursorY = 400;
+
+  // Pastille "2e tentative" (uniquement si applicable)
+  if (attemptNumber === 2) {
+    const label = "🔁 2ᵉ TENTATIVE";
+    ctx.font = "700 24px sans-serif";
+    const labelWidth = ctx.measureText(label).width + 48;
+    const pillY = cursorY + 40;
+    roundRect(ctx, width / 2 - labelWidth / 2, pillY, labelWidth, 56, 28);
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "rgba(255,255,255,0.3)";
+    ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(label, width / 2, pillY + 37);
+    cursorY = pillY + 56;
+  }
+
+  // Médaillon
+  const medalCenterY = cursorY + 155;
+  const medalRadius = 100;
   const medalGradient = ctx.createRadialGradient(
     width / 2,
     medalCenterY,
@@ -125,15 +146,10 @@ export async function generateResultsImage(params: ResultsImageParams): Promise<
     medalCenterY,
     medalRadius
   );
-  if (passed) {
-    medalGradient.addColorStop(0, ACCENT_LIGHT);
-    medalGradient.addColorStop(1, ACCENT);
-  } else {
-    medalGradient.addColorStop(0, "#26407a");
-    medalGradient.addColorStop(1, "#101d3d");
-  }
+  medalGradient.addColorStop(0, ACCENT_LIGHT);
+  medalGradient.addColorStop(1, ACCENT);
   ctx.save();
-  ctx.shadowColor = passed ? "rgba(185,28,28,0.55)" : "rgba(0,0,0,0.4)";
+  ctx.shadowColor = "rgba(185,28,28,0.55)";
   ctx.shadowBlur = 40;
   ctx.beginPath();
   ctx.arc(width / 2, medalCenterY, medalRadius, 0, Math.PI * 2);
@@ -141,20 +157,15 @@ export async function generateResultsImage(params: ResultsImageParams): Promise<
   ctx.fill();
   ctx.restore();
 
-  ctx.font = "128px sans-serif";
+  ctx.font = "116px sans-serif";
   ctx.textBaseline = "middle";
-  ctx.fillText(passed ? "🎉" : "📖", width / 2, medalCenterY + 8);
+  ctx.fillText("🎉", width / 2, medalCenterY + 6);
   ctx.textBaseline = "alphabetic";
 
-  // Titre
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "800 58px sans-serif";
-  ctx.fillText(passed ? "FÉLICITATIONS !" : "MERCI D'AVOIR PARTICIPÉ", width / 2, cardY + 360);
-
   // Nom du participant
-  ctx.font = "600 42px sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.9)";
-  const afterName = wrapText(ctx, participantName, width / 2, cardY + 425, cardW - 160, 50);
+  ctx.font = "600 44px sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  const afterName = wrapText(ctx, participantName, width / 2, medalCenterY + 150, width - 220, 52);
 
   // Badge de score
   const badgeY = afterName + 55;
@@ -162,10 +173,10 @@ export async function generateResultsImage(params: ResultsImageParams): Promise<
   const badgeW = 420;
   const badgeX = width / 2 - badgeW / 2;
   roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 28);
-  ctx.fillStyle = passed ? "rgba(185,28,28,0.18)" : "rgba(255,255,255,0.08)";
+  ctx.fillStyle = "rgba(185,28,28,0.18)";
   ctx.fill();
   ctx.lineWidth = 2;
-  ctx.strokeStyle = passed ? ACCENT_LIGHT : "rgba(255,255,255,0.25)";
+  ctx.strokeStyle = ACCENT_LIGHT;
   ctx.stroke();
 
   ctx.fillStyle = "rgba(255,255,255,0.6)";
@@ -184,21 +195,9 @@ export async function generateResultsImage(params: ResultsImageParams): Promise<
   });
   ctx.fillStyle = "rgba(255,255,255,0.55)";
   ctx.font = "500 26px sans-serif";
-  const afterQuiz = wrapText(
-    ctx,
-    quizTitle,
-    width / 2,
-    badgeY + badgeH + 65,
-    cardW - 140,
-    34
-  );
+  const afterQuiz = wrapText(ctx, quizTitle, width / 2, badgeY + badgeH + 65, width - 220, 34);
   ctx.font = "400 22px sans-serif";
   ctx.fillText(formattedDate, width / 2, afterQuiz + 40);
-
-  // Footer
-  ctx.fillStyle = "rgba(255,255,255,0.45)";
-  ctx.font = "600 24px sans-serif";
-  ctx.fillText("quiz.mefzogbadje.org", width / 2, height - 55);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {

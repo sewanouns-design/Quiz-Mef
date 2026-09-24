@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import OverviewTab from "./OverviewTab";
 import QuizTab from "./QuizTab";
 import ParticipantsTab from "./ParticipantsTab";
 import ResultsTab from "./ResultsTab";
@@ -11,6 +12,7 @@ import SettingsTab from "./SettingsTab";
 import QuestionsTab from "./QuestionsTab";
 
 const TABS = [
+  { id: "overview", label: "Vue d'ensemble" },
   { id: "quiz", label: "Quiz du jour" },
   { id: "participants", label: "Participants" },
   { id: "results", label: "Résultats" },
@@ -24,7 +26,7 @@ type TabId = (typeof TABS)[number]["id"];
 
 export default function DashboardClient() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabId>("quiz");
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
 
   async function handleLogout() {
     await fetch("/api/admin/logout", { method: "POST", cache: "no-store" });
@@ -67,6 +69,7 @@ export default function DashboardClient() {
         </nav>
 
         <div>
+          {activeTab === "overview" && <OverviewTab />}
           {activeTab === "quiz" && <QuizTab />}
           {activeTab === "participants" && <ParticipantsTab />}
           {activeTab === "results" && <ResultsTab />}

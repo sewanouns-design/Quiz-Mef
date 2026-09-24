@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getOrCreateDeviceKey, getStoredParticipant } from "@/lib/participant-storage";
 import { generateResultsImage } from "@/lib/generate-results-image";
+import { isPassingScore } from "@/lib/scoring";
 import type { CorrectedAnswer } from "@/lib/types";
 
 interface ResultsData {
@@ -13,6 +14,8 @@ interface ResultsData {
   maxScore: number;
   cancelled: boolean;
   cancelReason: string | null;
+  attemptNumber: number;
+  canRetry: boolean;
   answers: CorrectedAnswer[];
 }
 
@@ -75,7 +78,7 @@ export default function ResultsPage() {
   }, [quizId]);
 
   async function handleShare() {
-    if (!data) return;
+    if (!data || !passed) return;
     setShareError("");
     setSharing(true);
 
@@ -90,7 +93,7 @@ export default function ResultsPage() {
         maxScore: data.maxScore,
         quizTitle: data.quiz.title,
         lessonDate: data.quiz.lesson_date,
-        passed,
+        attemptNumber: data.attemptNumber,
       });
       const file = new File([blob], "quiz-biblique-mef.png", { type: "image/png" });
 
@@ -144,7 +147,7 @@ export default function ResultsPage() {
     );
   }
 
-  const passed = !data.cancelled && data.maxScore > 0 && data.score / data.maxScore >= 0.6;
+  const passed = !data.cancelled && isPassingScore(data.score, data.maxScore);
 
   return (
     <main className="min-h-screen px-4 py-10 sm:px-6">
@@ -179,6 +182,11 @@ export default function ResultsPage() {
               <div className="relative mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-accent-light to-accent text-4xl shadow-lg shadow-accent/40">
                 🎉
               </div>
+              {data.attemptNumber === 2 && (
+                <span className="relative mb-2 inline-block rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/80">
+                  🔁 2ᵉ tentative
+                </span>
+              )}
               <p className="relative text-xs font-semibold uppercase tracking-wide text-white/60">
                 {data.quiz.title}
               </p>
@@ -202,6 +210,11 @@ export default function ResultsPage() {
               <p className="text-sm font-semibold uppercase tracking-wide text-accent-dark">
                 {data.quiz.title}
               </p>
+              {data.attemptNumber === 2 && (
+                <span className="mt-2 inline-block rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-accent-dark">
+                  🔁 2ᵉ tentative
+                </span>
+              )}
               {participantName && (
                 <p className="mt-1 text-gray-500">Merci d&apos;avoir participé, {participantName}.</p>
               )}
@@ -211,16 +224,29 @@ export default function ResultsPage() {
                   {data.score} / {data.maxScore}
                 </span>
               </div>
+              {data.canRetry && (
+                <div className="mx-auto mt-6 max-w-sm rounded-2xl border-2 border-dashed border-navy/20 bg-navy/5 px-6 py-5">
+                  <p className="text-sm text-navy">
+                    Tu n&apos;as pas encore atteint la moyenne. Il te reste{" "}
+                    <strong>une seconde tentative</strong> pour ce quiz !
+                  </p>
+                  <Link href={`/quiz/${quizId}`} className="btn-primary mt-4 inline-flex">
+                    🔁 Reprendre le quiz
+                  </Link>
+                </div>
+              )}
             </>
           )}
         </div>
 
-        <div className="mb-8 flex flex-col items-center gap-2">
-          <button onClick={handleShare} disabled={sharing} className="btn-accent">
-            {sharing ? "Préparation de l'image..." : "📤 Partager mon score"}
-          </button>
-          {shareError && <p className="text-xs font-medium text-red-500">{shareError}</p>}
-        </div>
+        {passed && (
+          <div className="mb-8 flex flex-col items-center gap-2">
+            <button onClick={handleShare} disabled={sharing} className="btn-accent">
+              {sharing ? "Préparation de l'image..." : "📤 Partager mon score"}
+            </button>
+            {shareError && <p className="text-xs font-medium text-red-500">{shareError}</p>}
+          </div>
+        )}
 
         <div className="space-y-4">
           {data.answers.map((answer, index) => (

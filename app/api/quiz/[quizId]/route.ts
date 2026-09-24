@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { isPassingScore } from "@/lib/scoring";
 import type { PublicQuestion } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,7 @@ export async function GET(
   }
 
   let alreadySubmitted = false;
+  let isRetry = false;
   if (deviceKey) {
     const { data: participant } = await supabase
       .from("participants")
@@ -43,14 +45,24 @@ export async function GET(
       .maybeSingle();
 
     if (participant) {
-      const { data: submission } = await supabase
+      const { data: submissions } = await supabase
         .from("daily_submissions")
-        .select("id")
+        .select("score, max_score, cancelled, attempt_number")
         .eq("quiz_id", params.quizId)
         .eq("participant_id", participant.id)
-        .maybeSingle();
+        .order("attempt_number", { ascending: true });
 
-      alreadySubmitted = Boolean(submission);
+      if (submissions && submissions.length > 0) {
+        const firstAttempt = submissions[0];
+        const firstPassed =
+          !firstAttempt.cancelled && isPassingScore(firstAttempt.score, firstAttempt.max_score);
+
+        if (firstPassed || submissions.length > 1) {
+          alreadySubmitted = true;
+        } else {
+          isRetry = true;
+        }
+      }
     }
   }
 
@@ -58,5 +70,6 @@ export async function GET(
     quiz,
     questions: (questions ?? []) as PublicQuestion[],
     alreadySubmitted,
+    isRetry,
   });
 }

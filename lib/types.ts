@@ -46,6 +46,7 @@ export interface DailySubmission {
   max_score: number;
   cancelled: boolean;
   cancel_reason: string | null;
+  attempt_number: number;
   submitted_at: string;
 }
 

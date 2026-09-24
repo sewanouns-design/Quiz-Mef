@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { isPassingScore } from "@/lib/scoring";
 import type { CorrectedAnswer, DailyQuestion } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -38,19 +39,24 @@ export async function GET(
     return NextResponse.json({ error: "Aucune soumission trouvée" }, { status: 404 });
   }
 
-  const { data: submission, error: submissionError } = await supabase
+  const { data: submissions, error: submissionError } = await supabase
     .from("daily_submissions")
     .select("*")
     .eq("quiz_id", params.quizId)
     .eq("participant_id", participant.id)
-    .maybeSingle();
+    .order("attempt_number", { ascending: false });
 
   if (submissionError) {
     return NextResponse.json({ error: submissionError.message }, { status: 500 });
   }
-  if (!submission) {
+  if (!submissions || submissions.length === 0) {
     return NextResponse.json({ error: "Aucune soumission trouvée" }, { status: 404 });
   }
+
+  // On affiche la tentative la plus récente (la définitive).
+  const submission = submissions[0];
+  const passed = !submission.cancelled && isPassingScore(submission.score, submission.max_score);
+  const canRetry = !passed && submission.attempt_number === 1 && submissions.length === 1;
 
   const { data: questions, error: questionsError } = await supabase
     .from("daily_questions")
@@ -97,6 +103,8 @@ export async function GET(
     maxScore: submission.max_score,
     cancelled: submission.cancelled,
     cancelReason: submission.cancel_reason,
+    attemptNumber: submission.attempt_number,
+    canRetry,
     answers: corrected,
   });
 }

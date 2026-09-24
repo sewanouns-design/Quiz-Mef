@@ -64,11 +64,14 @@ create table if not exists daily_submissions (
   max_score int not null,
   cancelled boolean not null default false,
   cancel_reason text,
+  -- 1 = premier essai. Une 2e tentative (attempt_number = 2) n'est autorisée
+  -- que si le 1er essai n'a pas atteint 60% (voir app/api/quiz/[quizId]/submit).
+  attempt_number int not null default 1,
   submitted_at timestamptz default now()
 );
 
-create unique index if not exists idx_unique_submission_per_participant
-  on daily_submissions (quiz_id, participant_id);
+create unique index if not exists idx_unique_submission_per_attempt
+  on daily_submissions (quiz_id, participant_id, attempt_number);
 
 create index if not exists idx_daily_submissions_quiz_id on daily_submissions (quiz_id);
 create index if not exists idx_daily_submissions_participant_id on daily_submissions (participant_id);

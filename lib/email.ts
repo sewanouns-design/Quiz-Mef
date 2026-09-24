@@ -66,14 +66,23 @@ export function buildResultsEmailHtml(params: {
   maxScore: number;
   answers: CorrectedAnswer[];
   cancelled?: boolean;
+  attemptNumber?: number;
 }): string {
-  const { participantName, quizTitle, score, maxScore, answers, cancelled } = params;
+  const { participantName, quizTitle, score, maxScore, answers, cancelled, attemptNumber } =
+    params;
 
   const cancelledNotice = cancelled
     ? `<div style="background:#fef2f2;border:2px solid #b91c1c;border-radius:8px;padding:14px;margin:16px 0;color:#7f1414;font-size:14px;">
         ⚠️ <strong>Ce test a été annulé automatiquement</strong> car la page a été quittée à plusieurs reprises pendant le quiz. Voici tout de même le détail des réponses données jusque-là.
       </div>`
     : "";
+
+  const retryNotice =
+    !cancelled && attemptNumber === 2
+      ? `<div style="background:#f0ede1;border:1px solid #c9a84c;border-radius:8px;padding:10px 14px;margin:16px 0;color:#1a2e5a;font-size:13px;">
+          🔁 Il s'agit de ta <strong>2ᵉ tentative</strong> pour ce quiz.
+        </div>`
+      : "";
 
   return `
   <div style="font-family:'Inter',Arial,sans-serif;max-width:640px;margin:0 auto;background:#f7f7f7;padding:24px;">
@@ -84,6 +93,7 @@ export function buildResultsEmailHtml(params: {
       <p>Bonjour <strong>${escapeHtml(participantName)}</strong>,</p>
       <p>Voici tes résultats pour le quiz : <strong>${escapeHtml(quizTitle)}</strong></p>
       ${cancelledNotice}
+      ${retryNotice}
       <div style="background:#f0ede1;border:2px solid #c9a84c;border-radius:8px;padding:16px;text-align:center;margin:20px 0;">
         <div style="font-size:14px;color:#1a2e5a;">Score obtenu</div>
         <div style="font-size:32px;font-weight:700;color:#1a2e5a;">${score} / ${maxScore}</div>
@@ -107,6 +117,7 @@ export async function sendResultsEmail(params: {
   maxScore: number;
   answers: CorrectedAnswer[];
   cancelled?: boolean;
+  attemptNumber?: number;
 }): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL;
@@ -127,7 +138,11 @@ export async function sendResultsEmail(params: {
     year: "numeric",
   });
 
-  const subjectPrefix = params.cancelled ? "[Test annulé] " : "";
+  const subjectPrefix = params.cancelled
+    ? "[Test annulé] "
+    : params.attemptNumber === 2
+      ? "[2e tentative] "
+      : "";
   const result = await resend.emails.send({
     from,
     to: params.to,

@@ -15,6 +15,7 @@ interface QuizData {
   };
   questions: PublicQuestion[];
   alreadySubmitted: boolean;
+  isRetry: boolean;
 }
 
 type AnswersState = Record<string, { selectedOption?: number; answerText?: string }>;
@@ -356,6 +357,12 @@ export default function QuizPage() {
   return (
     <main className="min-h-screen px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-2xl">
+        {data.isRetry && (
+          <div className="mb-6 rounded-xl border-2 border-navy/20 bg-navy/5 px-4 py-3 text-center text-sm font-medium text-navy">
+            🔁 Ceci est ta <strong>2ᵉ et dernière tentative</strong> pour ce quiz.
+          </div>
+        )}
+
         {showLeaveWarning && (
           <div className="mb-6 flex items-start justify-between gap-3 rounded-xl border-2 border-accent bg-accent/10 px-4 py-3">
             <p className="text-sm font-medium text-accent-dark">

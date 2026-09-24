@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isSameOriginRequest } from "@/lib/auth";
 import { sendResultsEmail } from "@/lib/email";
+import { isPassingScore } from "@/lib/scoring";
 import type { AnswerInput, CorrectedAnswer, DailyQuestion } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -82,18 +83,32 @@ export async function POST(
     return NextResponse.json({ error: "Quiz introuvable" }, { status: 404 });
   }
 
-  const { data: existingSubmission } = await supabase
+  const { data: existingSubmissions, error: existingError } = await supabase
     .from("daily_submissions")
-    .select("id")
+    .select("score, max_score, cancelled, attempt_number")
     .eq("quiz_id", params.quizId)
     .eq("participant_id", participant.id)
-    .maybeSingle();
+    .order("attempt_number", { ascending: true });
 
-  if (existingSubmission) {
-    return NextResponse.json(
-      { error: "Tu as déjà soumis ce quiz." },
-      { status: 409 }
-    );
+  if (existingError) {
+    return NextResponse.json({ error: existingError.message }, { status: 500 });
+  }
+
+  let attemptNumber = 1;
+  if (existingSubmissions && existingSubmissions.length > 0) {
+    const firstAttempt = existingSubmissions[0];
+    const firstPassed =
+      !firstAttempt.cancelled && isPassingScore(firstAttempt.score, firstAttempt.max_score);
+
+    // Une 2e tentative n'est permise que si le 1er essai n'a pas atteint 60 %
+    // et qu'elle n'a pas déjà été utilisée.
+    if (firstPassed || existingSubmissions.length > 1) {
+      return NextResponse.json(
+        { error: "Tu as déjà soumis ce quiz." },
+        { status: 409 }
+      );
+    }
+    attemptNumber = 2;
   }
 
   const { data: questions, error: questionsError } = await supabase
@@ -165,6 +180,7 @@ export async function POST(
       max_score: maxScore,
       cancelled: isCancelled,
       cancel_reason: isCancelled && typeof cancelReason === "string" ? cancelReason : null,
+      attempt_number: attemptNumber,
     })
     .select()
     .single();
@@ -195,6 +211,7 @@ export async function POST(
         maxScore,
         answers: corrected,
         cancelled: isCancelled,
+        attemptNumber,
       });
     } catch (err) {
       console.error("Erreur envoi email de résultats :", err);
@@ -206,6 +223,7 @@ export async function POST(
     score,
     maxScore,
     cancelled: isCancelled,
+    attemptNumber,
     answers: corrected,
   });
 }
