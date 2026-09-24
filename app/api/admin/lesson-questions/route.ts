@@ -10,13 +10,20 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = getSupabaseAdmin();
+  const quizId = request.nextUrl.searchParams.get("quizId");
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("lesson_questions")
     .select(
       "id, question_text, created_at, participant:participants(id, name, parish, email, whatsapp), quiz:daily_quizzes(id, title, lesson_date)"
     )
     .order("created_at", { ascending: false });
+
+  if (quizId) {
+    query = query.eq("quiz_id", quizId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

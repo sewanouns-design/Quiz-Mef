@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import QuestionBuilder, { type EditableQuestion } from "./QuestionBuilder";
+import LessonQuestionsModal from "./LessonQuestionsModal";
 import { parseQuizQuestionsInput } from "@/lib/quiz-import-parser";
 
 interface QuizListItem {
@@ -167,6 +168,10 @@ export default function QuizTab() {
   const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null);
   const [deactivatingQuizId, setDeactivatingQuizId] = useState<string | null>(null);
   const [exportingQuizId, setExportingQuizId] = useState<string | null>(null);
+  const [lessonQuestionsQuiz, setLessonQuestionsQuiz] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -778,6 +783,13 @@ export default function QuizTab() {
                           {exportingQuizId === quiz.id ? "Export..." : "⬇️ Exporter"}
                         </button>
                         <button
+                          onClick={() => setLessonQuestionsQuiz({ id: quiz.id, title: quiz.title })}
+                          className="text-sm font-semibold text-gray-500 hover:underline"
+                          title="Voir les questions posées par les participants sur cette leçon"
+                        >
+                          💬 Questions
+                        </button>
+                        <button
                           onClick={() => handleDelete(quiz)}
                           disabled={deletingQuizId === quiz.id}
                           className="text-sm font-semibold text-red-600 hover:underline disabled:opacity-50"
@@ -793,6 +805,14 @@ export default function QuizTab() {
           </div>
         )}
       </section>
+
+      {lessonQuestionsQuiz && (
+        <LessonQuestionsModal
+          quizId={lessonQuestionsQuiz.id}
+          quizTitle={lessonQuestionsQuiz.title}
+          onClose={() => setLessonQuestionsQuiz(null)}
+        />
+      )}
     </div>
   );
 }
