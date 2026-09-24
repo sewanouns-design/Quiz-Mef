@@ -207,7 +207,7 @@ function buildReengagementEmailHtml(params: {
   activeTodayCount?: number;
 }): string {
   const { participantName, milestoneHours, quizUrl, streakDays, activeTodayCount } = params;
-  const { primary, accent } = params.colors ?? {
+  const { accent } = params.colors ?? {
     primary: "#1a2e5a",
     accent: "#dc2626",
     accentDark: "#7f1414",
@@ -218,32 +218,22 @@ function buildReengagementEmailHtml(params: {
   // de participants déjà passés aujourd'hui (effet de groupe/FOMO).
   let statLine = "";
   if (streakDays && streakDays >= 2) {
-    statLine = `🔥 Tu avais une série de <strong>${streakDays} jours</strong> d'affilée avant ta pause — reprends-la dès aujourd'hui !`;
+    statLine = `Petit rappel : tu avais une série de <strong>${streakDays} jours</strong> d'affilée avant ta pause — reprends-la dès aujourd'hui.`;
   } else if (activeTodayCount && activeTodayCount > 0) {
-    statLine = `👥 Déjà <strong>${activeTodayCount} personne${activeTodayCount > 1 ? "s" : ""}</strong> ${activeTodayCount > 1 ? "ont" : "a"} répondu au quiz aujourd'hui.`;
+    statLine = `Déjà <strong>${activeTodayCount} personne${activeTodayCount > 1 ? "s" : ""}</strong> ${activeTodayCount > 1 ? "ont" : "a"} répondu au quiz aujourd'hui.`;
   }
 
-  const statBlock = statLine
-    ? `<div style="background:${accent}15;border:1px solid ${accent};border-radius:8px;padding:12px 16px;margin:20px 0;color:${primary};font-size:14px;text-align:center;">${statLine}</div>`
-    : "";
-
+  // Volontairement une mise en page sobre, proche d'un email personnel
+  // (pas de bannière colorée ni de gros bouton CTA), pour éviter que
+  // les filtres de messagerie classent cette relance en "Promotions".
   return `
-  <div style="font-family:'Inter',Arial,sans-serif;max-width:640px;margin:0 auto;background:#f7f7f7;padding:24px;">
-    <div style="background:${primary};padding:24px;border-radius:12px 12px 0 0;text-align:center;">
-      <h1 style="color:${accent};margin:0;font-size:22px;">⁉️ Quiz Biblique MEF</h1>
-    </div>
-    <div style="background:#ffffff;padding:24px;border-radius:0 0 12px 12px;">
-      <p>Bonjour <strong>${escapeHtml(participantName)}</strong>,</p>
-      <p>${intro}</p>
-      ${statBlock}
-      <p>« Sonde les écritures, car ce sont elles qui rendent témoignage de moi » (Jean 5:39). Chaque quiz est une occasion de plus de méditer la Parole de Dieu.</p>
-      <div style="text-align:center;margin:28px 0;">
-        <a href="${quizUrl}" style="display:inline-block;background:${accent};color:#ffffff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:10px;">
-          Reprendre le quiz du jour →
-        </a>
-      </div>
-      <p style="margin-top:24px;font-size:13px;color:#888;">Quiz Biblique MEF — quiz.mefzogbadje.org</p>
-    </div>
+  <div style="font-family:Arial,Helvetica,sans-serif;max-width:580px;margin:0 auto;padding:16px;color:#222222;font-size:15px;line-height:1.6;">
+    <p>Bonjour ${escapeHtml(participantName)},</p>
+    <p>${intro}</p>
+    ${statLine ? `<p>${statLine}</p>` : ""}
+    <p>« Sonde les écritures, car ce sont elles qui rendent témoignage de moi » (Jean 5:39). Chaque quiz est une occasion de plus de méditer la Parole de Dieu.</p>
+    <p>Tu peux reprendre le quiz du jour ici : <a href="${quizUrl}" style="color:${accent};">${quizUrl}</a></p>
+    <p style="margin-top:24px;color:#555555;">— Quiz Biblique MEF</p>
   </div>
   `;
 }
