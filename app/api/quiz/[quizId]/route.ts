@@ -53,15 +53,18 @@ export async function GET(
         .eq("participant_id", participant.id)
         .order("attempt_number", { ascending: true });
 
-      if (submissions && submissions.length > 0) {
-        const firstAttempt = submissions[0];
-        const firstPassed =
-          !firstAttempt.cancelled && isPassingScore(firstAttempt.score, firstAttempt.max_score);
+      // Une tentative annulée (sortie de page répétée, appel entrant...) ne
+      // compte jamais comme une vraie tentative : elle ne doit ni bloquer un
+      // nouvel essai, ni le faire passer pour une "2e tentative".
+      const realAttempts = (submissions ?? []).filter((s) => !s.cancelled);
+      if (realAttempts.length > 0) {
+        const firstAttempt = realAttempts[0];
+        const firstPassed = isPassingScore(firstAttempt.score, firstAttempt.max_score);
 
-        if (firstPassed || submissions.length > 1) {
+        if (firstPassed || realAttempts.length > 1) {
           alreadySubmitted = true;
-          // La tentative la plus récente est la définitive.
-          resultToken = submissions[submissions.length - 1].result_token;
+          // La tentative réelle la plus récente est la définitive.
+          resultToken = realAttempts[realAttempts.length - 1].result_token;
         } else {
           isRetry = true;
         }

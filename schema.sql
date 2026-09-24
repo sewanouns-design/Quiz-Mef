@@ -79,11 +79,16 @@ create table if not exists daily_submissions (
   submitted_at timestamptz default now()
 );
 
+-- Index partiels (where not cancelled) : une tentative annulée (sortie de
+-- page répétée, appel entrant...) n'occupe pas définitivement un numéro de
+-- tentative et ne bloque donc jamais un nouvel essai réel.
 create unique index if not exists idx_unique_submission_per_attempt
-  on daily_submissions (quiz_id, participant_id, attempt_number);
+  on daily_submissions (quiz_id, participant_id, attempt_number)
+  where not cancelled;
 
 create unique index if not exists idx_unique_submission_per_name_attempt
-  on daily_submissions (quiz_id, normalized_name, attempt_number);
+  on daily_submissions (quiz_id, normalized_name, attempt_number)
+  where not cancelled;
 
 create unique index if not exists idx_unique_result_token on daily_submissions (result_token);
 

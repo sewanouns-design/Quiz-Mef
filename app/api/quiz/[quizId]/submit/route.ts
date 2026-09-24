@@ -80,21 +80,23 @@ export async function POST(
     return NextResponse.json({ error: existingError.message }, { status: 500 });
   }
 
-  let attemptNumber = 1;
-  if (existingSubmissions && existingSubmissions.length > 0) {
-    const firstAttempt = existingSubmissions[0];
-    const firstPassed =
-      !firstAttempt.cancelled && isPassingScore(firstAttempt.score, firstAttempt.max_score);
+  // Une tentative annulée (sortie de page répétée, appel entrant...) ne
+  // compte jamais comme une vraie tentative : elle ne doit ni bloquer un
+  // nouvel essai, ni faire perdre au participant l'une de ses 2 chances.
+  const realAttempts = (existingSubmissions ?? []).filter((s) => !s.cancelled);
+  let attemptNumber = realAttempts.length + 1;
+  if (realAttempts.length > 0) {
+    const firstAttempt = realAttempts[0];
+    const firstPassed = isPassingScore(firstAttempt.score, firstAttempt.max_score);
 
     // Une 2e tentative n'est permise que si le 1er essai n'a pas atteint 60 %
     // et qu'elle n'a pas déjà été utilisée.
-    if (firstPassed || existingSubmissions.length > 1) {
+    if (firstPassed || realAttempts.length > 1) {
       return NextResponse.json(
         { error: "Tu as déjà soumis ce quiz." },
         { status: 409 }
       );
     }
-    attemptNumber = 2;
   }
 
   const { data: questions, error: questionsError } = await supabase
