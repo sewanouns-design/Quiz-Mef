@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { SiteSettings } from "@/lib/types";
 import { getRandomVerse } from "@/lib/verses";
 import DesktopSideDecoration from "./DesktopSideDecoration";
+import LogoIcon from "@/components/LogoIcon";
 
 interface Props {
   settings: SiteSettings;
@@ -34,7 +35,7 @@ export default function HomeMinimalTemplate({ settings, activeQuiz }: Props) {
             className="flex h-16 w-16 items-center justify-center rounded-full text-3xl shadow-lg"
             style={{ backgroundColor: primary }}
           >
-            {settings.logo_icon}
+            <LogoIcon value={settings.logo_icon} className="h-10 w-10" />
           </div>
         </div>
 

@@ -1,3 +1,5 @@
+import LogoIcon, { isImageLogo } from "@/components/LogoIcon";
+
 export default function DesktopSideDecoration({
   icon,
   primaryColor,
@@ -25,10 +27,14 @@ export default function DesktopSideDecoration({
           style={{ backgroundColor: accentColor, opacity: 0.16 }}
         />
         <div
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 select-none text-[240px] leading-none"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 select-none leading-none"
           style={{ opacity: 0.05 }}
         >
-          {icon}
+          {isImageLogo(icon) ? (
+            <LogoIcon value={icon} className="h-64 w-64" />
+          ) : (
+            <span className="text-[240px]">{icon}</span>
+          )}
         </div>
         <div className="relative flex flex-col items-center gap-3">
           {Array.from({ length: 6 }).map((_, i) => (

@@ -70,19 +70,6 @@ export const TEMPLATE_OPTIONS: { value: SiteSettings["template"]; label: string;
   },
 ];
 
-export const ICON_OPTIONS = [
-  "⁉️",
-  "📖",
-  "✝️",
-  "🕊️",
-  "⭐",
-  "🙏",
-  "📜",
-  "💡",
-  "🔔",
-  "🌿",
-];
-
 /** Éclaircit (amount > 0) ou assombrit (amount < 0) une couleur hexadécimale. */
 export function shadeHexColor(hex: string, amount: number): string {
   const normalized = hex.replace("#", "");

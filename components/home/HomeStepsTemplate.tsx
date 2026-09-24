@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { SiteSettings } from "@/lib/types";
 import { getRandomVerse } from "@/lib/verses";
 import DesktopSideDecoration from "./DesktopSideDecoration";
+import LogoIcon from "@/components/LogoIcon";
 
 interface Props {
   settings: SiteSettings;
@@ -57,7 +58,7 @@ export default function HomeStepsTemplate({ settings, activeQuiz, stats }: Props
               className="flex h-20 w-20 items-center justify-center rounded-2xl text-4xl shadow-lg"
               style={{ backgroundColor: primary }}
             >
-              {settings.logo_icon}
+              <LogoIcon value={settings.logo_icon} className="h-12 w-12" />
             </div>
           </div>
 

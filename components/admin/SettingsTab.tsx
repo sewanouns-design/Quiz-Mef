@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ColorPickerInput from "./ColorPickerInput";
 import HomePreview from "./HomePreview";
+import LogoIcon, { isImageLogo } from "@/components/LogoIcon";
 import {
   DEFAULT_SITE_SETTINGS,
   FONT_OPTIONS,
-  ICON_OPTIONS,
   TEMPLATE_OPTIONS,
   shadeHexColor,
 } from "@/lib/site-settings";
 import type { HomeStep, SiteSettings } from "@/lib/types";
+
+const MAX_LOGO_FILE_BYTES = 250 * 1024;
 
 export default function SettingsTab() {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
@@ -18,6 +20,8 @@ export default function SettingsTab() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [logoError, setLogoError] = useState("");
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/admin/settings", { cache: "no-store" })
@@ -30,6 +34,27 @@ export default function SettingsTab() {
 
   function updateField<K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) {
     setSettings((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setLogoError("");
+    if (!file.type.startsWith("image/")) {
+      setLogoError("Le fichier doit être une image.");
+      return;
+    }
+    if (file.size > MAX_LOGO_FILE_BYTES) {
+      setLogoError("L'image doit faire moins de 250 Ko.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => updateField("logo_icon", String(reader.result));
+    reader.onerror = () => setLogoError("Impossible de lire ce fichier.");
+    reader.readAsDataURL(file);
   }
 
   function updatePrimaryColor(hex: string) {
@@ -191,30 +216,41 @@ export default function SettingsTab() {
           </select>
         </div>
 
-        {/* Icône logo */}
+        {/* Logo */}
         <div className="mb-6">
-          <label className="label-field">Icône du logo</label>
-          <div className="flex flex-wrap items-center gap-2">
-            {ICON_OPTIONS.map((icon) => (
-              <button
-                key={icon}
-                type="button"
-                onClick={() => updateField("logo_icon", icon)}
-                className={`flex h-10 w-10 items-center justify-center rounded-lg border-2 text-xl transition-colors ${
-                  settings.logo_icon === icon ? "" : "border-gray-200 hover:border-gray-300"
-                }`}
-                style={settings.logo_icon === icon ? { borderColor: settings.color_accent } : undefined}
-              >
-                {icon}
-              </button>
-            ))}
-            <input
-              type="text"
-              value={settings.logo_icon}
-              onChange={(e) => updateField("logo_icon", e.target.value)}
-              className="input-field w-20 text-center"
-              maxLength={4}
-            />
+          <label className="label-field">Logo / icône du site</label>
+          <div className="flex items-center gap-3">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 text-2xl">
+              <LogoIcon value={settings.logo_icon} className="h-10 w-10" />
+            </div>
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  className="rounded-lg border-2 border-navy px-3 py-1.5 text-sm font-semibold text-navy transition-colors hover:bg-navy hover:text-white"
+                >
+                  📤 Importer une image
+                </button>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+                <input
+                  type="text"
+                  value={isImageLogo(settings.logo_icon) ? "" : settings.logo_icon}
+                  onChange={(e) => updateField("logo_icon", e.target.value)}
+                  placeholder="ou un emoji, ex : ⁉️"
+                  className="input-field w-40 text-sm"
+                  maxLength={4}
+                />
+              </div>
+              {logoError && <p className="mt-1 text-xs font-medium text-red-600">{logoError}</p>}
+              <p className="mt-1 text-xs text-gray-400">PNG, JPG ou SVG, 250 Ko maximum.</p>
+            </div>
           </div>
         </div>
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { SiteSettings } from "@/lib/types";
 import { getRandomVerse } from "@/lib/verses";
+import LogoIcon from "@/components/LogoIcon";
 
 interface Props {
   settings: SiteSettings;
@@ -29,7 +30,7 @@ export default function HomeCardTemplate({ settings, activeQuiz, stats }: Props)
             className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl text-4xl text-white shadow-md"
             style={{ backgroundColor: accent }}
           >
-            {settings.logo_icon}
+            <LogoIcon value={settings.logo_icon} className="h-12 w-12" />
           </div>
 
           <h1 className="text-2xl font-extrabold" style={{ color: primary }}>
