@@ -1,4 +1,4 @@
-import type { AnswerInput, DailyQuestion, QuestionType } from "./types";
+import type { AnswerInput, CorrectedAnswer, DailyQuestion, QuestionType } from "./types";
 
 /**
  * Normalise un texte pour comparaison : Unicode NFKC (pour que les accents
@@ -57,4 +57,21 @@ export function gradeAnswer(
   const variants = acceptedVariants(question.correct_text ?? "");
   const isCorrect = given.length > 0 && variants.includes(given);
   return { isCorrect, pointsAwarded: isCorrect ? question.points : 0 };
+}
+
+/**
+ * Retire la bonne réponse et la justification des réponses FAUSSES quand
+ * `reveal` est faux (voir shouldRevealAnswers) — jamais des réponses
+ * correctes, qui n'apprennent rien de nouveau au participant.
+ */
+export function redactAnswersIfHidden(
+  answers: CorrectedAnswer[],
+  reveal: boolean
+): CorrectedAnswer[] {
+  if (reveal) return answers;
+  return answers.map((a) =>
+    a.isCorrect === false
+      ? { ...a, correctOption: null, correctText: null, justification: null }
+      : a
+  );
 }

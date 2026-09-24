@@ -118,9 +118,9 @@ export async function generateResultsImage(params: ResultsImageParams): Promise<
 
   let cursorY = 400;
 
-  // Pastille "2e tentative" (uniquement si applicable)
-  if (attemptNumber === 2) {
-    const label = "🔁 2ᵉ TENTATIVE";
+  // Pastille "Nᵉ tentative" (uniquement si applicable)
+  if (attemptNumber && attemptNumber > 1) {
+    const label = `🔁 ${attemptNumber}ᵉ TENTATIVE`;
     ctx.font = "700 24px sans-serif";
     const labelWidth = ctx.measureText(label).width + 48;
     const pillY = cursorY + 40;

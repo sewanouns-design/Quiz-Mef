@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { isPassingScore } from "@/lib/scoring";
+import { isPassingScore, MAX_ATTEMPTS } from "@/lib/scoring";
 import type { PublicQuestion } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -55,13 +55,12 @@ export async function GET(
 
       // Une tentative annulée (sortie de page répétée, appel entrant...) ne
       // compte jamais comme une vraie tentative : elle ne doit ni bloquer un
-      // nouvel essai, ni le faire passer pour une "2e tentative".
+      // nouvel essai, ni le faire passer pour une tentative supplémentaire.
       const realAttempts = (submissions ?? []).filter((s) => !s.cancelled);
       if (realAttempts.length > 0) {
-        const firstAttempt = realAttempts[0];
-        const firstPassed = isPassingScore(firstAttempt.score, firstAttempt.max_score);
+        const passedAny = realAttempts.some((s) => isPassingScore(s.score, s.max_score));
 
-        if (firstPassed || realAttempts.length > 1) {
+        if (passedAny || realAttempts.length >= MAX_ATTEMPTS) {
           alreadySubmitted = true;
           // La tentative réelle la plus récente est la définitive.
           resultToken = realAttempts[realAttempts.length - 1].result_token;

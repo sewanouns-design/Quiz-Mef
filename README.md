@@ -103,8 +103,11 @@ contre un déclenchement manuel par un tiers).
 
 - `/` — page d'accueil, affiche le quiz du jour s'il est actif.
 - `/quiz` — formulaire d'identification (nom, adresse, email, WhatsApp).
-- `/quiz/[quizId]` — page du quiz (une tentative, deux si le score est
-  inférieur à 60 % au premier essai).
+- `/quiz/[quizId]` — page du quiz. Jusqu'à 3 tentatives réelles tant que le
+  score reste inférieur à 60 % (une tentative annulée — sortie de page
+  répétée, appel entrant... — n'en compte aucune). La bonne réponse et sa
+  justification restent cachées pour les erreurs tant qu'il reste une
+  tentative ; elles sont révélées dès la réussite ou à la 3ᵉ tentative ratée.
 - `/quiz/[quizId]/resultats/[token]` — résultats détaillés avec corrections
   et partage WhatsApp, via un jeton de résultat non devinable (pas l'ID de
   la soumission).

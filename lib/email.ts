@@ -40,6 +40,9 @@ function buildResultsTableRows(answers: CorrectedAnswer[]): string {
   return answers
     .map((a, i) => {
       const icon = a.type === "open" ? "✍️" : a.isCorrect ? "✅" : "❌";
+      // Réponse fausse dont la correction a été masquée (tentatives restantes) :
+      // on l'indique sans révéler la bonne réponse ni la justification.
+      const hidden = a.isCorrect === false && a.correctOption === null && a.correctText === null;
       const justification = a.justification
         ? `<div style="margin-top:6px;color:#555;font-size:13px;"><strong>Justification :</strong> ${escapeHtml(
             a.justification
@@ -52,9 +55,11 @@ function buildResultsTableRows(answers: CorrectedAnswer[]): string {
             <div style="margin:4px 0;">${escapeHtml(a.question)}</div>
             <div style="font-size:13px;"><strong>Ta réponse :</strong> ${formatAnswer(a)}</div>
             ${
-              a.type !== "open"
-                ? `<div style="font-size:13px;"><strong>Bonne réponse :</strong> ${formatCorrectAnswer(a)}</div>`
-                : ""
+              hidden
+                ? `<div style="font-size:13px;color:#888;">🔒 Réessaie pour découvrir la bonne réponse</div>`
+                : a.type !== "open"
+                  ? `<div style="font-size:13px;"><strong>Bonne réponse :</strong> ${formatCorrectAnswer(a)}</div>`
+                  : ""
             }
             ${justification}
             <div style="margin-top:6px;font-size:12px;color:#888;">${a.pointsAwarded} / ${a.points} points</div>
@@ -74,9 +79,10 @@ export function buildResultsEmailHtml(params: {
   answers: CorrectedAnswer[];
   cancelled?: boolean;
   attemptNumber?: number;
+  attemptsRemaining?: number;
   colors?: EmailColors;
 }): string {
-  const { participantName, quizTitle, score, maxScore, answers, cancelled, attemptNumber } =
+  const { participantName, quizTitle, score, maxScore, answers, cancelled, attemptNumber, attemptsRemaining } =
     params;
   const { primary, accent, accentDark } = params.colors ?? {
     primary: "#1a2e5a",
@@ -91,9 +97,16 @@ export function buildResultsEmailHtml(params: {
     : "";
 
   const retryNotice =
-    !cancelled && attemptNumber === 2
+    !cancelled && attemptNumber && attemptNumber > 1
       ? `<div style="background:${accent}15;border:1px solid ${accent};border-radius:8px;padding:10px 14px;margin:16px 0;color:${primary};font-size:13px;">
-          🔁 Il s'agit de ta <strong>2ᵉ tentative</strong> pour ce quiz.
+          🔁 Il s'agit de ta <strong>${attemptNumber}ᵉ tentative</strong> pour ce quiz.
+        </div>`
+      : "";
+
+  const remainingNotice =
+    !cancelled && attemptsRemaining !== undefined && attemptsRemaining > 0
+      ? `<div style="background:${accent}15;border:1px solid ${accent};border-radius:8px;padding:10px 14px;margin:16px 0;color:${primary};font-size:13px;">
+          Il te reste <strong>${attemptsRemaining} tentative${attemptsRemaining > 1 ? "s" : ""}</strong> pour atteindre la moyenne. Retente ta chance !
         </div>`
       : "";
 
@@ -107,6 +120,7 @@ export function buildResultsEmailHtml(params: {
       <p>Voici tes résultats pour le quiz : <strong>${escapeHtml(quizTitle)}</strong></p>
       ${cancelledNotice}
       ${retryNotice}
+      ${remainingNotice}
       <div style="background:${accent}15;border:2px solid ${accent};border-radius:8px;padding:16px;text-align:center;margin:20px 0;">
         <div style="font-size:14px;color:${primary};">Score obtenu</div>
         <div style="font-size:32px;font-weight:700;color:${primary};">${score} / ${maxScore}</div>
@@ -131,6 +145,7 @@ export async function sendResultsEmail(params: {
   answers: CorrectedAnswer[];
   cancelled?: boolean;
   attemptNumber?: number;
+  attemptsRemaining?: number;
 }): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL;
@@ -161,8 +176,8 @@ export async function sendResultsEmail(params: {
 
   const subjectPrefix = params.cancelled
     ? "[Test annulé] "
-    : params.attemptNumber === 2
-      ? "[2e tentative] "
+    : params.attemptNumber && params.attemptNumber > 1
+      ? `[${params.attemptNumber}e tentative] `
       : "";
   const result = await resend.emails.send({
     from,

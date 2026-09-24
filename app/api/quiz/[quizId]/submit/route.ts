@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isSameOriginRequest } from "@/lib/auth";
 import { sendResultsEmail } from "@/lib/email";
-import { isPassingScore } from "@/lib/scoring";
-import { gradeAnswer, isAutoGraded, normalizeName } from "@/lib/grading";
+import { attemptsRemaining, isPassingScore, MAX_ATTEMPTS, shouldRevealAnswers } from "@/lib/scoring";
+import { gradeAnswer, isAutoGraded, normalizeName, redactAnswersIfHidden } from "@/lib/grading";
 import { getClientIp, isRateLimited, recordRateLimitEvent } from "@/lib/rate-limit";
 import type { AnswerInput, CorrectedAnswer, DailyQuestion } from "@/lib/types";
 
@@ -82,22 +82,19 @@ export async function POST(
 
   // Une tentative annulée (sortie de page répétée, appel entrant...) ne
   // compte jamais comme une vraie tentative : elle ne doit ni bloquer un
-  // nouvel essai, ni faire perdre au participant l'une de ses 2 chances.
+  // nouvel essai, ni faire perdre au participant l'une de ses chances.
   const realAttempts = (existingSubmissions ?? []).filter((s) => !s.cancelled);
-  let attemptNumber = realAttempts.length + 1;
-  if (realAttempts.length > 0) {
-    const firstAttempt = realAttempts[0];
-    const firstPassed = isPassingScore(firstAttempt.score, firstAttempt.max_score);
+  const passedAny = realAttempts.some((s) => isPassingScore(s.score, s.max_score));
 
-    // Une 2e tentative n'est permise que si le 1er essai n'a pas atteint 60 %
-    // et qu'elle n'a pas déjà été utilisée.
-    if (firstPassed || realAttempts.length > 1) {
-      return NextResponse.json(
-        { error: "Tu as déjà soumis ce quiz." },
-        { status: 409 }
-      );
-    }
+  // Une nouvelle tentative n'est permise que si aucune précédente n'a atteint
+  // 60 % et que le nombre maximum de tentatives réelles n'est pas atteint.
+  if (passedAny || realAttempts.length >= MAX_ATTEMPTS) {
+    return NextResponse.json(
+      { error: "Tu as déjà soumis ce quiz." },
+      { status: 409 }
+    );
   }
+  const attemptNumber = realAttempts.length + 1;
 
   const { data: questions, error: questionsError } = await supabase
     .from("daily_questions")
@@ -209,6 +206,15 @@ export async function POST(
     return NextResponse.json({ error: answersError.message }, { status: 500 });
   }
 
+  // Tant qu'il reste des tentatives réelles et que la moyenne n'est pas
+  // atteinte, la bonne réponse et la justification des erreurs restent
+  // cachées (une soumission annulée les révèle toujours, ce n'est pas une
+  // vraie tentative comptabilisée).
+  const passed = isPassingScore(score, maxScore);
+  const reveal = isCancelled || shouldRevealAnswers(score, maxScore, attemptNumber);
+  const visibleAnswers = redactAnswersIfHidden(corrected, reveal);
+  const remaining = isCancelled ? MAX_ATTEMPTS - realAttempts.length : attemptsRemaining(attemptNumber, passed);
+
   if (participant.email) {
     try {
       await sendResultsEmail({
@@ -218,9 +224,10 @@ export async function POST(
         lessonDate: quiz.lesson_date,
         score,
         maxScore,
-        answers: corrected,
+        answers: visibleAnswers,
         cancelled: isCancelled,
         attemptNumber,
+        attemptsRemaining: remaining,
       });
     } catch (err) {
       console.error("Erreur envoi email de résultats :", err);
@@ -234,6 +241,7 @@ export async function POST(
     maxScore,
     cancelled: isCancelled,
     attemptNumber,
-    answers: corrected,
+    attemptsRemaining: remaining,
+    answers: visibleAnswers,
   });
 }

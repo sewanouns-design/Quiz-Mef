@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { isPassingScore } from "@/lib/scoring";
+import { attemptsRemaining, isPassingScore, MAX_ATTEMPTS, shouldRevealAnswers } from "@/lib/scoring";
+import { redactAnswersIfHidden } from "@/lib/grading";
 import type { CorrectedAnswer, DailyQuestion } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -40,17 +41,20 @@ export async function GET(
     return NextResponse.json({ error: "Résultat introuvable" }, { status: 404 });
   }
 
-  // On indique si une 2e tentative est encore possible pour CE participant,
-  // pas seulement pour cette soumission précise.
+  // On indique si une nouvelle tentative est encore possible pour CE
+  // participant, pas seulement pour cette soumission précise — les
+  // tentatives annulées (sortie de page répétée, appel entrant...) ne
+  // comptent jamais comme de vraies tentatives.
   const { data: allAttempts } = await supabase
     .from("daily_submissions")
-    .select("attempt_number")
+    .select("score, max_score, cancelled")
     .eq("quiz_id", params.quizId)
     .eq("participant_id", submission.participant_id);
 
-  const passed = !submission.cancelled && isPassingScore(submission.score, submission.max_score);
-  const canRetry =
-    !passed && submission.attempt_number === 1 && (allAttempts?.length ?? 1) === 1;
+  const realAttempts = (allAttempts ?? []).filter((s) => !s.cancelled);
+  const passedAny = realAttempts.some((s) => isPassingScore(s.score, s.max_score));
+  const canRetry = !passedAny && realAttempts.length < MAX_ATTEMPTS;
+  const remaining = attemptsRemaining(realAttempts.length, passedAny);
 
   const { data: participant } = await supabase
     .from("participants")
@@ -97,6 +101,9 @@ export async function GET(
     };
   });
 
+  const reveal =
+    submission.cancelled || shouldRevealAnswers(submission.score, submission.max_score, submission.attempt_number);
+
   return NextResponse.json({
     quiz: { id: quiz.id, title: quiz.title, lesson_date: quiz.lesson_date },
     participantName: participant?.name ?? "",
@@ -107,6 +114,7 @@ export async function GET(
     cancelReason: submission.cancel_reason,
     attemptNumber: submission.attempt_number,
     canRetry,
-    answers: corrected,
+    attemptsRemaining: remaining,
+    answers: redactAnswersIfHidden(corrected, reveal),
   });
 }

@@ -16,6 +16,7 @@ interface ResultsData {
   cancelReason: string | null;
   attemptNumber: number;
   canRetry: boolean;
+  attemptsRemaining: number;
   answers: CorrectedAnswer[];
 }
 
@@ -176,9 +177,9 @@ export default function ResultsPage() {
               <div className="relative mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-accent-light to-accent text-4xl shadow-lg shadow-accent/40">
                 🎉
               </div>
-              {data.attemptNumber === 2 && (
+              {data.attemptNumber > 1 && (
                 <span className="relative mb-2 inline-block rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/80">
-                  🔁 2ᵉ tentative
+                  🔁 {data.attemptNumber}ᵉ tentative
                 </span>
               )}
               <p className="relative text-xs font-semibold uppercase tracking-wide text-white/60">
@@ -204,9 +205,9 @@ export default function ResultsPage() {
               <p className="text-sm font-semibold uppercase tracking-wide text-accent-dark">
                 {data.quiz.title}
               </p>
-              {data.attemptNumber === 2 && (
+              {data.attemptNumber > 1 && (
                 <span className="mt-2 inline-block rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-accent-dark">
-                  🔁 2ᵉ tentative
+                  🔁 {data.attemptNumber}ᵉ tentative
                 </span>
               )}
               {data.participantName && (
@@ -224,7 +225,10 @@ export default function ResultsPage() {
                 <div className="mx-auto mt-6 max-w-sm rounded-2xl border-2 border-dashed border-navy/20 bg-navy/5 px-6 py-5">
                   <p className="text-sm text-navy">
                     Tu n&apos;as pas encore atteint la moyenne. Il te reste{" "}
-                    <strong>une seconde tentative</strong> pour ce quiz !
+                    <strong>
+                      {data.attemptsRemaining} tentative{data.attemptsRemaining > 1 ? "s" : ""}
+                    </strong>{" "}
+                    pour ce quiz !
                   </p>
                   <Link href={`/quiz/${quizId}`} className="btn-primary mt-4 inline-flex">
                     🔁 Reprendre le quiz
@@ -261,10 +265,16 @@ export default function ResultsPage() {
                 <strong>Ta réponse :</strong> {formatParticipantAnswer(answer)}
               </p>
 
-              {answer.type !== "open" && (
-                <p className="text-sm text-gray-700">
-                  <strong>Bonne réponse :</strong> {formatCorrectAnswer(answer)}
+              {answer.isCorrect === false && answer.correctOption === null && answer.correctText === null ? (
+                <p className="text-sm italic text-gray-400">
+                  🔒 Réessaie pour découvrir la bonne réponse
                 </p>
+              ) : (
+                answer.type !== "open" && (
+                  <p className="text-sm text-gray-700">
+                    <strong>Bonne réponse :</strong> {formatCorrectAnswer(answer)}
+                  </p>
+                )
               )}
 
               {answer.justification && (
