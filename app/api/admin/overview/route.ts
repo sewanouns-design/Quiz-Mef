@@ -35,11 +35,10 @@ export async function GET(request: NextRequest) {
   let submissionsQuery = supabase
     .from("daily_submissions")
     .select("score, max_score, cancelled, submitted_at");
-  let parishQuery = supabase.from("participants").select("parish");
   let recentSubmissionsQuery = supabase
     .from("daily_submissions")
     .select(
-      "score, max_score, cancelled, submitted_at, participant:participants(name, parish), quiz:daily_quizzes(title)"
+      "score, max_score, cancelled, submitted_at, participant:participants(name, address), quiz:daily_quizzes(title)"
     );
 
   if (fromTs) {
@@ -47,7 +46,6 @@ export async function GET(request: NextRequest) {
     quizzesQuery = quizzesQuery.gte("created_at", fromTs);
     lessonQuestionsQuery = lessonQuestionsQuery.gte("created_at", fromTs);
     submissionsQuery = submissionsQuery.gte("submitted_at", fromTs);
-    parishQuery = parishQuery.gte("created_at", fromTs);
     recentSubmissionsQuery = recentSubmissionsQuery.gte("submitted_at", fromTs);
   }
   if (toTs) {
@@ -55,7 +53,6 @@ export async function GET(request: NextRequest) {
     quizzesQuery = quizzesQuery.lte("created_at", toTs);
     lessonQuestionsQuery = lessonQuestionsQuery.lte("created_at", toTs);
     submissionsQuery = submissionsQuery.lte("submitted_at", toTs);
-    parishQuery = parishQuery.lte("created_at", toTs);
     recentSubmissionsQuery = recentSubmissionsQuery.lte("submitted_at", toTs);
   }
 
@@ -64,7 +61,6 @@ export async function GET(request: NextRequest) {
     quizzesCount,
     lessonQuestionsCount,
     submissionsRows,
-    parishRows,
     activeQuiz,
     recentSubmissions,
   ] = await Promise.all([
@@ -72,7 +68,6 @@ export async function GET(request: NextRequest) {
     quizzesQuery,
     lessonQuestionsQuery,
     submissionsQuery,
-    parishQuery,
     supabase.from("daily_quizzes").select("title").eq("is_active", true).maybeSingle(),
     recentSubmissionsQuery.order("submitted_at", { ascending: false }).limit(8),
   ]);
@@ -82,7 +77,6 @@ export async function GET(request: NextRequest) {
     quizzesCount.error,
     lessonQuestionsCount.error,
     submissionsRows.error,
-    parishRows.error,
     activeQuiz.error,
     recentSubmissions.error,
   ].filter(Boolean);
@@ -104,12 +98,6 @@ export async function GET(request: NextRequest) {
         )
       : null;
 
-  const distinctParishes = new Set(
-    (parishRows.data ?? [])
-      .map((p) => (p.parish ?? "").trim().toLowerCase())
-      .filter((p) => p.length > 0)
-  );
-
   return NextResponse.json({
     period: { from, to },
     participantsCount: participantsCount.count ?? 0,
@@ -119,7 +107,6 @@ export async function GET(request: NextRequest) {
     passedCount,
     averageScorePercent,
     lessonQuestionsCount: lessonQuestionsCount.count ?? 0,
-    parishesCount: distinctParishes.size,
     activeQuizTitle: activeQuiz.data?.title ?? null,
     recentSubmissions: recentSubmissions.data ?? [],
   });

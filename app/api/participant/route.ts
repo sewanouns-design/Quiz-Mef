@@ -46,11 +46,11 @@ export async function POST(request: NextRequest) {
   await recordRateLimitEvent(ip, RATE_LIMIT_ROUTE);
 
   const body = await request.json();
-  const { deviceKey, name, parish, email, whatsapp } = body ?? {};
+  const { deviceKey, name, address, email, whatsapp } = body ?? {};
 
-  if (!deviceKey || !name || !parish || !email) {
+  if (!deviceKey || !name || !address || !email) {
     return NextResponse.json(
-      { error: "deviceKey, name, parish et email sont requis" },
+      { error: "deviceKey, name, address et email sont requis" },
       { status: 400 }
     );
   }
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       {
         device_key: deviceKey,
         name,
-        parish,
+        address,
         email: email || null,
         whatsapp: whatsapp || null,
       },

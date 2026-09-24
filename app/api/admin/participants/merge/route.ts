@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
 
   const updates: Record<string, unknown> = {};
   if (typeof fields?.name === "string" && fields.name.trim()) updates.name = fields.name.trim();
-  if (typeof fields?.parish === "string" && fields.parish.trim()) updates.parish = fields.parish.trim();
+  if (typeof fields?.address === "string" && fields.address.trim()) updates.address = fields.address.trim();
   if (fields?.email !== undefined) updates.email = fields.email || null;
   if (fields?.whatsapp !== undefined) updates.whatsapp = fields.whatsapp || null;
 

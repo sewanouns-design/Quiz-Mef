@@ -31,7 +31,7 @@ export type PublicQuestion = Omit<
 export interface Participant {
   id: string;
   name: string;
-  parish: string;
+  address: string;
   email: string | null;
   whatsapp: string | null;
   device_key: string;

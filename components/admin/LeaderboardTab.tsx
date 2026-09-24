@@ -7,7 +7,7 @@ interface Submission {
   id: string;
   score: number;
   max_score: number;
-  participant: { id: string; name: string; parish: string } | null;
+  participant: { id: string; name: string; address: string } | null;
 }
 
 const MEDALS = ["🥇", "🥈", "🥉"];
@@ -72,7 +72,7 @@ export default function LeaderboardTab() {
                 </span>
                 <div>
                   <p className="font-semibold text-navy">{s.participant?.name ?? "—"}</p>
-                  <p className="text-xs text-gray-500">{s.participant?.parish ?? "—"}</p>
+                  <p className="text-xs text-gray-500">{s.participant?.address ?? "—"}</p>
                 </div>
               </div>
               <span className="font-bold text-navy">

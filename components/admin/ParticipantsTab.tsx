@@ -7,7 +7,7 @@ import MergeParticipantsModal from "./MergeParticipantsModal";
 interface Participant {
   id: string;
   name: string;
-  parish: string;
+  address: string;
   email: string | null;
   whatsapp: string | null;
   created_at: string;
@@ -52,7 +52,7 @@ export default function ParticipantsTab() {
 
   const filtered = participants.filter((p) => {
     const q = search.toLowerCase();
-    return p.name.toLowerCase().includes(q) || p.parish.toLowerCase().includes(q);
+    return p.name.toLowerCase().includes(q) || p.address.toLowerCase().includes(q);
   });
 
   function toggleOne(id: string) {
@@ -128,7 +128,7 @@ export default function ParticipantsTab() {
           )}
           <input
             className="input-field sm:max-w-xs"
-            placeholder="Rechercher par nom ou paroisse..."
+            placeholder="Rechercher par nom ou adresse..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -163,7 +163,7 @@ export default function ParticipantsTab() {
                   />
                 </th>
                 <th className="py-2 pr-4">Nom</th>
-                <th className="py-2 pr-4">Paroisse</th>
+                <th className="py-2 pr-4">Adresse</th>
                 <th className="py-2 pr-4">Email</th>
                 <th className="py-2 pr-4">WhatsApp</th>
                 <th className="py-2 pr-4">Inscription</th>
@@ -190,7 +190,7 @@ export default function ParticipantsTab() {
                       {p.name}
                     </button>
                   </td>
-                  <td className="py-3 pr-4 text-gray-600">{p.parish}</td>
+                  <td className="py-3 pr-4 text-gray-600">{p.address}</td>
                   <td className="py-3 pr-4">
                     {p.email ? (
                       <a href={`mailto:${p.email}`} className="text-accent-dark hover:underline">

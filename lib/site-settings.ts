@@ -23,7 +23,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
     {
       icon: "📝",
       title: "Identifie-toi",
-      description: "Ton nom et ta paroisse suffisent pour commencer.",
+      description: "Ton nom et ton adresse suffisent pour commencer.",
     },
     {
       icon: "⁉️",

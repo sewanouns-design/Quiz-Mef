@@ -5,7 +5,7 @@ const STORAGE_KEY = "mef_participant";
 export interface StoredParticipant {
   deviceKey: string;
   name: string;
-  parish: string;
+  address: string;
   email: string;
   whatsapp: string;
 }

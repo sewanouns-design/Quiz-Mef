@@ -15,7 +15,7 @@ export default function QuizIdentificationPage() {
   const router = useRouter();
   const [deviceKey, setDeviceKey] = useState("");
   const [name, setName] = useState("");
-  const [parish, setParish] = useState("");
+  const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,7 +30,7 @@ export default function QuizIdentificationPage() {
     const stored = getStoredParticipant();
     if (stored) {
       setName(stored.name || "");
-      setParish(stored.parish || "");
+      setAddress(stored.address || "");
       setEmail(stored.email || "");
       setWhatsapp(stored.whatsapp || "");
       setPhoneInputKey(`stored-${stored.whatsapp || ""}`);
@@ -41,7 +41,7 @@ export default function QuizIdentificationPage() {
       .then((data) => {
         if (data?.participant) {
           setName(data.participant.name || "");
-          setParish(data.participant.parish || "");
+          setAddress(data.participant.address || "");
           setEmail(data.participant.email || "");
           setWhatsapp(data.participant.whatsapp || "");
           setPhoneInputKey(`fetched-${data.participant.whatsapp || ""}`);
@@ -63,8 +63,8 @@ export default function QuizIdentificationPage() {
     e.preventDefault();
     setError("");
 
-    if (!name.trim() || !parish.trim() || !email.trim()) {
-      setError("Le nom, la paroisse et l'email sont requis.");
+    if (!name.trim() || !address.trim() || !email.trim()) {
+      setError("Le nom, l'adresse et l'email sont requis.");
       return;
     }
 
@@ -84,7 +84,7 @@ export default function QuizIdentificationPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ deviceKey, name, parish, email, whatsapp }),
+        body: JSON.stringify({ deviceKey, name, address, email, whatsapp }),
       });
 
       if (!participantRes.ok) {
@@ -92,7 +92,7 @@ export default function QuizIdentificationPage() {
         throw new Error(data.error || "Erreur lors de l'enregistrement");
       }
 
-      saveStoredParticipant({ deviceKey, name, parish, email, whatsapp });
+      saveStoredParticipant({ deviceKey, name, address, email, whatsapp });
 
       const quizRes = await fetch("/api/quiz/active", { cache: "no-store" });
       const quizData = await quizRes.json();
@@ -137,15 +137,15 @@ export default function QuizIdentificationPage() {
           </div>
 
           <div>
-            <label className="label-field" htmlFor="parish">
-              Paroisse
+            <label className="label-field" htmlFor="address">
+              Adresse
             </label>
             <input
-              id="parish"
+              id="address"
               className="input-field"
-              value={parish}
-              onChange={(e) => setParish(e.target.value)}
-              placeholder="Ex : MEF Zogbadjè"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Ex : Zogbadjè, Cotonou"
               required
             />
           </div>

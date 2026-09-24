@@ -11,7 +11,7 @@ create extension if not exists "pgcrypto";
 create table if not exists participants (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  parish text not null,
+  address text not null,
   email text,
   whatsapp text,
   device_key text unique not null,
@@ -19,7 +19,7 @@ create table if not exists participants (
 );
 
 create index if not exists idx_participants_device_key on participants (device_key);
-create index if not exists idx_participants_parish on participants (parish);
+create index if not exists idx_participants_address on participants (address);
 
 -- ------------------------------------------------------------
 -- Quiz quotidiens
@@ -145,7 +145,7 @@ create table if not exists site_settings (
   hero_title text not null default 'Quiz Biblique du Jour',
   hero_subtitle text not null default 'Teste tes connaissances sur la leçon du jour',
   steps jsonb not null default '[
-    {"icon": "📝", "title": "Identifie-toi", "description": "Ton nom et ta paroisse suffisent pour commencer."},
+    {"icon": "📝", "title": "Identifie-toi", "description": "Ton nom et ton adresse suffisent pour commencer."},
     {"icon": "⁉️", "title": "Réponds au quiz", "description": "Des questions sur la leçon du jour, à ton rythme."},
     {"icon": "📊", "title": "Reçois tes résultats", "description": "Score détaillé, corrections, et un email récapitulatif."}
   ]'::jsonb,

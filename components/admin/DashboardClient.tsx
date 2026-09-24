@@ -7,17 +7,15 @@ import QuizTab from "./QuizTab";
 import ParticipantsTab from "./ParticipantsTab";
 import ResultsTab from "./ResultsTab";
 import LeaderboardTab from "./LeaderboardTab";
-import ParishLeaderboardTab from "./ParishLeaderboardTab";
 import SettingsTab from "./SettingsTab";
 
 const TABS = [
-  { id: "overview", label: "Vue d'ensemble" },
-  { id: "quiz", label: "Quiz du jour" },
-  { id: "participants", label: "Participants" },
-  { id: "results", label: "Résultats" },
-  { id: "leaderboard", label: "Classement général" },
-  { id: "parish", label: "Classement par paroisse" },
-  { id: "settings", label: "Personnalisation" },
+  { id: "overview", label: "Vue d'ensemble", icon: "📊" },
+  { id: "quiz", label: "Quiz du jour", icon: "📝" },
+  { id: "participants", label: "Participants", icon: "👥" },
+  { id: "results", label: "Résultats", icon: "🏆" },
+  { id: "leaderboard", label: "Classement", icon: "🥇" },
+  { id: "settings", label: "Personnalisation", icon: "🎨" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -49,30 +47,32 @@ export default function DashboardClient() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
-        <nav className="mb-6 flex flex-wrap gap-2">
+      <div className="sticky top-0 z-10 border-b border-gray-200 bg-white shadow-sm">
+        <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4 sm:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-3 text-sm font-semibold transition-colors sm:px-4 ${
                 activeTab === tab.id
-                  ? "bg-navy text-white"
-                  : "bg-white text-navy hover:bg-navy/10"
+                  ? "border-accent text-navy"
+                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-navy"
               }`}
             >
+              <span aria-hidden="true">{tab.icon}</span>
               {tab.label}
             </button>
           ))}
         </nav>
+      </div>
 
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
         <div>
           {activeTab === "overview" && <OverviewTab />}
           {activeTab === "quiz" && <QuizTab />}
           {activeTab === "participants" && <ParticipantsTab />}
           {activeTab === "results" && <ResultsTab />}
           {activeTab === "leaderboard" && <LeaderboardTab />}
-          {activeTab === "parish" && <ParishLeaderboardTab />}
           {activeTab === "settings" && <SettingsTab />}
         </div>
       </div>

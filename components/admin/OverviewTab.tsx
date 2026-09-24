@@ -10,14 +10,13 @@ interface OverviewData {
   passedCount: number;
   averageScorePercent: number | null;
   lessonQuestionsCount: number;
-  parishesCount: number;
   activeQuizTitle: string | null;
   recentSubmissions: {
     score: number;
     max_score: number;
     cancelled: boolean;
     submitted_at: string;
-    participant: { name: string; parish: string } | null;
+    participant: { name: string; address: string } | null;
     quiz: { title: string } | null;
   }[];
 }
@@ -336,7 +335,6 @@ export default function OverviewTab() {
               value={data.averageScorePercent !== null ? `${data.averageScorePercent}%` : "—"}
               label="Score moyen"
             />
-            <StatCard icon="⛪" value={data.parishesCount} label="Paroisses représentées" />
             <StatCard icon="💬" value={data.lessonQuestionsCount} label="Questions sur la leçon" />
             <StatCard
               icon="⚠️"
@@ -386,7 +384,7 @@ export default function OverviewTab() {
                             <p className="truncate font-medium text-navy">
                               {s.participant?.name ?? "—"}{" "}
                               <span className="font-normal text-gray-400">
-                                · {s.participant?.parish}
+                                · {s.participant?.address}
                               </span>
                             </p>
                             <p className="truncate text-xs text-gray-500">

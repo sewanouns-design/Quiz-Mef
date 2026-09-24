@@ -4,7 +4,7 @@ Site de quiz biblique quotidien pour la Mission Évangélique de la Foi (MEF).
 Chaque jour, un quiz basé sur la leçon du jour est publié. Les participants
 répondent, voient leurs résultats détaillés avec corrections, et les reçoivent
 par email. Un espace admin permet de publier les quiz et de suivre les
-statistiques par paroisse.
+statistiques de participation.
 
 Accessible sur **quiz.mefzogbadje.org**.
 
@@ -102,7 +102,7 @@ contre un déclenchement manuel par un tiers).
 ### Participants
 
 - `/` — page d'accueil, affiche le quiz du jour s'il est actif.
-- `/quiz` — formulaire d'identification (nom, paroisse, email, WhatsApp).
+- `/quiz` — formulaire d'identification (nom, adresse, email, WhatsApp).
 - `/quiz/[quizId]` — page du quiz (une tentative, deux si le score est
   inférieur à 60 % au premier essai).
 - `/quiz/[quizId]/resultats/[token]` — résultats détaillés avec corrections
@@ -121,9 +121,8 @@ contre un déclenchement manuel par un tiers).
   - **Participants** : liste de tous les participants (email et WhatsApp
     cliquables).
   - **Résultats** : soumissions d'un quiz sélectionné.
-  - **Classement général** : classement de tous les participants sur un
-    quiz.
-  - **Classement par paroisse** : moyenne et classement par paroisse.
+  - **Classement** : classement de tous les participants sur un quiz.
+  - **Personnalisation** : couleurs, template et contenu de la page d'accueil.
 
 ### Format JSON d'import des questions
 

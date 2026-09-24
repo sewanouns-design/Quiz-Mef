@@ -5,17 +5,17 @@ import { useState } from "react";
 interface Participant {
   id: string;
   name: string;
-  parish: string;
+  address: string;
   email: string | null;
   whatsapp: string | null;
   created_at: string;
 }
 
-type FieldKey = "name" | "parish" | "email" | "whatsapp";
+type FieldKey = "name" | "address" | "email" | "whatsapp";
 
 const FIELD_LABELS: Record<FieldKey, string> = {
   name: "Nom",
-  parish: "Paroisse",
+  address: "Adresse",
   email: "Email",
   whatsapp: "WhatsApp",
 };
@@ -32,7 +32,7 @@ export default function MergeParticipantsModal({
   const [targetId, setTargetId] = useState(candidates[0]?.id ?? "");
   const [fieldChoices, setFieldChoices] = useState<Record<FieldKey, string>>({
     name: candidates[0]?.id ?? "",
-    parish: candidates[0]?.id ?? "",
+    address: candidates[0]?.id ?? "",
     email: candidates[0]?.id ?? "",
     whatsapp: candidates[0]?.id ?? "",
   });
@@ -53,7 +53,7 @@ export default function MergeParticipantsModal({
       const sourceIds = candidates.map((c) => c.id).filter((id) => id !== targetId);
       const fields: Record<FieldKey, string | null> = {
         name: valueFor(fieldChoices.name, "name"),
-        parish: valueFor(fieldChoices.parish, "parish"),
+        address: valueFor(fieldChoices.address, "address"),
         email: valueFor(fieldChoices.email, "email") === "—" ? null : valueFor(fieldChoices.email, "email"),
         whatsapp:
           valueFor(fieldChoices.whatsapp, "whatsapp") === "—"
@@ -79,7 +79,7 @@ export default function MergeParticipantsModal({
     }
   }
 
-  const fieldKeys: FieldKey[] = ["name", "parish", "email", "whatsapp"];
+  const fieldKeys: FieldKey[] = ["name", "address", "email", "whatsapp"];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>

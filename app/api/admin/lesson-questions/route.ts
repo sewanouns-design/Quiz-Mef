@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("lesson_questions")
     .select(
-      "id, question_text, created_at, participant:participants(id, name, parish, email, whatsapp), quiz:daily_quizzes(id, title, lesson_date)"
+      "id, question_text, created_at, participant:participants(id, name, address, email, whatsapp), quiz:daily_quizzes(id, title, lesson_date)"
     )
     .order("created_at", { ascending: false });
 

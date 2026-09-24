@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 interface ParticipantDetail {
   id: string;
   name: string;
-  parish: string;
+  address: string;
   email: string | null;
   whatsapp: string | null;
   created_at: string;
@@ -83,7 +83,7 @@ export default function ParticipantDetailModal({
             <div className="mb-4 flex items-start justify-between">
               <div>
                 <h2 className="text-lg font-bold text-navy">{participant.name}</h2>
-                <p className="text-sm text-gray-500">{participant.parish}</p>
+                <p className="text-sm text-gray-500">{participant.address}</p>
               </div>
               <button
                 onClick={onClose}

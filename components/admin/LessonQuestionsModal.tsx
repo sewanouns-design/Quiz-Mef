@@ -7,7 +7,7 @@ interface LessonQuestionEntry {
   id: string;
   question_text: string;
   created_at: string;
-  participant: { id: string; name: string; parish: string } | null;
+  participant: { id: string; name: string; address: string } | null;
 }
 
 export default function LessonQuestionsModal({

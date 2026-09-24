@@ -10,7 +10,7 @@ interface Submission {
   max_score: number;
   cancelled: boolean;
   submitted_at: string;
-  participant: { id: string; name: string; parish: string; email: string | null; whatsapp: string | null } | null;
+  participant: { id: string; name: string; address: string; email: string | null; whatsapp: string | null } | null;
 }
 
 function toWhatsappLink(whatsapp: string): string {
@@ -145,7 +145,7 @@ export default function ResultsTab() {
                 </th>
                 <th className="py-2 pr-4">Rang</th>
                 <th className="py-2 pr-4">Nom</th>
-                <th className="py-2 pr-4">Paroisse</th>
+                <th className="py-2 pr-4">Adresse</th>
                 <th className="py-2 pr-4">Score</th>
                 <th className="py-2 pr-4">Email</th>
                 <th className="py-2 pr-4">WhatsApp</th>
@@ -178,7 +178,7 @@ export default function ResultsTab() {
                       "—"
                     )}
                   </td>
-                  <td className="py-3 pr-4 text-gray-600">{s.participant?.parish ?? "—"}</td>
+                  <td className="py-3 pr-4 text-gray-600">{s.participant?.address ?? "—"}</td>
                   <td className="py-3 pr-4">
                     <span className="rounded-full bg-accent/20 px-2.5 py-1 text-xs font-semibold text-navy">
                       {s.score} / {s.max_score}
