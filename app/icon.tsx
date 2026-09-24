@@ -17,18 +17,15 @@ export default function Icon() {
           borderRadius: 10,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            color: "#dc2626",
-            fontSize: 28,
-            fontWeight: 800,
-            fontFamily: "sans-serif",
-            letterSpacing: -1,
-          }}
-        >
-          !?
-        </div>
+        <svg width="30" height="30" viewBox="0 0 100 100" fill="none">
+          <path
+            d="M20 54 L42 74 L80 26"
+            stroke="#dc2626"
+            strokeWidth="16"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </div>
     ),
     { ...size }

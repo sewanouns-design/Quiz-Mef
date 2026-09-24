@@ -15,18 +15,15 @@ export async function GET() {
           background: "#1a2e5a",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            color: "#dc2626",
-            fontSize: 108,
-            fontWeight: 800,
-            fontFamily: "sans-serif",
-            letterSpacing: -4,
-          }}
-        >
-          !?
-        </div>
+        <svg width="118" height="118" viewBox="0 0 100 100" fill="none">
+          <path
+            d="M20 54 L42 74 L80 26"
+            stroke="#dc2626"
+            strokeWidth="15"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </div>
     ),
     { width: 192, height: 192 }

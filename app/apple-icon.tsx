@@ -16,18 +16,15 @@ export default function AppleIcon() {
           background: "#1a2e5a",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            color: "#dc2626",
-            fontSize: 104,
-            fontWeight: 800,
-            fontFamily: "sans-serif",
-            letterSpacing: -4,
-          }}
-        >
-          !?
-        </div>
+        <svg width="112" height="112" viewBox="0 0 100 100" fill="none">
+          <path
+            d="M20 54 L42 74 L80 26"
+            stroke="#dc2626"
+            strokeWidth="15"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </div>
     ),
     { ...size }
