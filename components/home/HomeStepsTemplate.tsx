@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { SiteSettings } from "@/lib/types";
 import { getRandomVerse } from "@/lib/verses";
+import DesktopSideDecoration from "./DesktopSideDecoration";
 
 interface Props {
   settings: SiteSettings;
@@ -39,7 +40,13 @@ export default function HomeStepsTemplate({ settings, activeQuiz, stats }: Props
       className="min-h-screen px-6 py-16"
       style={{ fontFamily: `'${settings.font_family}', sans-serif` }}
     >
-      <div className="mx-auto w-full max-w-2xl">
+      <div className="mx-auto w-full max-w-7xl lg:grid lg:grid-cols-[1fr_min(42rem,100%)_1fr] lg:items-start lg:gap-6">
+        <DesktopSideDecoration
+          icon={settings.logo_icon}
+          primaryColor={primary}
+          accentColor={settings.color_accent}
+        />
+        <div className="mx-auto w-full max-w-2xl">
         <div className="text-center">
           <div className="mb-6 flex justify-center">
             <div
@@ -147,6 +154,13 @@ export default function HomeStepsTemplate({ settings, activeQuiz, stats }: Props
             Espace admin
           </Link>
         </div>
+        </div>
+        <DesktopSideDecoration
+          icon={settings.logo_icon}
+          primaryColor={primary}
+          accentColor={settings.color_accent}
+          mirrored
+        />
       </div>
     </main>
   );

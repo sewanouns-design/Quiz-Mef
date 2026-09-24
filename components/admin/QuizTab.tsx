@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import QuestionBuilder, { type EditableQuestion } from "./QuestionBuilder";
 
 interface QuizListItem {
   id: string;
@@ -20,16 +21,6 @@ function formatDuration(totalSeconds: number): string {
   if (m) parts.push(`${m} min`);
   if (s) parts.push(`${s} s`);
   return parts.join(" ") || "0 s";
-}
-
-interface EditableQuestion {
-  type: string;
-  question: string;
-  options?: string[];
-  correctOption?: number;
-  correctText?: string;
-  justification?: string;
-  points: number;
 }
 
 interface StoredQuestion {
@@ -74,6 +65,15 @@ function toEditableJson(questions: StoredQuestion[]): string {
   return JSON.stringify(editable, null, 2);
 }
 
+function tryParseQuestions(json: string): EditableQuestion[] | null {
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function QuizTab() {
   const [quizzes, setQuizzes] = useState<QuizListItem[]>([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -86,6 +86,7 @@ export default function QuizTab() {
   const [durationMinutes, setDurationMinutes] = useState("");
   const [durationSecondsPart, setDurationSecondsPart] = useState("");
   const [questionsJson, setQuestionsJson] = useState(EXAMPLE_JSON);
+  const [editorMode, setEditorMode] = useState<"visual" | "json">("visual");
   const [submitting, setSubmitting] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(false);
   const [error, setError] = useState("");
@@ -138,6 +139,7 @@ export default function QuizTab() {
     setDurationMinutes("");
     setDurationSecondsPart("");
     setQuestionsJson(EXAMPLE_JSON);
+    setEditorMode("visual");
     setError("");
     setSuccess("");
   }
@@ -256,6 +258,7 @@ export default function QuizTab() {
   }
 
   const isEdit = Boolean(editingQuizId);
+  const parsedQuestionsForBuilder = tryParseQuestions(questionsJson);
 
   return (
     <div className="space-y-8">
@@ -367,32 +370,71 @@ export default function QuizTab() {
             </label>
 
             <div>
-              <div className="mb-1.5 flex items-center justify-between">
-                <label className="label-field mb-0" htmlFor="questionsJson">
-                  Questions (JSON) — librement modifiable : texte, type, options, bonne réponse,
-                  points, justification
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <label className="label-field mb-0">
+                  Questions — texte, type, options, bonne réponse, points, justification
                 </label>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="whitespace-nowrap text-sm font-semibold text-accent-dark hover:underline"
-                >
-                  Importer un fichier JSON
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".json,application/json"
-                  onChange={handleFileImport}
-                  className="hidden"
-                />
+                <div className="flex items-center gap-2">
+                  <div className="flex rounded-xl border border-gray-300 p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setEditorMode("visual")}
+                      className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                        editorMode === "visual"
+                          ? "bg-navy text-white"
+                          : "text-navy hover:bg-navy/10"
+                      }`}
+                    >
+                      ✏️ Édition manuelle
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditorMode("json")}
+                      className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                        editorMode === "json" ? "bg-navy text-white" : "text-navy hover:bg-navy/10"
+                      }`}
+                    >
+                      {"</>"} JSON avancé
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="whitespace-nowrap text-sm font-semibold text-accent-dark hover:underline"
+                  >
+                    Importer un fichier JSON
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".json,application/json"
+                    onChange={handleFileImport}
+                    className="hidden"
+                  />
+                </div>
               </div>
-              <textarea
-                id="questionsJson"
-                className="input-field min-h-[220px] font-mono text-xs"
-                value={questionsJson}
-                onChange={(e) => setQuestionsJson(e.target.value)}
-              />
+
+              {editorMode === "visual" ? (
+                parsedQuestionsForBuilder ? (
+                  <QuestionBuilder
+                    questions={parsedQuestionsForBuilder}
+                    onChange={(next) => setQuestionsJson(JSON.stringify(next, null, 2))}
+                  />
+                ) : (
+                  <div className="rounded-xl border-2 border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    Le JSON actuel n&apos;est pas valide, il ne peut pas être affiché dans
+                    l&apos;éditeur visuel. Passe en mode « JSON avancé » pour le corriger, ou
+                    importe un nouveau fichier.
+                  </div>
+                )
+              ) : (
+                <textarea
+                  id="questionsJson"
+                  className="input-field min-h-[220px] font-mono text-xs"
+                  value={questionsJson}
+                  onChange={(e) => setQuestionsJson(e.target.value)}
+                />
+              )}
             </div>
 
             {error && <p className="text-sm font-medium text-red-600">{error}</p>}

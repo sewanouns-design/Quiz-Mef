@@ -1,8 +1,14 @@
 /** @type {import('next').NextConfig} */
 
+// En développement (`next dev`), le runtime de rafraîchissement à chaud de
+// Next.js utilise eval(), qui serait autrement bloqué par la CSP. On
+// n'assouplit donc script-src qu'en dev ; le build de production (Vercel)
+// tourne toujours avec NODE_ENV=production et garde la politique stricte.
+const isDev = process.env.NODE_ENV !== "production";
+
 const ContentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data:",

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getOrCreateDeviceKey, getStoredParticipant } from "@/lib/participant-storage";
+import { generateResultsImage } from "@/lib/generate-results-image";
 import type { CorrectedAnswer } from "@/lib/types";
 
 interface ResultsData {
@@ -40,6 +41,8 @@ export default function ResultsPage() {
   const [error, setError] = useState("");
   const [participantName, setParticipantName] = useState("");
   const [timeExpired, setTimeExpired] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareError, setShareError] = useState("");
 
   useEffect(() => {
     try {
@@ -71,13 +74,55 @@ export default function ResultsPage() {
       .finally(() => setLoading(false));
   }, [quizId]);
 
-  function handleShare() {
+  async function handleShare() {
     if (!data) return;
+    setShareError("");
+    setSharing(true);
+
     const message = `J'ai obtenu ${data.score}/${data.maxScore} au Quiz Biblique MEF du ${new Date(
       data.quiz.lesson_date
     ).toLocaleDateString("fr-FR")} ! ⁉️ Teste tes connaissances toi aussi sur quiz.mefzogbadje.org`;
-    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
+
+    try {
+      const blob = await generateResultsImage({
+        participantName: participantName || "Participant",
+        score: data.score,
+        maxScore: data.maxScore,
+        quizTitle: data.quiz.title,
+        lessonDate: data.quiz.lesson_date,
+        passed,
+      });
+      const file = new File([blob], "quiz-biblique-mef.png", { type: "image/png" });
+
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({ files: [file], title: "Quiz Biblique MEF", text: message });
+        return;
+      }
+
+      // Repli : télécharger l'image puis ouvrir WhatsApp avec le texte, pour un partage manuel.
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "quiz-biblique-mef.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        // L'utilisateur a annulé le partage natif, rien à faire.
+        return;
+      }
+      setShareError("Impossible de générer l'image, partage du score en texte seulement.");
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
+    } finally {
+      setSharing(false);
+    }
   }
 
   if (loading) {
@@ -117,20 +162,33 @@ export default function ResultsPage() {
         )}
         <div className="mb-8 text-center">
           {passed ? (
-            <div className="mx-auto max-w-md rounded-2xl bg-navy px-8 py-10 text-white shadow-lg">
-              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-accent text-3xl">
+            <div
+              className="relative mx-auto max-w-md overflow-hidden rounded-3xl px-8 py-10 text-white shadow-2xl"
+              style={{
+                background: "linear-gradient(155deg, #1a2e5a 0%, #101d3d 100%)",
+              }}
+            >
+              <div
+                className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full"
+                style={{ background: "radial-gradient(circle, rgba(185,28,28,0.35), transparent 70%)" }}
+              />
+              <div
+                className="pointer-events-none absolute -bottom-16 -left-10 h-40 w-40 rounded-full"
+                style={{ background: "radial-gradient(circle, rgba(220,38,38,0.25), transparent 70%)" }}
+              />
+              <div className="relative mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-accent-light to-accent text-4xl shadow-lg shadow-accent/40">
                 🎉
               </div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-white/60">
+              <p className="relative text-xs font-semibold uppercase tracking-wide text-white/60">
                 {data.quiz.title}
               </p>
-              <h2 className="mt-2 text-2xl font-extrabold">
+              <h2 className="relative mt-2 text-2xl font-extrabold sm:text-3xl">
                 Félicitations{participantName ? `, ${participantName}` : ""} !
               </h2>
-              <p className="mt-1 text-sm text-white/70">
+              <p className="relative mt-1 text-sm text-white/70">
                 Tu as réussi le quiz avec brio.
               </p>
-              <div className="mt-6 inline-flex flex-col items-center rounded-xl border border-white/20 px-8 py-4">
+              <div className="relative mt-6 inline-flex flex-col items-center rounded-2xl border border-white/20 bg-white/5 px-8 py-4 backdrop-blur">
                 <span className="text-xs uppercase tracking-wide text-white/60">
                   Score total
                 </span>
@@ -157,10 +215,11 @@ export default function ResultsPage() {
           )}
         </div>
 
-        <div className="mb-8 flex justify-center">
-          <button onClick={handleShare} className="btn-accent">
-            Partager mon score
+        <div className="mb-8 flex flex-col items-center gap-2">
+          <button onClick={handleShare} disabled={sharing} className="btn-accent">
+            {sharing ? "Préparation de l'image..." : "📤 Partager mon score"}
           </button>
+          {shareError && <p className="text-xs font-medium text-red-500">{shareError}</p>}
         </div>
 
         <div className="space-y-4">
