@@ -24,7 +24,9 @@ RÈGLES :
 - Les mauvaises réponses (distracteurs) des QCM doivent être plausibles mais clairement 
   fausses selon le texte.
 - Pour les "short", la réponse attendue ("correctText") doit être courte (un mot ou une 
-  courte expression), sans ambiguïté d'orthographe ou de formulation.
+  courte expression). Si plusieurs orthographes sont plausibles (ex : accents, variantes de
+  transcription d'un nom propre), liste-les toutes séparées par "|" 
+  (ex : "Moïse|Moise"). La correction ignore la casse et les espaces en trop.
 - Le champ "question" doit être rédigé en français clair, sans ambiguïté.
 
 FORMAT JSON EXACT À RESPECTER :

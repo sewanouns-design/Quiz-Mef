@@ -7,13 +7,8 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { quizId: string } }
+  { params }: { params: { quizId: string; token: string } }
 ) {
-  const deviceKey = request.nextUrl.searchParams.get("deviceKey");
-  if (!deviceKey) {
-    return NextResponse.json({ error: "deviceKey requis" }, { status: 400 });
-  }
-
   const supabase = getSupabaseAdmin();
 
   const { data: quiz, error: quizError } = await supabase
@@ -29,34 +24,39 @@ export async function GET(
     return NextResponse.json({ error: "Quiz introuvable" }, { status: 404 });
   }
 
-  const { data: participant } = await supabase
-    .from("participants")
-    .select("id")
-    .eq("device_key", deviceKey)
-    .maybeSingle();
-
-  if (!participant) {
-    return NextResponse.json({ error: "Aucune soumission trouvée" }, { status: 404 });
-  }
-
-  const { data: submissions, error: submissionError } = await supabase
+  // Le jeton est non devinable (UUID) : il identifie une soumission précise
+  // sans exposer d'ID séquentiel ni dépendre du localStorage de l'appareil.
+  const { data: submission, error: submissionError } = await supabase
     .from("daily_submissions")
     .select("*")
     .eq("quiz_id", params.quizId)
-    .eq("participant_id", participant.id)
-    .order("attempt_number", { ascending: false });
+    .eq("result_token", params.token)
+    .maybeSingle();
 
   if (submissionError) {
     return NextResponse.json({ error: submissionError.message }, { status: 500 });
   }
-  if (!submissions || submissions.length === 0) {
-    return NextResponse.json({ error: "Aucune soumission trouvée" }, { status: 404 });
+  if (!submission) {
+    return NextResponse.json({ error: "Résultat introuvable" }, { status: 404 });
   }
 
-  // On affiche la tentative la plus récente (la définitive).
-  const submission = submissions[0];
+  // On indique si une 2e tentative est encore possible pour CE participant,
+  // pas seulement pour cette soumission précise.
+  const { data: allAttempts } = await supabase
+    .from("daily_submissions")
+    .select("attempt_number")
+    .eq("quiz_id", params.quizId)
+    .eq("participant_id", submission.participant_id);
+
   const passed = !submission.cancelled && isPassingScore(submission.score, submission.max_score);
-  const canRetry = !passed && submission.attempt_number === 1 && submissions.length === 1;
+  const canRetry =
+    !passed && submission.attempt_number === 1 && (allAttempts?.length ?? 1) === 1;
+
+  const { data: participant } = await supabase
+    .from("participants")
+    .select("name")
+    .eq("id", submission.participant_id)
+    .maybeSingle();
 
   const { data: questions, error: questionsError } = await supabase
     .from("daily_questions")
@@ -98,9 +98,11 @@ export async function GET(
   });
 
   return NextResponse.json({
-    quiz,
+    quiz: { id: quiz.id, title: quiz.title, lesson_date: quiz.lesson_date },
+    participantName: participant?.name ?? "",
     score: submission.score,
     maxScore: submission.max_score,
+    openScore: submission.open_score,
     cancelled: submission.cancelled,
     cancelReason: submission.cancel_reason,
     attemptNumber: submission.attempt_number,

@@ -1,6 +1,8 @@
 "use client";
 
 export interface EditableQuestion {
+  /** Présent uniquement en édition — préserve l'identité de la question. */
+  id?: string;
   type: string;
   question: string;
   options?: string[];
@@ -9,6 +11,8 @@ export interface EditableQuestion {
   justification?: string;
   points: number;
 }
+
+export const REQUIRED_TOTAL_POINTS = 20;
 
 const TYPE_LABELS: Record<string, string> = {
   mcq: "QCM (choix multiple)",
@@ -101,8 +105,24 @@ export default function QuestionBuilder({
     onChange(next);
   }
 
+  const totalPoints = questions.reduce((sum, q) => sum + (q.points || 0), 0);
+  const totalOk = totalPoints === REQUIRED_TOTAL_POINTS;
+
   return (
     <div className="space-y-4">
+      <div
+        className={`flex items-center justify-between rounded-xl border-2 px-4 py-2.5 text-sm font-semibold ${
+          totalOk
+            ? "border-green-300 bg-green-50 text-green-700"
+            : "border-accent/40 bg-accent/10 text-accent-dark"
+        }`}
+      >
+        <span>{totalOk ? "✅" : "⚠️"} Total des points</span>
+        <span>
+          {totalPoints} / {REQUIRED_TOTAL_POINTS}
+        </span>
+      </div>
+
       {questions.length === 0 && (
         <p className="rounded-xl border border-dashed border-gray-300 p-4 text-center text-sm text-gray-400">
           Aucune question. Clique sur « Ajouter une question » pour commencer.
@@ -233,8 +253,12 @@ export default function QuestionBuilder({
                 className="input-field"
                 value={q.correctText ?? ""}
                 onChange={(e) => updateQuestion(index, { correctText: e.target.value })}
-                placeholder="Ex : Noé"
+                placeholder="Ex : Noé, ou Moïse|Moise pour accepter plusieurs variantes"
               />
+              <p className="mt-1 text-xs text-gray-400">
+                Sépare plusieurs orthographes acceptées par « | » (ex : Moïse|Moise). La casse,
+                les espaces en trop et les accents composés n&apos;ont pas d&apos;importance.
+              </p>
             </div>
           )}
 

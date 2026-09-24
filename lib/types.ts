@@ -47,6 +47,9 @@ export interface DailySubmission {
   cancelled: boolean;
   cancel_reason: string | null;
   attempt_number: number;
+  open_score: number | null;
+  result_token: string;
+  normalized_name: string;
   submitted_at: string;
 }
 
@@ -75,8 +78,11 @@ export interface AnswerInput {
   answerText?: string;
 }
 
-/** Format JSON importé par l'admin pour créer les questions d'un quiz. */
+/** Format JSON importé par l'admin pour créer/modifier les questions d'un quiz. */
 export interface QuestionImport {
+  /** Présent uniquement en édition : préserve l'identité de la question pour
+   * que les réponses déjà enregistrées restent rattachées lors d'un recalcul. */
+  id?: string;
   type: QuestionType;
   question: string;
   options?: string[];

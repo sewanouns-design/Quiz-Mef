@@ -1,23 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
+import { validateQuizQuestions } from "@/lib/quiz-validation";
+import { regradeQuiz } from "@/lib/regrade";
 import type { QuestionImport } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
-
-function validateQuestions(questions: unknown): questions is QuestionImport[] {
-  if (!Array.isArray(questions) || questions.length === 0) return false;
-  return questions.every((q) => {
-    if (typeof q !== "object" || q === null) return false;
-    const question = q as Record<string, unknown>;
-    const validType = ["mcq", "true_false", "short", "fill_blank", "open"].includes(
-      question.type as string
-    );
-    const hasQuestionText = typeof question.question === "string" && question.question.length > 0;
-    const hasPoints = typeof question.points === "number";
-    return validType && hasQuestionText && hasPoints;
-  });
-}
 
 export async function GET(
   request: NextRequest,
@@ -90,40 +78,86 @@ export async function PUT(
     }
   }
 
+  let regrade: { questionsChecked: number; answersUpdated: number; submissionsUpdated: number } | null =
+    null;
+
   if (questions !== undefined) {
-    if (!validateQuestions(questions)) {
-      return NextResponse.json(
-        { error: "Le format JSON des questions est invalide." },
-        { status: 400 }
-      );
+    const validation = validateQuizQuestions(questions);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    const { error: deleteError } = await supabase
+    const incoming = questions as QuestionImport[];
+
+    // Met à jour les questions existantes EN PLACE (par id) plutôt que de
+    // tout supprimer/recréer : sinon les réponses déjà enregistrées
+    // (daily_answers.question_id) perdraient leur rattachement — via
+    // "on delete set null" — et un recalcul (regrade) n'aurait plus rien à
+    // réévaluer.
+    const { data: existingQuestions, error: existingError } = await supabase
       .from("daily_questions")
-      .delete()
+      .select("id")
       .eq("quiz_id", params.quizId);
 
-    if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    if (existingError) {
+      return NextResponse.json({ error: existingError.message }, { status: 500 });
     }
 
-    const questionRows = (questions as QuestionImport[]).map((q, index) => ({
-      quiz_id: params.quizId,
-      type: q.type,
-      question: q.question,
-      options: q.options ?? null,
-      correct_option: q.correctOption ?? null,
-      correct_text: q.correctText ?? null,
-      justification: q.justification ?? null,
-      points: q.points,
-      position: index,
-    }));
+    const existingIds = new Set((existingQuestions ?? []).map((q) => q.id as string));
+    const incomingIds = new Set(
+      incoming.filter((q) => q.id).map((q) => q.id as string)
+    );
 
-    const { error: insertError } = await supabase.from("daily_questions").insert(questionRows);
-    if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    const idsToDelete = [...existingIds].filter((id) => !incomingIds.has(id));
+    if (idsToDelete.length > 0) {
+      const { error: deleteError } = await supabase
+        .from("daily_questions")
+        .delete()
+        .in("id", idsToDelete);
+      if (deleteError) {
+        return NextResponse.json({ error: deleteError.message }, { status: 500 });
+      }
+    }
+
+    for (let index = 0; index < incoming.length; index++) {
+      const q = incoming[index];
+      const row = {
+        quiz_id: params.quizId,
+        type: q.type,
+        question: q.question,
+        options: q.options ?? null,
+        correct_option: q.correctOption ?? null,
+        correct_text: q.correctText ?? null,
+        justification: q.justification ?? null,
+        points: q.points,
+        position: index,
+      };
+
+      if (q.id && existingIds.has(q.id)) {
+        const { error: rowError } = await supabase
+          .from("daily_questions")
+          .update(row)
+          .eq("id", q.id);
+        if (rowError) {
+          return NextResponse.json({ error: rowError.message }, { status: 500 });
+        }
+      } else {
+        const { error: rowError } = await supabase.from("daily_questions").insert(row);
+        if (rowError) {
+          return NextResponse.json({ error: rowError.message }, { status: 500 });
+        }
+      }
+    }
+
+    try {
+      regrade = await regradeQuiz(params.quizId);
+    } catch (err) {
+      // La sauvegarde a réussi ; seul le recalcul a échoué. On le signale
+      // sans faire échouer toute la requête (l'admin peut relancer le
+      // recalcul manuellement via le bouton dédié).
+      console.error("Erreur lors du recalcul automatique des notes :", err);
     }
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, regrade });
 }

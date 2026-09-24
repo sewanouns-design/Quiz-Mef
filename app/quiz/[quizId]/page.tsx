@@ -16,6 +16,7 @@ interface QuizData {
   questions: PublicQuestion[];
   alreadySubmitted: boolean;
   isRetry: boolean;
+  resultToken: string | null;
 }
 
 type AnswersState = Record<string, { selectedOption?: number; answerText?: string }>;
@@ -145,7 +146,9 @@ export default function QuizPage() {
       })
       .then((quizData: QuizData) => {
         if (quizData.alreadySubmitted) {
-          router.replace(`/quiz/${quizId}/resultats`);
+          router.replace(
+            quizData.resultToken ? `/quiz/${quizId}/resultats/${quizData.resultToken}` : "/"
+          );
           return;
         }
         setData(quizData);
@@ -193,7 +196,15 @@ export default function QuizPage() {
       });
 
       if (res.status === 409) {
-        router.replace(`/quiz/${quizId}/resultats`);
+        // Cas rare (double soumission concurrente) : on retrouve le jeton de
+        // résultat de la tentative existante avant de rediriger.
+        const lookup = await fetch(
+          `/api/quiz/${quizId}?deviceKey=${encodeURIComponent(deviceKeyRef.current)}`,
+          { cache: "no-store" }
+        )
+          .then((r) => r.json())
+          .catch(() => null);
+        router.replace(lookup?.resultToken ? `/quiz/${quizId}/resultats/${lookup.resultToken}` : "/");
         return;
       }
 
@@ -201,6 +212,8 @@ export default function QuizPage() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Erreur lors de la soumission.");
       }
+
+      const result = await res.json();
 
       if (options?.reason === "time_expired") {
         try {
@@ -210,7 +223,7 @@ export default function QuizPage() {
         }
       }
 
-      router.push(`/quiz/${quizId}/resultats`);
+      router.push(`/quiz/${quizId}/resultats/${result.resultToken}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
       submittingRef.current = false;

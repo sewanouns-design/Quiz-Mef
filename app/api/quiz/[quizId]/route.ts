@@ -37,6 +37,7 @@ export async function GET(
 
   let alreadySubmitted = false;
   let isRetry = false;
+  let resultToken: string | null = null;
   if (deviceKey) {
     const { data: participant } = await supabase
       .from("participants")
@@ -47,7 +48,7 @@ export async function GET(
     if (participant) {
       const { data: submissions } = await supabase
         .from("daily_submissions")
-        .select("score, max_score, cancelled, attempt_number")
+        .select("score, max_score, cancelled, attempt_number, result_token")
         .eq("quiz_id", params.quizId)
         .eq("participant_id", participant.id)
         .order("attempt_number", { ascending: true });
@@ -59,6 +60,8 @@ export async function GET(
 
         if (firstPassed || submissions.length > 1) {
           alreadySubmitted = true;
+          // La tentative la plus récente est la définitive.
+          resultToken = submissions[submissions.length - 1].result_token;
         } else {
           isRetry = true;
         }
@@ -71,5 +74,6 @@ export async function GET(
     questions: (questions ?? []) as PublicQuestion[],
     alreadySubmitted,
     isRetry,
+    resultToken,
   });
 }

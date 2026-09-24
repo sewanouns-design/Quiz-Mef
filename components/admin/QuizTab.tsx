@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import QuestionBuilder, { type EditableQuestion } from "./QuestionBuilder";
+import { validateQuizQuestions } from "@/lib/quiz-validation";
 
 interface QuizListItem {
   id: string;
@@ -24,6 +25,7 @@ function formatDuration(totalSeconds: number): string {
 }
 
 interface StoredQuestion {
+  id: string;
   type: string;
   question: string;
   options: string[] | null;
@@ -48,12 +50,81 @@ const EXAMPLE_JSON = `[
     "options": ["Vrai", "Faux"],
     "correctOption": 0,
     "justification": "La pluie est tombée 40 jours et 40 nuits.",
-    "points": 1
+    "points": 2
+  },
+  {
+    "type": "mcq",
+    "question": "Combien de temps l'arche a-t-elle flotté avant que les eaux ne se retirent ?",
+    "options": ["7 jours", "40 jours", "150 jours", "1 an"],
+    "correctOption": 2,
+    "justification": "Les eaux ont dominé la terre pendant 150 jours.",
+    "points": 2
+  },
+  {
+    "type": "short",
+    "question": "Quel oiseau Noé a-t-il envoyé en premier pour voir si les eaux avaient baissé ?",
+    "correctText": "corbeau",
+    "justification": "Noé envoya d'abord un corbeau, puis une colombe.",
+    "points": 2
+  },
+  {
+    "type": "true_false",
+    "question": "Dieu a promis de ne plus jamais détruire la terre par un déluge.",
+    "options": ["Vrai", "Faux"],
+    "correctOption": 0,
+    "justification": "C'est le sens de l'alliance de l'arc-en-ciel.",
+    "points": 2
+  },
+  {
+    "type": "mcq",
+    "question": "Combien de membres de la famille de Noé sont entrés dans l'arche ?",
+    "options": ["4", "6", "8", "10"],
+    "correctOption": 2,
+    "justification": "Noé, sa femme, ses trois fils et leurs femmes : 8 personnes.",
+    "points": 2
+  },
+  {
+    "type": "mcq",
+    "question": "Quel signe Dieu a-t-il donné comme symbole de son alliance ?",
+    "options": ["Une colombe", "Un arc-en-ciel", "Une étoile", "Un feu"],
+    "correctOption": 1,
+    "justification": "L'arc-en-ciel est le signe de l'alliance entre Dieu et la terre.",
+    "points": 2
+  },
+  {
+    "type": "true_false",
+    "question": "Noé a planté une vigne après le déluge.",
+    "options": ["Vrai", "Faux"],
+    "correctOption": 0,
+    "justification": "Genèse rapporte que Noé devint cultivateur et planta une vigne.",
+    "points": 2
+  },
+  {
+    "type": "mcq",
+    "question": "Sur quelle montagne l'arche s'est-elle posée ?",
+    "options": ["Le Sinaï", "L'Ararat", "Le Carmel", "L'Horeb"],
+    "correctOption": 1,
+    "justification": "L'arche se posa sur les montagnes d'Ararat.",
+    "points": 2
+  },
+  {
+    "type": "mcq",
+    "question": "Pourquoi Dieu a-t-il choisi de sauver Noé ?",
+    "options": [
+      "Il était riche",
+      "Il trouva grâce aux yeux de l'Éternel",
+      "Il était roi",
+      "Il était le plus âgé"
+    ],
+    "correctOption": 1,
+    "justification": "« Noé trouva grâce aux yeux de l'Éternel » (Genèse 6:8).",
+    "points": 2
   }
 ]`;
 
 function toEditableJson(questions: StoredQuestion[]): string {
   const editable: EditableQuestion[] = questions.map((q) => ({
+    id: q.id,
     type: q.type,
     question: q.question,
     ...(q.options ? { options: q.options } : {}),
@@ -91,6 +162,8 @@ export default function QuizTab() {
   const [loadingEdit, setLoadingEdit] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [regradingQuizId, setRegradingQuizId] = useState<string | null>(null);
+  const [regradeMessage, setRegradeMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -196,6 +269,12 @@ export default function QuizTab() {
       return;
     }
 
+    const questionsValidation = validateQuizQuestions(questions);
+    if (!questionsValidation.valid) {
+      setError(questionsValidation.error ?? "Les questions ne sont pas valides.");
+      return;
+    }
+
     const h = Number(durationHours) || 0;
     const m = Number(durationMinutes) || 0;
     const s = Number(durationSecondsPart) || 0;
@@ -225,18 +304,47 @@ export default function QuizTab() {
         }
       );
 
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Erreur lors de l'enregistrement du quiz.");
       }
 
-      setSuccess(isEdit ? "Quiz modifié avec succès." : "Quiz créé avec succès.");
+      if (isEdit && data.regrade) {
+        setSuccess(
+          `Quiz modifié avec succès. Recalcul : ${data.regrade.answersUpdated} réponse(s) et ${data.regrade.submissionsUpdated} copie(s) mises à jour.`
+        );
+      } else {
+        setSuccess(isEdit ? "Quiz modifié avec succès." : "Quiz créé avec succès.");
+      }
       resetForm();
       loadQuizzes();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleRegrade(quizId: string) {
+    setError("");
+    setRegradeMessage("");
+    setRegradingQuizId(quizId);
+    try {
+      const res = await fetch(`/api/admin/quiz/${quizId}/regrade`, {
+        method: "POST",
+        cache: "no-store",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Erreur lors du recalcul.");
+      }
+      setRegradeMessage(
+        `Recalcul terminé pour « ${quizzes.find((q) => q.id === quizId)?.title ?? "ce quiz"} » : ${data.answersUpdated} réponse(s) et ${data.submissionsUpdated} copie(s) mises à jour.`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setRegradingQuizId(null);
     }
   }
 
@@ -455,6 +563,11 @@ export default function QuizTab() {
 
       <section className="card">
         <h2 className="mb-4 text-lg font-bold text-navy">Quiz existants</h2>
+        {regradeMessage && (
+          <p className="mb-4 rounded-xl border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-700">
+            {regradeMessage}
+          </p>
+        )}
         {loadingList ? (
           <p className="text-gray-500">Chargement...</p>
         ) : quizzes.length === 0 ? (
@@ -508,6 +621,14 @@ export default function QuizTab() {
                             Activer
                           </button>
                         )}
+                        <button
+                          onClick={() => handleRegrade(quiz.id)}
+                          disabled={regradingQuizId === quiz.id}
+                          className="text-sm font-semibold text-gray-500 hover:underline disabled:opacity-50"
+                          title="Réévalue toutes les copies déjà soumises avec les bonnes réponses actuelles"
+                        >
+                          {regradingQuizId === quiz.id ? "Recalcul..." : "🔄 Recalculer les notes"}
+                        </button>
                       </div>
                     </td>
                   </tr>

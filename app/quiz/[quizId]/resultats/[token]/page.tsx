@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getOrCreateDeviceKey, getStoredParticipant } from "@/lib/participant-storage";
 import { generateResultsImage } from "@/lib/generate-results-image";
 import { isPassingScore } from "@/lib/scoring";
 import type { CorrectedAnswer } from "@/lib/types";
 
 interface ResultsData {
   quiz: { id: string; title: string; lesson_date: string };
+  participantName: string;
   score: number;
   maxScore: number;
   cancelled: boolean;
@@ -36,13 +36,13 @@ function formatCorrectAnswer(answer: CorrectedAnswer): string {
 }
 
 export default function ResultsPage() {
-  const params = useParams<{ quizId: string }>();
+  const params = useParams<{ quizId: string; token: string }>();
   const quizId = params.quizId;
+  const token = params.token;
 
   const [data, setData] = useState<ResultsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [participantName, setParticipantName] = useState("");
   const [timeExpired, setTimeExpired] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState("");
@@ -58,13 +58,7 @@ export default function ResultsPage() {
       // stockage indisponible, on n'affiche simplement pas le message
     }
 
-    const participant = getStoredParticipant();
-    setParticipantName(participant?.name || "");
-    const key = getOrCreateDeviceKey();
-
-    fetch(`/api/quiz/${quizId}/results?deviceKey=${encodeURIComponent(key)}`, {
-      cache: "no-store",
-    })
+    fetch(`/api/quiz/${quizId}/results/${token}`, { cache: "no-store" })
       .then(async (res) => {
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
@@ -75,7 +69,7 @@ export default function ResultsPage() {
       .then((resultsData: ResultsData) => setData(resultsData))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [quizId]);
+  }, [quizId, token]);
 
   async function handleShare() {
     if (!data || !passed) return;
@@ -88,7 +82,7 @@ export default function ResultsPage() {
 
     try {
       const blob = await generateResultsImage({
-        participantName: participantName || "Participant",
+        participantName: data.participantName || "Participant",
         score: data.score,
         maxScore: data.maxScore,
         quizTitle: data.quiz.title,
@@ -191,7 +185,7 @@ export default function ResultsPage() {
                 {data.quiz.title}
               </p>
               <h2 className="relative mt-2 text-2xl font-extrabold sm:text-3xl">
-                Félicitations{participantName ? `, ${participantName}` : ""} !
+                Félicitations{data.participantName ? `, ${data.participantName}` : ""} !
               </h2>
               <p className="relative mt-1 text-sm text-white/70">
                 Tu as réussi le quiz avec brio.
@@ -215,8 +209,10 @@ export default function ResultsPage() {
                   🔁 2ᵉ tentative
                 </span>
               )}
-              {participantName && (
-                <p className="mt-1 text-gray-500">Merci d&apos;avoir participé, {participantName}.</p>
+              {data.participantName && (
+                <p className="mt-1 text-gray-500">
+                  Merci d&apos;avoir participé, {data.participantName}.
+                </p>
               )}
               <div className="mx-auto mt-6 inline-flex flex-col items-center rounded-2xl border-2 border-accent bg-white px-10 py-6 shadow-sm">
                 <span className="text-sm font-medium text-gray-500">Score total</span>

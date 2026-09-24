@@ -93,9 +93,11 @@ openssl rand -hex 32
 
 - `/` — page d'accueil, affiche le quiz du jour s'il est actif.
 - `/quiz` — formulaire d'identification (nom, paroisse, email, WhatsApp).
-- `/quiz/[quizId]` — page du quiz, une seule soumission par appareil.
-- `/quiz/[quizId]/resultats` — résultats détaillés avec corrections et
-  partage WhatsApp.
+- `/quiz/[quizId]` — page du quiz (une tentative, deux si le score est
+  inférieur à 60 % au premier essai).
+- `/quiz/[quizId]/resultats/[token]` — résultats détaillés avec corrections
+  et partage WhatsApp, via un jeton de résultat non devinable (pas l'ID de
+  la soumission).
 
 ### Admin
 

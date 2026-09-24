@@ -1,23 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
+import { validateQuizQuestions } from "@/lib/quiz-validation";
 import type { QuestionImport } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
-
-function validateQuestions(questions: unknown): questions is QuestionImport[] {
-  if (!Array.isArray(questions) || questions.length === 0) return false;
-  return questions.every((q) => {
-    if (typeof q !== "object" || q === null) return false;
-    const question = q as Record<string, unknown>;
-    const validType = ["mcq", "true_false", "short", "fill_blank", "open"].includes(
-      question.type as string
-    );
-    const hasQuestionText = typeof question.question === "string" && question.question.length > 0;
-    const hasPoints = typeof question.points === "number";
-    return validType && hasQuestionText && hasPoints;
-  });
-}
 
 export async function POST(request: NextRequest) {
   if (!isAdminRequestAuthenticated(request)) {
@@ -37,11 +24,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!validateQuestions(questions)) {
-    return NextResponse.json(
-      { error: "Le format JSON des questions est invalide." },
-      { status: 400 }
-    );
+  const validation = validateQuizQuestions(questions);
+  if (!validation.valid) {
+    return NextResponse.json({ error: validation.error }, { status: 400 });
   }
 
   const parsedDuration =

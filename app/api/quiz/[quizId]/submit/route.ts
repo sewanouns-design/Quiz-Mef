@@ -1,41 +1,13 @@
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isSameOriginRequest } from "@/lib/auth";
 import { sendResultsEmail } from "@/lib/email";
 import { isPassingScore } from "@/lib/scoring";
+import { gradeAnswer, isAutoGraded, normalizeName } from "@/lib/grading";
 import type { AnswerInput, CorrectedAnswer, DailyQuestion } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
-
-function normalize(text: string): string {
-  return text
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
-}
-
-function gradeAnswer(
-  question: DailyQuestion,
-  input: AnswerInput | undefined
-): { isCorrect: boolean | null; pointsAwarded: number } {
-  if (question.type === "mcq" || question.type === "true_false") {
-    const selected = input?.selectedOption;
-    const isCorrect =
-      typeof selected === "number" && selected === question.correct_option;
-    return { isCorrect, pointsAwarded: isCorrect ? question.points : 0 };
-  }
-
-  if (question.type === "short" || question.type === "fill_blank") {
-    const given = input?.answerText ?? "";
-    const correct = question.correct_text ?? "";
-    const isCorrect = given.trim().length > 0 && normalize(given) === normalize(correct);
-    return { isCorrect, pointsAwarded: isCorrect ? question.points : 0 };
-  }
-
-  // Questions ouvertes : nécessitent une correction manuelle.
-  return { isCorrect: null, pointsAwarded: 0 };
-}
 
 export async function POST(
   request: NextRequest,
@@ -128,6 +100,11 @@ export async function POST(
     (answers as AnswerInput[]).map((a) => [a.questionId, a])
   );
 
+  // Score auto-corrigé (QCM + réponse courte) uniquement : les questions
+  // ouvertes ne sont jamais notées automatiquement, donc elles ne comptent
+  // pas dans le score max ici (sinon le pourcentage serait injustement
+  // plafonné en dessous de 100 %). Leur correction manuelle alimente
+  // séparément submission.open_score.
   let score = 0;
   let maxScore = 0;
   const corrected: CorrectedAnswer[] = [];
@@ -143,8 +120,10 @@ export async function POST(
     const input = answersByQuestionId.get(question.id);
     const { isCorrect, pointsAwarded } = gradeAnswer(question, input);
 
-    maxScore += question.points;
-    score += pointsAwarded;
+    if (isAutoGraded(question.type)) {
+      maxScore += question.points;
+      score += pointsAwarded;
+    }
 
     answerRows.push({
       question_id: question.id,
@@ -181,11 +160,25 @@ export async function POST(
       cancelled: isCancelled,
       cancel_reason: isCancelled && typeof cancelReason === "string" ? cancelReason : null,
       attempt_number: attemptNumber,
+      normalized_name: normalizeName(participant.name),
+      result_token: randomUUID(),
     })
     .select()
     .single();
 
   if (submissionError || !submission) {
+    // Contrainte d'unicité (quiz_id, normalized_name, attempt_number) :
+    // une soumission très similaire existe déjà (autre appareil, nom quasi
+    // identique) — on ne la traite pas comme une erreur serveur générique.
+    if (submissionError?.code === "23505") {
+      return NextResponse.json(
+        {
+          error:
+            "Une soumission avec un nom très similaire existe déjà pour ce test. Si ce n'est pas toi, contacte l'organisateur.",
+        },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       { error: submissionError?.message ?? "Erreur lors de la soumission" },
       { status: 500 }
@@ -220,6 +213,7 @@ export async function POST(
 
   return NextResponse.json({
     submissionId: submission.id,
+    resultToken: submission.result_token,
     score,
     maxScore,
     cancelled: isCancelled,

@@ -67,11 +67,25 @@ create table if not exists daily_submissions (
   -- 1 = premier essai. Une 2e tentative (attempt_number = 2) n'est autorisée
   -- que si le 1er essai n'a pas atteint 60% (voir app/api/quiz/[quizId]/submit).
   attempt_number int not null default 1,
+  -- Score des questions ouvertes, saisi manuellement, distinct du score
+  -- auto-corrigé (QCM/réponse courte) ci-dessus. Nul tant que non corrigé.
+  open_score int,
+  -- Jeton non devinable pour le lien de résultat individuel (voir
+  -- app/api/quiz/[quizId]/results/[token]).
+  result_token text not null,
+  -- Nom normalisé (casse/espaces/Unicode) pour empêcher qu'une même personne
+  -- soumette deux fois sous un nom légèrement différent.
+  normalized_name text not null,
   submitted_at timestamptz default now()
 );
 
 create unique index if not exists idx_unique_submission_per_attempt
   on daily_submissions (quiz_id, participant_id, attempt_number);
+
+create unique index if not exists idx_unique_submission_per_name_attempt
+  on daily_submissions (quiz_id, normalized_name, attempt_number);
+
+create unique index if not exists idx_unique_result_token on daily_submissions (result_token);
 
 create index if not exists idx_daily_submissions_quiz_id on daily_submissions (quiz_id);
 create index if not exists idx_daily_submissions_participant_id on daily_submissions (participant_id);
