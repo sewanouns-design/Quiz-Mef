@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ParticipantDetailModal from "./ParticipantDetailModal";
+import MergeParticipantsModal from "./MergeParticipantsModal";
 
 interface Participant {
   id: string;
@@ -25,6 +26,7 @@ export default function ParticipantsTab() {
   const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [showMerge, setShowMerge] = useState(false);
 
   function loadParticipants() {
     setLoading(true);
@@ -105,6 +107,15 @@ export default function ParticipantsTab() {
           Participants <span className="text-gray-400">({participants.length})</span>
         </h2>
         <div className="flex flex-wrap items-center gap-2">
+          {selectedIds.size >= 2 && (
+            <button
+              type="button"
+              onClick={() => setShowMerge(true)}
+              className="rounded-lg border-2 border-navy px-3 py-1.5 text-sm font-semibold text-navy transition-colors hover:bg-navy hover:text-white"
+            >
+              🔀 Fusionner ({selectedIds.size})
+            </button>
+          )}
           {selectedIds.size > 0 && (
             <button
               type="button"
@@ -217,6 +228,18 @@ export default function ParticipantsTab() {
         <ParticipantDetailModal
           participantId={selectedParticipantId}
           onClose={() => setSelectedParticipantId(null)}
+        />
+      )}
+
+      {showMerge && (
+        <MergeParticipantsModal
+          candidates={participants.filter((p) => selectedIds.has(p.id))}
+          onClose={() => setShowMerge(false)}
+          onMerged={() => {
+            setShowMerge(false);
+            setSelectedIds(new Set());
+            loadParticipants();
+          }}
         />
       )}
     </section>
