@@ -67,6 +67,18 @@ export function validateQuizQuestions(questions: unknown): QuizValidationResult 
       }
     }
 
+    if (question.type !== "open") {
+      if (
+        typeof question.justification !== "string" ||
+        question.justification.trim().length === 0
+      ) {
+        return {
+          valid: false,
+          error: `Question ${i + 1} : une justification est requise pour expliquer la bonne réponse aux apprenants.`,
+        };
+      }
+    }
+
     totalPoints += question.points;
   }
 

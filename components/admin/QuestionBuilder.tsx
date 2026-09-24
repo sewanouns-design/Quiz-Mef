@@ -268,15 +268,21 @@ export default function QuestionBuilder({
             </p>
           )}
 
-          <div className="mt-3">
-            <label className="label-field">Justification (optionnel)</label>
-            <textarea
-              className="input-field min-h-[60px]"
-              value={q.justification ?? ""}
-              onChange={(e) => updateQuestion(index, { justification: e.target.value })}
-              placeholder="Expliquer la bonne réponse — affichée dans les résultats du participant."
-            />
-          </div>
+          {q.type !== "open" && (
+            <div className="mt-3">
+              <label className="label-field">Justification (obligatoire)</label>
+              <textarea
+                className="input-field min-h-[60px]"
+                value={q.justification ?? ""}
+                onChange={(e) => updateQuestion(index, { justification: e.target.value })}
+                placeholder="Expliquer la bonne réponse — affichée automatiquement au participant s'il se trompe."
+              />
+              <p className="mt-1 text-xs text-gray-400">
+                Montrée avec la bonne réponse dans les résultats et l&apos;email, pour que
+                l&apos;apprenant comprenne son erreur.
+              </p>
+            </div>
+          )}
         </div>
       ))}
 
