@@ -22,19 +22,37 @@ interface OverviewData {
   }[];
 }
 
-type PeriodPreset = "today" | "7d" | "30d" | "month" | "all" | "custom";
+type PeriodPreset =
+  | "today"
+  | "yesterday"
+  | "thisWeek"
+  | "lastWeek"
+  | "thisMonth"
+  | "lastMonth"
+  | "all"
+  | "custom";
 
 const PRESETS: { id: PeriodPreset; label: string }[] = [
   { id: "today", label: "Aujourd'hui" },
-  { id: "7d", label: "7 jours" },
-  { id: "30d", label: "30 jours" },
-  { id: "month", label: "Ce mois-ci" },
+  { id: "yesterday", label: "Hier" },
+  { id: "thisWeek", label: "Cette semaine" },
+  { id: "lastWeek", label: "Semaine dernière" },
+  { id: "thisMonth", label: "Ce mois-ci" },
+  { id: "lastMonth", label: "Mois dernier" },
   { id: "all", label: "Tout" },
   { id: "custom", label: "Personnalisé" },
 ];
 
 function toIsoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+/** Lundi de la semaine contenant `d` (semaine ISO, lundi = premier jour). */
+function startOfWeek(d: Date): Date {
+  const result = new Date(d);
+  const isoDay = (d.getDay() + 6) % 7; // 0 = lundi ... 6 = dimanche
+  result.setDate(result.getDate() - isoDay);
+  return result;
 }
 
 function computeRange(
@@ -46,20 +64,33 @@ function computeRange(
   if (preset === "custom") return { from: customFrom || null, to: customTo || null };
 
   const now = new Date();
-  const to = toIsoDate(now);
-  let from: Date;
+
   if (preset === "today") {
-    from = now;
-  } else if (preset === "7d") {
-    from = new Date(now);
-    from.setDate(from.getDate() - 6);
-  } else if (preset === "30d") {
-    from = new Date(now);
-    from.setDate(from.getDate() - 29);
-  } else {
-    from = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { from: toIsoDate(now), to: toIsoDate(now) };
   }
-  return { from: toIsoDate(from), to };
+  if (preset === "yesterday") {
+    const y = new Date(now);
+    y.setDate(y.getDate() - 1);
+    return { from: toIsoDate(y), to: toIsoDate(y) };
+  }
+  if (preset === "thisWeek") {
+    return { from: toIsoDate(startOfWeek(now)), to: toIsoDate(now) };
+  }
+  if (preset === "lastWeek") {
+    const thisMonday = startOfWeek(now);
+    const lastMonday = new Date(thisMonday);
+    lastMonday.setDate(lastMonday.getDate() - 7);
+    const lastSunday = new Date(thisMonday);
+    lastSunday.setDate(lastSunday.getDate() - 1);
+    return { from: toIsoDate(lastMonday), to: toIsoDate(lastSunday) };
+  }
+  if (preset === "thisMonth") {
+    return { from: toIsoDate(new Date(now.getFullYear(), now.getMonth(), 1)), to: toIsoDate(now) };
+  }
+  // lastMonth
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+  return { from: toIsoDate(lastMonthStart), to: toIsoDate(lastMonthEnd) };
 }
 
 function initials(name: string): string {
@@ -103,13 +134,113 @@ function StatCard({
   );
 }
 
+function PeriodDropdown({
+  preset,
+  setPreset,
+  customFrom,
+  setCustomFrom,
+  customTo,
+  setCustomTo,
+}: {
+  preset: PeriodPreset;
+  setPreset: (p: PeriodPreset) => void;
+  customFrom: string;
+  setCustomFrom: (v: string) => void;
+  customTo: string;
+  setCustomTo: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const currentLabel = PRESETS.find((p) => p.id === preset)?.label ?? "Période";
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition-colors hover:border-navy/30"
+      >
+        <span aria-hidden="true">📅</span>
+        {currentLabel}
+        <span className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}>⌄</span>
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 z-20 mt-2 w-72 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
+            <ul className="py-1.5">
+              {PRESETS.map((p) => (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreset(p.id);
+                      if (p.id !== "custom") setOpen(false);
+                    }}
+                    className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-sm font-medium transition-colors ${
+                      preset === p.id ? "bg-navy/5 text-navy" : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {p.label}
+                    {preset === p.id && <span className="text-navy">✓</span>}
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            {preset === "custom" && (
+              <div className="space-y-3 border-t border-gray-100 bg-gray-50 p-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold uppercase text-gray-400">
+                      Début
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                      value={customFrom}
+                      max={customTo || undefined}
+                      onChange={(e) => setCustomFrom(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-semibold uppercase text-gray-400">
+                      Fin
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                      value={customTo}
+                      min={customFrom || undefined}
+                      onChange={(e) => setCustomTo(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={!customFrom || !customTo}
+                  onClick={() => setOpen(false)}
+                  className="w-full rounded-lg bg-navy py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Appliquer
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function OverviewTab() {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [preset, setPreset] = useState<PeriodPreset>("30d");
+  const [preset, setPreset] = useState<PeriodPreset>("thisMonth");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [activityOpen, setActivityOpen] = useState(false);
 
   const range = useMemo(() => computeRange(preset, customFrom, customTo), [
     preset,
@@ -161,56 +292,15 @@ export default function OverviewTab() {
           <h2 className="text-lg font-bold text-navy">Vue d&apos;ensemble</h2>
           <p className="text-sm text-gray-500">Statistiques globales de la plateforme.</p>
         </div>
-        <div className="flex flex-wrap gap-1.5 rounded-xl bg-gray-100 p-1.5">
-          {PRESETS.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => setPreset(p.id)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                preset === p.id
-                  ? "bg-navy text-white shadow-sm"
-                  : "text-gray-600 hover:bg-white hover:text-navy"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+        <PeriodDropdown
+          preset={preset}
+          setPreset={setPreset}
+          customFrom={customFrom}
+          setCustomFrom={setCustomFrom}
+          customTo={customTo}
+          setCustomTo={setCustomTo}
+        />
       </div>
-
-      {preset === "custom" && (
-        <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-white p-4">
-          <div>
-            <label className="label-field" htmlFor="overview-from">
-              Du
-            </label>
-            <input
-              id="overview-from"
-              type="date"
-              className="input-field"
-              value={customFrom}
-              max={customTo || undefined}
-              onChange={(e) => setCustomFrom(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="label-field" htmlFor="overview-to">
-              Au
-            </label>
-            <input
-              id="overview-to"
-              type="date"
-              className="input-field"
-              value={customTo}
-              min={customFrom || undefined}
-              onChange={(e) => setCustomTo(e.target.value)}
-            />
-          </div>
-          {(!customFrom || !customTo) && (
-            <p className="pb-3 text-xs text-gray-400">Choisis une date de début et de fin.</p>
-          )}
-        </div>
-      )}
 
       {loading || !data ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -256,49 +346,73 @@ export default function OverviewTab() {
             />
           </div>
 
-          <section className="card">
-            <h2 className="mb-4 text-lg font-bold text-navy">Activité récente</h2>
-            {data.recentSubmissions.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-400">
-                Aucune soumission sur cette période.
-              </p>
-            ) : (
-              <ul className="divide-y divide-gray-100">
-                {data.recentSubmissions.map((s, i) => (
-                  <li key={i} className="flex items-center justify-between gap-3 py-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy/10 text-xs font-bold text-navy">
-                        {initials(s.participant?.name ?? "?")}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-navy">
-                          {s.participant?.name ?? "—"}{" "}
-                          <span className="font-normal text-gray-400">
-                            · {s.participant?.parish}
-                          </span>
-                        </p>
-                        <p className="truncate text-xs text-gray-500">
-                          {s.quiz?.title ?? "Quiz supprimé"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      {s.cancelled ? (
-                        <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
-                          Annulé
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent-dark">
-                          {s.score} / {s.max_score}
-                        </span>
-                      )}
-                      <p className="mt-1 text-[10px] text-gray-400">
-                        {new Date(s.submitted_at).toLocaleString("fr-FR")}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+          <section className="card !p-0 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setActivityOpen((v) => !v)}
+              className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-gray-50"
+            >
+              <span className="flex items-center gap-2 text-lg font-bold text-navy">
+                Activité récente
+                {data.recentSubmissions.length > 0 && (
+                  <span className="rounded-full bg-navy/10 px-2 py-0.5 text-xs font-semibold text-navy">
+                    {data.recentSubmissions.length}
+                  </span>
+                )}
+              </span>
+              <span
+                className={`text-gray-400 transition-transform ${activityOpen ? "rotate-180" : ""}`}
+                aria-hidden="true"
+              >
+                ⌄
+              </span>
+            </button>
+
+            {activityOpen && (
+              <div className="border-t border-gray-100 px-6 pb-5 pt-1">
+                {data.recentSubmissions.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-400">
+                    Aucune soumission sur cette période.
+                  </p>
+                ) : (
+                  <ul className="divide-y divide-gray-100">
+                    {data.recentSubmissions.map((s, i) => (
+                      <li key={i} className="flex items-center justify-between gap-3 py-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy/10 text-xs font-bold text-navy">
+                            {initials(s.participant?.name ?? "?")}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-navy">
+                              {s.participant?.name ?? "—"}{" "}
+                              <span className="font-normal text-gray-400">
+                                · {s.participant?.parish}
+                              </span>
+                            </p>
+                            <p className="truncate text-xs text-gray-500">
+                              {s.quiz?.title ?? "Quiz supprimé"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          {s.cancelled ? (
+                            <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
+                              Annulé
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent-dark">
+                              {s.score} / {s.max_score}
+                            </span>
+                          )}
+                          <p className="mt-1 text-[10px] text-gray-400">
+                            {new Date(s.submitted_at).toLocaleString("fr-FR")}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             )}
           </section>
         </>
