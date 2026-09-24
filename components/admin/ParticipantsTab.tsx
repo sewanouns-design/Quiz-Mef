@@ -23,8 +23,11 @@ export default function ParticipantsTab() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
+  function loadParticipants() {
+    setLoading(true);
     fetch("/api/admin/participants", { cache: "no-store" })
       .then(async (res) => {
         if (res.status === 401) {
@@ -35,9 +38,14 @@ export default function ParticipantsTab() {
           throw new Error(data.error || "Erreur lors du chargement des participants.");
         }
         setParticipants(data.participants ?? []);
+        setError("");
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Une erreur est survenue."))
       .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    loadParticipants();
   }, []);
 
   const filtered = participants.filter((p) => {
@@ -45,18 +53,75 @@ export default function ParticipantsTab() {
     return p.name.toLowerCase().includes(q) || p.parish.toLowerCase().includes(q);
   });
 
+  function toggleOne(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelectedIds((prev) =>
+      prev.size === filtered.length ? new Set() : new Set(filtered.map((p) => p.id))
+    );
+  }
+
+  async function handleDeleteSelected() {
+    const count = selectedIds.size;
+    if (count === 0) return;
+    const confirmed = window.confirm(
+      `Supprimer définitivement ${count} participant(s) sélectionné(s), ainsi que toutes leurs soumissions et questions posées ? Cette action est irréversible.`
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/participants", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ ids: [...selectedIds] }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Erreur lors de la suppression.");
+      }
+      setSelectedIds(new Set());
+      loadParticipants();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <section className="card">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-bold text-navy">
           Participants <span className="text-gray-400">({participants.length})</span>
         </h2>
-        <input
-          className="input-field sm:max-w-xs"
-          placeholder="Rechercher par nom ou paroisse..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          {selectedIds.size > 0 && (
+            <button
+              type="button"
+              onClick={handleDeleteSelected}
+              disabled={deleting}
+              className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {deleting ? "Suppression..." : `Supprimer la sélection (${selectedIds.size})`}
+            </button>
+          )}
+          <input
+            className="input-field sm:max-w-xs"
+            placeholder="Rechercher par nom ou paroisse..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
       </div>
 
       {loading ? (
@@ -77,6 +142,15 @@ export default function ParticipantsTab() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-gray-200 text-gray-500">
+                <th className="py-2 pr-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.size === filtered.length}
+                    onChange={toggleAll}
+                    className="h-4 w-4 rounded border-gray-300"
+                    aria-label="Tout sélectionner"
+                  />
+                </th>
                 <th className="py-2 pr-4">Nom</th>
                 <th className="py-2 pr-4">Paroisse</th>
                 <th className="py-2 pr-4">Email</th>
@@ -87,6 +161,15 @@ export default function ParticipantsTab() {
             <tbody>
               {filtered.map((p) => (
                 <tr key={p.id} className="border-b border-gray-100">
+                  <td className="py-3 pr-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(p.id)}
+                      onChange={() => toggleOne(p.id)}
+                      className="h-4 w-4 rounded border-gray-300"
+                      aria-label={`Sélectionner ${p.name}`}
+                    />
+                  </td>
                   <td className="py-3 pr-4 font-medium text-navy">
                     <button
                       type="button"
