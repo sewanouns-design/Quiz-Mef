@@ -123,6 +123,76 @@ const EXAMPLE_JSON = `[
   }
 ]`;
 
+const GENERATION_PROMPT = `Tu es un générateur de quiz bibliques pour le site "Quiz Biblique MEF".
+Je vais te fournir le texte d'une leçon (ou une image/photo de la leçon).
+Génère un quiz à partir de ce contenu, au format JSON strict ci-dessous.
+
+RÈGLES :
+- Réponds UNIQUEMENT avec le tableau JSON, sans texte avant/après, sans balises markdown \`\`\`.
+- Génère entre 10 et 20 questions.
+- Le total des "points" de toutes les questions doit être égal à 20.
+- Types autorisés : "mcq" (QCM), "true_false" (Vrai/Faux), "short" (réponse courte),
+  "fill_blank" (texte à trous), "open" (question ouverte).
+- Au moins UNE question de type "true_false".
+- AU MAXIMUM 1 seule question de type "open" dans tout le quiz (0 ou 1, jamais plus).
+- AU MAXIMUM 2 questions au total parmi les types "short" et "fill_blank" combinés.
+- Le reste (la quasi-totalité du quiz) doit être composé de "mcq" et "true_false".
+- Pour un "mcq", propose exactement 4 options plausibles et proches les unes des
+  autres (pas de bonne réponse trop évidente par élimination), et varie la position
+  de la bonne réponse ("correctOption") d'une question à l'autre plutôt que de toujours
+  mettre la même position.
+- Pour "short" et "fill_blank", "correctText" doit être une réponse précise et courte
+  (1 à 3 mots), jamais une question d'opinion, de ressenti ou d'interprétation
+  personnelle (ce type de question est réservé à "open"). Si plusieurs orthographes
+  sont plausibles (accents, variantes de transcription d'un nom propre), liste-les
+  toutes séparées par "|" dans "correctText" (ex : "Moïse|Moise").
+- Les questions doivent porter UNIQUEMENT sur des faits présents dans le texte fourni —
+  n'invente rien et ne pioche pas dans des connaissances bibliques externes au texte.
+- Le champ "justification" est OBLIGATOIRE pour toute question qui n'est pas de type
+  "open" (ne le laisse jamais vide) : il doit citer ou paraphraser précisément le passage
+  de la leçon qui justifie la bonne réponse. Un participant qui se trompe la verra
+  affichée à côté de la bonne réponse, donc elle doit se suffire à elle-même pour
+  comprendre son erreur sans avoir à relire toute la leçon.
+- Le champ "question" doit être rédigé en français clair, sans ambiguïté.
+- Ne mets JAMAIS le titre du test, la date/période ou une durée limite dans le JSON :
+  ces informations sont toujours saisies séparément par la personne qui importe.
+
+FORMAT JSON EXACT À RESPECTER (le tableau de questions, rien d'autre) :
+[
+  { "type": "mcq", "question": "Texte de la question ?", "options": ["Option A", "Option B", "Option C", "Option D"], "correctOption": 0, "justification": "Citation ou paraphrase du passage de la leçon.", "points": 2 },
+  { "type": "true_false", "question": "Affirmation à évaluer.", "options": ["Vrai", "Faux"], "correctOption": 0, "justification": "...", "points": 2 },
+  { "type": "short", "question": "Question à réponse courte ?", "correctText": "réponse en 1 à 3 mots", "justification": "...", "points": 2 },
+  { "type": "fill_blank", "question": "Une phrase avec ________ à compléter.", "correctText": "mot manquant", "justification": "...", "points": 2 },
+  { "type": "open", "question": "Question ouverte, à correction manuelle ?", "justification": "...", "points": 4 }
+]
+
+Voici le contenu de la leçon :
+[COLLE ICI LE TEXTE DE LA LEÇON, OU DÉCRIS L'IMAGE JOINTE]`;
+
+function CopyPromptButton() {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(GENERATION_PROMPT);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // presse-papier indisponible, tant pis
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="rounded-lg bg-navy px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-navy-light"
+    >
+      {copied ? "✓ Copié" : "📋 Copier le prompt"}
+    </button>
+  );
+}
+
 function toEditableJson(questions: StoredQuestion[]): string {
   const editable: EditableQuestion[] = questions.map((q) => ({
     id: q.id,
@@ -599,64 +669,75 @@ export default function QuizTab() {
             </label>
 
             <div>
-              <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-                <label className="label-field mb-0">
-                  Questions — texte, type, options, bonne réponse, points, justification
-                </label>
-                <div className="flex items-center gap-2">
-                  <div className="flex rounded-xl border border-gray-300 p-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setEditorMode("visual")}
-                      className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
-                        editorMode === "visual"
-                          ? "bg-navy text-white"
-                          : "text-navy hover:bg-navy/10"
-                      }`}
-                    >
-                      ✏️ Édition manuelle
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditorMode("json")}
-                      className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
-                        editorMode === "json" ? "bg-navy text-white" : "text-navy hover:bg-navy/10"
-                      }`}
-                    >
-                      {"</>"} JSON avancé
-                    </button>
-                  </div>
+              <label className="label-field">Questions</label>
+
+              <details className="mb-3 rounded-lg border border-gray-200 bg-gray-50 text-sm">
+                <summary className="cursor-pointer select-none px-3 py-2 font-semibold text-navy">
+                  📋 Prompt de génération par IA
+                </summary>
+                <div className="border-t border-gray-200 px-3 py-2">
+                  <p className="mb-2 text-xs text-gray-500">
+                    Colle ce prompt dans un chat IA avec le texte (ou une photo) de la leçon, puis
+                    importe le JSON obtenu ci-dessous.
+                  </p>
+                  <pre className="mb-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-md bg-white p-2 font-mono text-[11px] leading-relaxed text-gray-600">
+                    {GENERATION_PROMPT}
+                  </pre>
+                  <CopyPromptButton />
+                </div>
+              </details>
+
+              <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                <div className="inline-flex rounded-lg border border-gray-300 bg-white p-0.5">
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="whitespace-nowrap text-sm font-semibold text-accent-dark hover:underline"
+                    onClick={() => setEditorMode("visual")}
+                    className={`whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
+                      editorMode === "visual"
+                        ? "bg-navy text-white"
+                        : "text-navy hover:bg-navy/10"
+                    }`}
                   >
-                    Importer un fichier JSON
+                    Visuel
                   </button>
-                  {!isEdit && questionsJson.trim() === "[]" && (
+                  <button
+                    type="button"
+                    onClick={() => setEditorMode("json")}
+                    className={`whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
+                      editorMode === "json" ? "bg-navy text-white" : "text-navy hover:bg-navy/10"
+                    }`}
+                  >
+                    JSON
+                  </button>
+                </div>
+                <span className="text-gray-300">·</span>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="whitespace-nowrap text-xs font-semibold text-accent-dark hover:underline"
+                >
+                  Importer un fichier
+                </button>
+                {!isEdit && questionsJson.trim() === "[]" && (
+                  <>
+                    <span className="text-gray-300">·</span>
                     <button
                       type="button"
                       onClick={handleLoadExample}
-                      className="whitespace-nowrap text-sm font-semibold text-gray-500 hover:underline"
+                      className="whitespace-nowrap text-xs font-semibold text-gray-500 hover:underline"
                     >
-                      Charger un exemple
+                      Exemple
                     </button>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".json,application/json"
-                    onChange={handleFileImport}
-                    className="hidden"
-                  />
-                </div>
+                  </>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  onChange={handleFileImport}
+                  className="hidden"
+                />
               </div>
-              <p className="mb-3 text-xs text-gray-400">
-                L&apos;import accepte un JSON généré par une IA même s&apos;il ne suit pas le
-                format exact (noms de champs, réponse par lettre/texte, type déduit
-                automatiquement, points manquants répartis pour atteindre 20). Voir
-                PROMPT_QUIZ.md pour le prompt de génération à jour.
-              </p>
 
               {editorMode === "visual" ? (
                 parsedQuestionsForBuilder ? (
@@ -667,14 +748,14 @@ export default function QuizTab() {
                 ) : (
                   <div className="rounded-xl border-2 border-red-200 bg-red-50 p-4 text-sm text-red-700">
                     Le JSON actuel n&apos;est pas valide, il ne peut pas être affiché dans
-                    l&apos;éditeur visuel. Passe en mode « JSON avancé » pour le corriger, ou
-                    importe un nouveau fichier.
+                    l&apos;éditeur visuel. Passe en mode « JSON » pour le corriger, ou importe un
+                    nouveau fichier.
                   </div>
                 )
               ) : (
                 <textarea
                   id="questionsJson"
-                  className="input-field min-h-[220px] font-mono text-xs"
+                  className="input-field min-h-[160px] font-mono text-xs"
                   value={questionsJson}
                   onChange={(e) => setQuestionsJson(e.target.value)}
                 />
