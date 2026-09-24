@@ -195,7 +195,21 @@ export default function QuizPage() {
         }),
       });
 
+      // Une fois cette tentative soumise (quel qu'en soit le sort), sa date
+      // limite ne doit plus jamais resservir : sinon une nouvelle tentative
+      // rouverte plus tard retrouve un minuteur déjà expiré dans le
+      // navigateur et se soumet vide instantanément, sans que la personne
+      // n'ait rien pu répondre.
+      function clearStoredDeadline() {
+        try {
+          window.localStorage.removeItem(`quiz_deadline_${quizId}_${deviceKeyRef.current}`);
+        } catch {
+          // stockage indisponible, rien à nettoyer
+        }
+      }
+
       if (res.status === 409) {
+        clearStoredDeadline();
         // Cas rare (double soumission concurrente) : on retrouve le jeton de
         // résultat de la tentative existante avant de rediriger.
         const lookup = await fetch(
@@ -214,6 +228,7 @@ export default function QuizPage() {
       }
 
       const result = await res.json();
+      clearStoredDeadline();
 
       if (options?.reason === "time_expired") {
         try {
@@ -276,7 +291,19 @@ export default function QuizPage() {
     const storageKey = `quiz_deadline_${quizId}_${deviceKey}`;
     const existing = Number(window.localStorage.getItem(storageKey));
     if (existing && !Number.isNaN(existing)) {
-      beginTicking(existing, data.quiz.duration_seconds);
+      if (existing > Date.now()) {
+        beginTicking(existing, data.quiz.duration_seconds);
+      } else {
+        // Date limite laissée par une tentative précédente déjà terminée :
+        // on l'efface au lieu de soumettre cette nouvelle tentative vide
+        // instantanément (sinon reprendre le quiz plus tard renvoie 0/20
+        // sans même laisser le temps de répondre).
+        try {
+          window.localStorage.removeItem(storageKey);
+        } catch {
+          // stockage indisponible, tant pis
+        }
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, deviceKey, quizId]);
