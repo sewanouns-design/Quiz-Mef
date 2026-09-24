@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import QuestionBuilder, { type EditableQuestion } from "./QuestionBuilder";
-import { validateQuizQuestions } from "@/lib/quiz-validation";
+import { parseQuizQuestionsInput } from "@/lib/quiz-import-parser";
 
 interface QuizListItem {
   id: string;
@@ -177,13 +177,27 @@ export default function QuizTab() {
     const reader = new FileReader();
     reader.onload = () => {
       const text = String(reader.result ?? "");
+      let parsedJson;
       try {
-        JSON.parse(text);
+        parsedJson = JSON.parse(text);
       } catch {
         setError("Le fichier importé ne contient pas un JSON valide.");
         return;
       }
-      setQuestionsJson(text);
+
+      const result = parseQuizQuestionsInput(parsedJson);
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+
+      setQuestionsJson(JSON.stringify(result.questions, null, 2));
+      setEditorMode("visual");
+      setSuccess(
+        `${result.questions.length} question(s) importée(s) avec succès${
+          result.pointsAutoDistributed ? " (points manquants répartis automatiquement)" : ""
+        }.`
+      );
     };
     reader.onerror = () => setError("Impossible de lire le fichier.");
     reader.readAsText(file);
@@ -256,9 +270,9 @@ export default function QuizTab() {
     setError("");
     setSuccess("");
 
-    let questions;
+    let rawJson;
     try {
-      questions = JSON.parse(questionsJson);
+      rawJson = JSON.parse(questionsJson);
     } catch {
       setError("Le JSON des questions est invalide.");
       return;
@@ -269,11 +283,12 @@ export default function QuizTab() {
       return;
     }
 
-    const questionsValidation = validateQuizQuestions(questions);
-    if (!questionsValidation.valid) {
-      setError(questionsValidation.error ?? "Les questions ne sont pas valides.");
+    const importResult = parseQuizQuestionsInput(rawJson);
+    if (!importResult.success) {
+      setError(importResult.error);
       return;
     }
+    const questions = importResult.questions;
 
     const h = Number(durationHours) || 0;
     const m = Number(durationMinutes) || 0;
@@ -478,7 +493,7 @@ export default function QuizTab() {
             </label>
 
             <div>
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
                 <label className="label-field mb-0">
                   Questions — texte, type, options, bonne réponse, points, justification
                 </label>
@@ -521,6 +536,12 @@ export default function QuizTab() {
                   />
                 </div>
               </div>
+              <p className="mb-3 text-xs text-gray-400">
+                L&apos;import accepte un JSON généré par une IA même s&apos;il ne suit pas le
+                format exact (noms de champs, réponse par lettre/texte, type déduit
+                automatiquement, points manquants répartis pour atteindre 20). Voir
+                PROMPT_QUIZ.md pour le prompt de génération à jour.
+              </p>
 
               {editorMode === "visual" ? (
                 parsedQuestionsForBuilder ? (
