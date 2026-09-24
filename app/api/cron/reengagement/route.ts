@@ -8,6 +8,26 @@ export const maxDuration = 60;
 const MILESTONES: (24 | 48 | 72)[] = [24, 48, 72];
 const SITE_URL = "https://quiz.mefzogbadje.org";
 
+/** Nombre de jours consécutifs (calendaires) se terminant à la dernière soumission. */
+function computeStreakDays(submittedAtList: string[]): number {
+  const uniqueDays = Array.from(
+    new Set(submittedAtList.map((d) => new Date(d).toISOString().slice(0, 10)))
+  ).sort((a, b) => b.localeCompare(a));
+
+  if (uniqueDays.length === 0) return 0;
+
+  let streak = 1;
+  let current = new Date(`${uniqueDays[0]}T00:00:00Z`);
+  for (let i = 1; i < uniqueDays.length; i++) {
+    const prev = new Date(`${uniqueDays[i]}T00:00:00Z`);
+    const diffDays = Math.round((current.getTime() - prev.getTime()) / 86400000);
+    if (diffDays !== 1) break;
+    streak += 1;
+    current = prev;
+  }
+  return streak;
+}
+
 /**
  * Relance quotidienne (cf. vercel.json) des participants n'ayant pas repassé
  * de quiz 24h / 48h / 72h après leur dernière soumission, tant qu'un quiz
@@ -47,6 +67,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: participantsError.message }, { status: 500 });
   }
 
+  const { count: activeTodayCount } = await supabase
+    .from("daily_submissions")
+    .select("id", { count: "exact", head: true })
+    .eq("quiz_id", activeQuiz.id);
+
   let sent = 0;
   const now = Date.now();
 
@@ -80,12 +105,23 @@ export async function GET(request: NextRequest) {
 
       if (existing) continue;
 
+      const { data: recentSubmissions } = await supabase
+        .from("daily_submissions")
+        .select("submitted_at")
+        .eq("participant_id", participant.id)
+        .order("submitted_at", { ascending: false })
+        .limit(60);
+
+      const streakDays = computeStreakDays((recentSubmissions ?? []).map((s) => s.submitted_at));
+
       try {
         await sendReengagementEmail({
           to: participant.email,
           participantName: participant.name,
           milestoneHours: milestone,
           quizUrl: `${SITE_URL}/quiz/${activeQuiz.id}`,
+          streakDays,
+          activeTodayCount: activeTodayCount ?? 0,
         });
         await supabase.from("reengagement_reminders").insert({
           participant_id: participant.id,

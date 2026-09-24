@@ -180,19 +180,21 @@ export async function sendResultsEmail(params: {
 
 const REENGAGEMENT_COPY: Record<
   24 | 48 | 72,
-  { subject: string; timeReference: string }
+  { subject: string; intro: string }
 > = {
   24: {
-    subject: "Tu nous as manqué au quiz d'aujourd'hui ! 🙏",
-    timeReference: "Hier, à pareil moment, tu passais ton quiz biblique",
+    subject: "On t'a gardé ta question du jour 📖",
+    intro:
+      "Hier, à pareil moment, tu répondais à ton quiz. Aujourd'hui, une nouvelle question t'attend — ça prend moins de 2 minutes.",
   },
   48: {
-    subject: "On t'attend toujours pour le quiz biblique 📖",
-    timeReference: "Avant-hier, à pareil moment, tu passais ton quiz biblique",
+    subject: "2 minutes pour ne pas perdre le fil 🙏",
+    intro: "Deux jours sans quiz, mais ta série n'est pas perdue si tu reviens maintenant.",
   },
   72: {
-    subject: "Reviens sonder les Écritures avec nous 🕊️",
-    timeReference: "Il y a 3 jours, à pareil moment, tu passais ton quiz biblique",
+    subject: "Dernier rappel : ton quiz t'attend encore 🕊️",
+    intro:
+      "On ne veut pas te harceler, mais on tenait à te dire : la communauté continue de sonder les Écritures chaque jour, et ta place y est.",
   },
 };
 
@@ -201,14 +203,29 @@ function buildReengagementEmailHtml(params: {
   milestoneHours: 24 | 48 | 72;
   quizUrl: string;
   colors?: EmailColors;
+  streakDays?: number;
+  activeTodayCount?: number;
 }): string {
-  const { participantName, milestoneHours, quizUrl } = params;
+  const { participantName, milestoneHours, quizUrl, streakDays, activeTodayCount } = params;
   const { primary, accent } = params.colors ?? {
     primary: "#1a2e5a",
     accent: "#dc2626",
     accentDark: "#7f1414",
   };
-  const { timeReference } = REENGAGEMENT_COPY[milestoneHours];
+  const { intro } = REENGAGEMENT_COPY[milestoneHours];
+
+  // Priorité à la série interrompue (effet plus personnel), sinon le nombre
+  // de participants déjà passés aujourd'hui (effet de groupe/FOMO).
+  let statLine = "";
+  if (streakDays && streakDays >= 2) {
+    statLine = `🔥 Tu avais une série de <strong>${streakDays} jours</strong> d'affilée avant ta pause — reprends-la dès aujourd'hui !`;
+  } else if (activeTodayCount && activeTodayCount > 0) {
+    statLine = `👥 Déjà <strong>${activeTodayCount} personne${activeTodayCount > 1 ? "s" : ""}</strong> ${activeTodayCount > 1 ? "ont" : "a"} répondu au quiz aujourd'hui.`;
+  }
+
+  const statBlock = statLine
+    ? `<div style="background:${accent}15;border:1px solid ${accent};border-radius:8px;padding:12px 16px;margin:20px 0;color:${primary};font-size:14px;text-align:center;">${statLine}</div>`
+    : "";
 
   return `
   <div style="font-family:'Inter',Arial,sans-serif;max-width:640px;margin:0 auto;background:#f7f7f7;padding:24px;">
@@ -217,7 +234,8 @@ function buildReengagementEmailHtml(params: {
     </div>
     <div style="background:#ffffff;padding:24px;border-radius:0 0 12px 12px;">
       <p>Bonjour <strong>${escapeHtml(participantName)}</strong>,</p>
-      <p>${timeReference} ! Ta régularité fait une vraie différence dans ta connaissance de la Parole — ne t'arrête pas en si bon chemin.</p>
+      <p>${intro}</p>
+      ${statBlock}
       <p>« Sonde les écritures, car ce sont elles qui rendent témoignage de moi » (Jean 5:39). Chaque quiz est une occasion de plus de méditer la Parole de Dieu.</p>
       <div style="text-align:center;margin:28px 0;">
         <a href="${quizUrl}" style="display:inline-block;background:${accent};color:#ffffff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:10px;">
@@ -235,6 +253,8 @@ export async function sendReengagementEmail(params: {
   participantName: string;
   milestoneHours: 24 | 48 | 72;
   quizUrl: string;
+  streakDays?: number;
+  activeTodayCount?: number;
 }): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL;
