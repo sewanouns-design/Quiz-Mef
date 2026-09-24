@@ -30,8 +30,11 @@ RÈGLES :
   toutes séparées par "|" dans "correctText" (ex : "Moïse|Moise").
 - Les questions doivent porter UNIQUEMENT sur des faits présents dans le texte fourni — 
   n'invente rien et ne pioche pas dans des connaissances bibliques externes au texte.
-- Pour chaque question, le champ "justification" doit citer ou paraphraser 
-  précisément le passage de la leçon qui justifie la bonne réponse.
+- Le champ "justification" est OBLIGATOIRE pour toute question qui n'est pas de type 
+  "open" (ne le laisse jamais vide) : il doit citer ou paraphraser précisément le passage 
+  de la leçon qui justifie la bonne réponse. Un participant qui se trompe la verra 
+  affichée à côté de la bonne réponse, donc elle doit se suffire à elle-même pour 
+  comprendre son erreur sans avoir à relire toute la leçon.
 - Le champ "question" doit être rédigé en français clair, sans ambiguïté.
 - Ne mets JAMAIS le titre du test, la date/période ou une durée limite dans le JSON : 
   ces informations sont toujours saisies séparément par la personne qui importe.
