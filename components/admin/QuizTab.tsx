@@ -156,7 +156,7 @@ export default function QuizTab() {
   const [durationHours, setDurationHours] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
   const [durationSecondsPart, setDurationSecondsPart] = useState("");
-  const [questionsJson, setQuestionsJson] = useState(EXAMPLE_JSON);
+  const [questionsJson, setQuestionsJson] = useState("[]");
   const [editorMode, setEditorMode] = useState<"visual" | "json">("visual");
   const [submitting, setSubmitting] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState(false);
@@ -228,10 +228,15 @@ export default function QuizTab() {
     setDurationHours("");
     setDurationMinutes("");
     setDurationSecondsPart("");
-    setQuestionsJson(EXAMPLE_JSON);
+    setQuestionsJson("[]");
     setEditorMode("visual");
     setError("");
     setSuccess("");
+  }
+
+  function handleLoadExample() {
+    setQuestionsJson(EXAMPLE_JSON);
+    setEditorMode("visual");
   }
 
   async function handleEdit(quizId: string) {
@@ -623,6 +628,15 @@ export default function QuizTab() {
                   >
                     Importer un fichier JSON
                   </button>
+                  {!isEdit && questionsJson.trim() === "[]" && (
+                    <button
+                      type="button"
+                      onClick={handleLoadExample}
+                      className="whitespace-nowrap text-sm font-semibold text-gray-500 hover:underline"
+                    >
+                      Charger un exemple
+                    </button>
+                  )}
                   <input
                     ref={fileInputRef}
                     type="file"
