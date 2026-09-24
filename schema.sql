@@ -187,6 +187,25 @@ create index if not exists idx_rate_limit_events_ip_route_time
   on rate_limit_events (ip, route, created_at);
 
 -- ------------------------------------------------------------
+-- Relances par email (24h / 48h / 72h d'inactivité depuis la
+-- dernière soumission d'un participant, cf. app/api/cron/reengagement).
+-- Une ligne par (participant, soumission de référence, palier) : garantit
+-- qu'un même palier n'est jamais renvoyé deux fois pour la même période
+-- d'inactivité, et que le compteur repart naturellement à chaque nouvelle
+-- soumission (nouveau submission_id).
+-- ------------------------------------------------------------
+create table if not exists reengagement_reminders (
+  id uuid primary key default gen_random_uuid(),
+  participant_id uuid references participants(id) on delete cascade,
+  submission_id uuid references daily_submissions(id) on delete cascade,
+  milestone_hours int not null,
+  sent_at timestamptz default now()
+);
+
+create unique index if not exists idx_unique_reengagement_reminder
+  on reengagement_reminders (participant_id, submission_id, milestone_hours);
+
+-- ------------------------------------------------------------
 -- Row Level Security
 -- L'application n'accède à Supabase que via la clé service_role
 -- côté serveur (routes API Next.js). On active RLS sans policy
@@ -201,3 +220,4 @@ alter table daily_answers enable row level security;
 alter table site_settings enable row level security;
 alter table login_attempts enable row level security;
 alter table rate_limit_events enable row level security;
+alter table reengagement_reminders enable row level security;

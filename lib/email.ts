@@ -79,7 +79,7 @@ export function buildResultsEmailHtml(params: {
 
   const retryNotice =
     !cancelled && attemptNumber === 2
-      ? `<div style="background:#f0ede1;border:1px solid #c9a84c;border-radius:8px;padding:10px 14px;margin:16px 0;color:#1a2e5a;font-size:13px;">
+      ? `<div style="background:#fef2f2;border:1px solid #dc2626;border-radius:8px;padding:10px 14px;margin:16px 0;color:#1a2e5a;font-size:13px;">
           🔁 Il s'agit de ta <strong>2ᵉ tentative</strong> pour ce quiz.
         </div>`
       : "";
@@ -87,14 +87,14 @@ export function buildResultsEmailHtml(params: {
   return `
   <div style="font-family:'Inter',Arial,sans-serif;max-width:640px;margin:0 auto;background:#f7f7f7;padding:24px;">
     <div style="background:#1a2e5a;padding:24px;border-radius:12px 12px 0 0;text-align:center;">
-      <h1 style="color:#c9a84c;margin:0;font-size:22px;">⁉️ Quiz Biblique MEF</h1>
+      <h1 style="color:#dc2626;margin:0;font-size:22px;">⁉️ Quiz Biblique MEF</h1>
     </div>
     <div style="background:#ffffff;padding:24px;border-radius:0 0 12px 12px;">
       <p>Bonjour <strong>${escapeHtml(participantName)}</strong>,</p>
       <p>Voici tes résultats pour le quiz : <strong>${escapeHtml(quizTitle)}</strong></p>
       ${cancelledNotice}
       ${retryNotice}
-      <div style="background:#f0ede1;border:2px solid #c9a84c;border-radius:8px;padding:16px;text-align:center;margin:20px 0;">
+      <div style="background:#fef2f2;border:2px solid #dc2626;border-radius:8px;padding:16px;text-align:center;margin:20px 0;">
         <div style="font-size:14px;color:#1a2e5a;">Score obtenu</div>
         <div style="font-size:32px;font-weight:700;color:#1a2e5a;">${score} / ${maxScore}</div>
       </div>
@@ -155,4 +155,84 @@ export async function sendResultsEmail(params: {
   }
 
   console.log(`Email de résultats envoyé à ${params.to} (id: ${result.data?.id})`);
+}
+
+const REENGAGEMENT_COPY: Record<
+  24 | 48 | 72,
+  { subject: string; timeReference: string }
+> = {
+  24: {
+    subject: "Tu nous as manqué au quiz d'aujourd'hui ! 🙏",
+    timeReference: "Hier, à pareil moment, tu passais ton quiz biblique",
+  },
+  48: {
+    subject: "On t'attend toujours pour le quiz biblique 📖",
+    timeReference: "Avant-hier, à pareil moment, tu passais ton quiz biblique",
+  },
+  72: {
+    subject: "Reviens sonder les Écritures avec nous 🕊️",
+    timeReference: "Il y a 3 jours, à pareil moment, tu passais ton quiz biblique",
+  },
+};
+
+function buildReengagementEmailHtml(params: {
+  participantName: string;
+  milestoneHours: 24 | 48 | 72;
+  quizUrl: string;
+}): string {
+  const { participantName, milestoneHours, quizUrl } = params;
+  const { timeReference } = REENGAGEMENT_COPY[milestoneHours];
+
+  return `
+  <div style="font-family:'Inter',Arial,sans-serif;max-width:640px;margin:0 auto;background:#f7f7f7;padding:24px;">
+    <div style="background:#1a2e5a;padding:24px;border-radius:12px 12px 0 0;text-align:center;">
+      <h1 style="color:#dc2626;margin:0;font-size:22px;">⁉️ Quiz Biblique MEF</h1>
+    </div>
+    <div style="background:#ffffff;padding:24px;border-radius:0 0 12px 12px;">
+      <p>Bonjour <strong>${escapeHtml(participantName)}</strong>,</p>
+      <p>${timeReference} ! Ta régularité fait une vraie différence dans ta connaissance de la Parole — ne t'arrête pas en si bon chemin.</p>
+      <p>« Sonde les écritures, car ce sont elles qui rendent témoignage de moi » (Jean 5:39). Chaque quiz est une occasion de plus de méditer la Parole de Dieu.</p>
+      <div style="text-align:center;margin:28px 0;">
+        <a href="${quizUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:10px;">
+          Reprendre le quiz du jour →
+        </a>
+      </div>
+      <p style="margin-top:24px;font-size:13px;color:#888;">Quiz Biblique MEF — quiz.mefzogbadje.org</p>
+    </div>
+  </div>
+  `;
+}
+
+export async function sendReengagementEmail(params: {
+  to: string;
+  participantName: string;
+  milestoneHours: 24 | 48 | 72;
+  quizUrl: string;
+}): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL;
+
+  if (!apiKey || !from) {
+    console.warn("RESEND_API_KEY ou RESEND_FROM_EMAIL manquant, relance non envoyée.");
+    return;
+  }
+
+  const resend = new Resend(apiKey);
+  const html = buildReengagementEmailHtml(params);
+  const { subject } = REENGAGEMENT_COPY[params.milestoneHours];
+
+  const result = await resend.emails.send({
+    from,
+    to: params.to,
+    subject,
+    html,
+  });
+
+  if (result.error) {
+    throw new Error(`Resend a refusé l'envoi : ${result.error.name} — ${result.error.message}`);
+  }
+
+  console.log(
+    `Relance ${params.milestoneHours}h envoyée à ${params.to} (id: ${result.data?.id})`
+  );
 }
