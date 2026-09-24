@@ -171,6 +171,22 @@ create table if not exists login_attempts (
 create index if not exists idx_login_attempts_ip_time on login_attempts (ip, created_at);
 
 -- ------------------------------------------------------------
+-- Limitation de débit générique pour les routes publiques
+-- d'écriture (inscription, soumission de quiz, question sur la
+-- leçon) : empêche le spam et l'utilisation du site comme relais
+-- d'envoi d'emails non sollicités.
+-- ------------------------------------------------------------
+create table if not exists rate_limit_events (
+  id uuid primary key default gen_random_uuid(),
+  ip text not null,
+  route text not null,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_rate_limit_events_ip_route_time
+  on rate_limit_events (ip, route, created_at);
+
+-- ------------------------------------------------------------
 -- Row Level Security
 -- L'application n'accède à Supabase que via la clé service_role
 -- côté serveur (routes API Next.js). On active RLS sans policy
@@ -184,3 +200,4 @@ alter table daily_submissions enable row level security;
 alter table daily_answers enable row level security;
 alter table site_settings enable row level security;
 alter table login_attempts enable row level security;
+alter table rate_limit_events enable row level security;

@@ -31,3 +31,34 @@ export async function recordLoginAttempt(ip: string, success: boolean): Promise<
 }
 
 export const LOGIN_RATE_LIMIT_WINDOW_MINUTES = WINDOW_MINUTES;
+
+/**
+ * Limitation de débit générique par IP + route, pour les endpoints publics
+ * d'écriture (inscription, soumission de quiz, question sur la leçon).
+ * Empêche le spam et l'utilisation du site comme relais d'envoi d'emails
+ * non sollicités (le formulaire d'inscription accepte n'importe quel email,
+ * et la soumission d'un quiz déclenche l'envoi d'un email de résultats).
+ */
+export async function isRateLimited(
+  ip: string,
+  route: string,
+  maxEvents: number,
+  windowMinutes: number
+): Promise<boolean> {
+  const supabase = getSupabaseAdmin();
+  const since = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
+
+  const { count } = await supabase
+    .from("rate_limit_events")
+    .select("*", { count: "exact", head: true })
+    .eq("ip", ip)
+    .eq("route", route)
+    .gte("created_at", since);
+
+  return (count ?? 0) >= maxEvents;
+}
+
+export async function recordRateLimitEvent(ip: string, route: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  await supabase.from("rate_limit_events").insert({ ip, route });
+}

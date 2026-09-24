@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isSameOriginRequest } from "@/lib/auth";
+import { getClientIp, isRateLimited, recordRateLimitEvent } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 const MAX_QUESTION_LENGTH = 1000;
+const RATE_LIMIT_ROUTE = "lesson-question";
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MINUTES = 15;
 
 export async function POST(
   request: NextRequest,
@@ -13,6 +17,15 @@ export async function POST(
   if (!isSameOriginRequest(request)) {
     return NextResponse.json({ error: "Requête refusée (origine invalide)" }, { status: 403 });
   }
+
+  const ip = getClientIp(request);
+  if (await isRateLimited(ip, RATE_LIMIT_ROUTE, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MINUTES)) {
+    return NextResponse.json(
+      { error: "Trop de tentatives. Réessaie dans quelques minutes." },
+      { status: 429 }
+    );
+  }
+  await recordRateLimitEvent(ip, RATE_LIMIT_ROUTE);
 
   const body = await request.json().catch(() => ({}));
   const { deviceKey, questionText } = body ?? {};
