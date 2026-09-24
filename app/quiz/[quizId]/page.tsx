@@ -417,6 +417,14 @@ export default function QuizPage() {
           <p className="mt-2 text-sm text-gray-500">
             {data.questions.length} questions · {totalPoints} points · {answeredCount} répondue(s)
           </p>
+          <div className="mx-auto mt-3 h-2 w-full max-w-xs overflow-hidden rounded-full bg-gray-100">
+            <div
+              className="h-full rounded-full bg-accent transition-all duration-300"
+              style={{
+                width: `${data.questions.length > 0 ? (answeredCount / data.questions.length) * 100 : 0}%`,
+              }}
+            />
+          </div>
         </div>
 
         <div className="space-y-6">
