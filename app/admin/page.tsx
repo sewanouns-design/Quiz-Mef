@@ -43,7 +43,7 @@ export default function AdminLoginPage() {
             ⁉️
           </div>
           <h1 className="text-2xl font-bold text-navy">Espace Admin</h1>
-          <p className="mt-1 text-gray-600">Quiz Biblique MEF</p>
+          <p className="mt-1 text-gray-600">Quiz Biblique</p>
         </div>
 
         <form onSubmit={handleSubmit} className="card space-y-4">

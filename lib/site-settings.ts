@@ -38,7 +38,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   ],
   verse_text: "Sonde les écritures, car ce sont elles qui rendent témoignage de moi.",
   verse_reference: "Jean 5:39",
-  footer_text: "Quiz Biblique MEF — Mission Évangélique de la Foi",
+  footer_text: "Quiz Biblique — Mission Évangélique de la Foi",
   show_stats: true,
   updated_at: "",
 };

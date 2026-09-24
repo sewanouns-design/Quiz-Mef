@@ -3,7 +3,7 @@ import "./globals.css";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 export const metadata: Metadata = {
-  title: "Quiz Biblique MEF",
+  title: "Quiz Biblique",
   description: "Teste tes connaissances sur la leçon du jour — Mission Évangélique de la Foi",
   appleWebApp: {
     capable: true,

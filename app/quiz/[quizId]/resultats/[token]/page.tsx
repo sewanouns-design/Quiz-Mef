@@ -76,7 +76,7 @@ export default function ResultsPage() {
     setShareError("");
     setSharing(true);
 
-    const message = `J'ai obtenu ${data.score}/${data.maxScore} au Quiz Biblique MEF du ${new Date(
+    const message = `J'ai obtenu ${data.score}/${data.maxScore} au Quiz Biblique du ${new Date(
       data.quiz.lesson_date
     ).toLocaleDateString("fr-FR")} ! ⁉️ Teste tes connaissances toi aussi sur quiz.mefzogbadje.org`;
 
@@ -89,14 +89,14 @@ export default function ResultsPage() {
         lessonDate: data.quiz.lesson_date,
         attemptNumber: data.attemptNumber,
       });
-      const file = new File([blob], "quiz-biblique-mef.png", { type: "image/png" });
+      const file = new File([blob], "quiz-biblique.png", { type: "image/png" });
 
       if (
         typeof navigator !== "undefined" &&
         navigator.canShare &&
         navigator.canShare({ files: [file] })
       ) {
-        await navigator.share({ files: [file], title: "Quiz Biblique MEF", text: message });
+        await navigator.share({ files: [file], title: "Quiz Biblique", text: message });
         return;
       }
 
@@ -104,7 +104,7 @@ export default function ResultsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "quiz-biblique-mef.png";
+      a.download = "quiz-biblique.png";
       document.body.appendChild(a);
       a.click();
       a.remove();

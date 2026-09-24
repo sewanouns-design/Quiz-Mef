@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Quiz Biblique MEF",
+    name: "Quiz Biblique",
     short_name: "Quiz Biblique",
     description: "Teste tes connaissances sur la leçon du jour — Mission Évangélique de la Foi",
     start_url: "/",

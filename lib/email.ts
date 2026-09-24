@@ -100,7 +100,7 @@ export function buildResultsEmailHtml(params: {
   return `
   <div style="font-family:'Inter',Arial,sans-serif;max-width:640px;margin:0 auto;background:#f7f7f7;padding:24px;">
     <div style="background:${primary};padding:24px;border-radius:12px 12px 0 0;text-align:center;">
-      <h1 style="color:${accent};margin:0;font-size:22px;">⁉️ Quiz Biblique MEF</h1>
+      <h1 style="color:${accent};margin:0;font-size:22px;">⁉️ Quiz Biblique</h1>
     </div>
     <div style="background:#ffffff;padding:24px;border-radius:0 0 12px 12px;">
       <p>Bonjour <strong>${escapeHtml(participantName)}</strong>,</p>
@@ -115,7 +115,7 @@ export function buildResultsEmailHtml(params: {
         ${buildResultsTableRows(answers)}
       </table>
       <p style="margin-top:24px;">Continue à sonder les Écritures chaque jour. « Sonde les écritures, car ce sont elles qui rendent témoignage de moi » (Jean 5:39).</p>
-      <p style="margin-top:24px;font-size:13px;color:#888;">Quiz Biblique MEF — quiz.mefzogbadje.org</p>
+      <p style="margin-top:24px;font-size:13px;color:#888;">Quiz Biblique — quiz.mefzogbadje.org</p>
     </div>
   </div>
   `;
@@ -233,7 +233,7 @@ function buildReengagementEmailHtml(params: {
     ${statLine ? `<p>${statLine}</p>` : ""}
     <p>« Sonde les écritures, car ce sont elles qui rendent témoignage de moi » (Jean 5:39). Chaque quiz est une occasion de plus de méditer la Parole de Dieu.</p>
     <p>Tu peux reprendre le quiz du jour ici : <a href="${quizUrl}" style="color:${accent};">${quizUrl}</a></p>
-    <p style="margin-top:24px;color:#555555;">— Quiz Biblique MEF</p>
+    <p style="margin-top:24px;color:#555555;">— Quiz Biblique</p>
   </div>
   `;
 }
