@@ -15,6 +15,9 @@ create table if not exists participants (
   email text,
   whatsapp text,
   device_key text unique not null,
+  -- Opt-in explicite : n'apparaît dans le classement public (prénom +
+  -- initiale seulement) que si activé au moment de l'identification.
+  show_in_leaderboard boolean not null default false,
   created_at timestamptz default now()
 );
 

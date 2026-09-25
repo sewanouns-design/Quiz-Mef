@@ -18,6 +18,7 @@ export default function QuizIdentificationPage() {
   const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [showInLeaderboard, setShowInLeaderboard] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checkingQuiz, setCheckingQuiz] = useState(true);
   const [error, setError] = useState("");
@@ -33,6 +34,7 @@ export default function QuizIdentificationPage() {
       setAddress(stored.address || "");
       setEmail(stored.email || "");
       setWhatsapp(stored.whatsapp || "");
+      setShowInLeaderboard(Boolean(stored.showInLeaderboard));
       setPhoneInputKey(`stored-${stored.whatsapp || ""}`);
     }
 
@@ -44,6 +46,7 @@ export default function QuizIdentificationPage() {
           setAddress(data.participant.address || "");
           setEmail(data.participant.email || "");
           setWhatsapp(data.participant.whatsapp || "");
+          setShowInLeaderboard(Boolean(data.participant.show_in_leaderboard));
           setPhoneInputKey(`fetched-${data.participant.whatsapp || ""}`);
         }
       })
@@ -84,7 +87,7 @@ export default function QuizIdentificationPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ deviceKey, name, address, email, whatsapp }),
+        body: JSON.stringify({ deviceKey, name, address, email, whatsapp, showInLeaderboard }),
       });
 
       if (!participantRes.ok) {
@@ -92,7 +95,7 @@ export default function QuizIdentificationPage() {
         throw new Error(data.error || "Erreur lors de l'enregistrement");
       }
 
-      saveStoredParticipant({ deviceKey, name, address, email, whatsapp });
+      saveStoredParticipant({ deviceKey, name, address, email, whatsapp, showInLeaderboard });
 
       const quizRes = await fetch("/api/quiz/active", { cache: "no-store" });
       const quizData = await quizRes.json();
@@ -179,6 +182,19 @@ export default function QuizIdentificationPage() {
               onChange={setWhatsapp}
             />
           </div>
+
+          <label className="flex items-start gap-2 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={showInLeaderboard}
+              onChange={(e) => setShowInLeaderboard(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300"
+            />
+            <span>
+              Afficher mon prénom dans le classement public du quiz (initiale du nom
+              seulement, visible par les autres participants).
+            </span>
+          </label>
 
           {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 

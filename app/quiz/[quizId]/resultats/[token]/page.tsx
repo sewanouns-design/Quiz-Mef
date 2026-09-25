@@ -325,7 +325,10 @@ export default function ResultsPage() {
           ))}
         </div>
 
-        <div className="mt-10 text-center">
+        <div className="mt-10 flex flex-col items-center gap-3">
+          <Link href={`/quiz/${quizId}/classement`} className="text-sm font-semibold text-navy hover:underline">
+            🏆 Voir le classement de ce quiz
+          </Link>
           <Link href="/" className="btn-secondary">
             Retour à l&apos;accueil
           </Link>

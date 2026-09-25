@@ -8,6 +8,7 @@ export interface StoredParticipant {
   address: string;
   email: string;
   whatsapp: string;
+  showInLeaderboard?: boolean;
 }
 
 export function getStoredParticipant(): StoredParticipant | null {

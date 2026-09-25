@@ -38,6 +38,7 @@ export interface Participant {
   email: string | null;
   whatsapp: string | null;
   device_key: string;
+  show_in_leaderboard: boolean;
   created_at: string;
 }
 

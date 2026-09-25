@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   await recordRateLimitEvent(ip, RATE_LIMIT_ROUTE);
 
   const body = await request.json();
-  const { deviceKey, name, address, email, whatsapp } = body ?? {};
+  const { deviceKey, name, address, email, whatsapp, showInLeaderboard } = body ?? {};
 
   if (!deviceKey || !name || !address || !email) {
     return NextResponse.json(
@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
         address,
         email: email || null,
         whatsapp: whatsapp || null,
+        show_in_leaderboard: Boolean(showInLeaderboard),
       },
       { onConflict: "device_key" }
     )
