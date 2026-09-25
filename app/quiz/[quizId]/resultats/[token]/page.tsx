@@ -6,6 +6,7 @@ import Link from "next/link";
 import { generateResultsImage } from "@/lib/generate-results-image";
 import { isPassingScore } from "@/lib/scoring";
 import { clearQuizProgress, getStoredParticipant } from "@/lib/participant-storage";
+import PushOptIn from "@/components/PushOptIn";
 import type { CorrectedAnswer } from "@/lib/types";
 
 interface ResultsData {
@@ -334,6 +335,7 @@ export default function ResultsPage() {
               📊 Voir mes stats
             </Link>
           </div>
+          <PushOptIn />
           <Link href="/" className="btn-secondary">
             Retour à l&apos;accueil
           </Link>

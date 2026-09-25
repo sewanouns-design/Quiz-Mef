@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { sendReengagementEmail } from "@/lib/email";
+import { sendReengagementEmail, REENGAGEMENT_COPY } from "@/lib/email";
 import { computeStreakDays } from "@/lib/streak";
+import { sendPushToParticipant } from "@/lib/push";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -57,8 +58,6 @@ export async function GET(request: NextRequest) {
   const now = Date.now();
 
   for (const participant of participants ?? []) {
-    if (!participant.email) continue;
-
     const { data: lastSubmission } = await supabase
       .from("daily_submissions")
       .select("id, submitted_at, quiz_id")
@@ -95,23 +94,46 @@ export async function GET(request: NextRequest) {
 
       const streakDays = computeStreakDays((recentSubmissions ?? []).map((s) => s.submitted_at));
 
+      // Email et push sont deux canaux indépendants pour la même relance :
+      // l'un des deux suffit à marquer le palier comme notifié (jamais les
+      // deux à chaque exécution pour la même personne).
+      let notified = false;
+
+      if (participant.email) {
+        try {
+          await sendReengagementEmail({
+            to: participant.email,
+            participantName: participant.name,
+            milestoneHours: milestone,
+            quizUrl: `${SITE_URL}/quiz/${activeQuiz.id}`,
+            streakDays,
+            activeTodayCount: activeTodayCount ?? 0,
+          });
+          notified = true;
+        } catch (err) {
+          console.error(`Erreur envoi relance email ${milestone}h pour ${participant.id} :`, err);
+        }
+      }
+
       try {
-        await sendReengagementEmail({
-          to: participant.email,
-          participantName: participant.name,
-          milestoneHours: milestone,
-          quizUrl: `${SITE_URL}/quiz/${activeQuiz.id}`,
-          streakDays,
-          activeTodayCount: activeTodayCount ?? 0,
+        const { subject } = REENGAGEMENT_COPY[milestone];
+        const pushSent = await sendPushToParticipant(participant.id, {
+          title: subject,
+          body: "Reviens répondre au quiz du jour — ça prend moins de 2 minutes.",
+          url: `${SITE_URL}/quiz/${activeQuiz.id}`,
         });
+        if (pushSent > 0) notified = true;
+      } catch (err) {
+        console.error(`Erreur envoi relance push ${milestone}h pour ${participant.id} :`, err);
+      }
+
+      if (notified) {
         await supabase.from("reengagement_reminders").insert({
           participant_id: participant.id,
           submission_id: lastSubmission.id,
           milestone_hours: milestone,
         });
         sent += 1;
-      } catch (err) {
-        console.error(`Erreur envoi relance ${milestone}h pour ${participant.id} :`, err);
       }
       break;
     }

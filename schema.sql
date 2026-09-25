@@ -217,6 +217,22 @@ create unique index if not exists idx_unique_reengagement_reminder
   on reengagement_reminders (participant_id, submission_id, milestone_hours);
 
 -- ------------------------------------------------------------
+-- Abonnements aux notifications push web (rappel quotidien du quiz,
+-- opt-in). Une ligne par navigateur/appareil abonné ; endpoint unique
+-- fourni par le navigateur (PushSubscription.endpoint).
+-- ------------------------------------------------------------
+create table if not exists push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  participant_id uuid references participants(id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_push_subscriptions_participant_id on push_subscriptions (participant_id);
+
+-- ------------------------------------------------------------
 -- Journal d'activité admin : trace des actions destructrices/notables du
 -- super-admin (suppression de résultat/participant, fusion, quiz
 -- créé/modifié/supprimé/activé/désactivé/recalculé, paramètres modifiés),
@@ -249,3 +265,4 @@ alter table login_attempts enable row level security;
 alter table rate_limit_events enable row level security;
 alter table reengagement_reminders enable row level security;
 alter table admin_activity_log enable row level security;
+alter table push_subscriptions enable row level security;

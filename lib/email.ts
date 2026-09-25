@@ -252,7 +252,7 @@ export async function sendResultsEmail(params: {
   console.log(`Email de résultats envoyé à ${params.to} (id: ${result.data?.id})`);
 }
 
-const REENGAGEMENT_COPY: Record<
+export const REENGAGEMENT_COPY: Record<
   24 | 48 | 72,
   { subject: string; intro: string }
 > = {
