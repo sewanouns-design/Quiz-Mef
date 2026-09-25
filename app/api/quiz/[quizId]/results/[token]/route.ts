@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { attemptsRemaining, isPassingScore, MAX_ATTEMPTS, shouldRevealAnswers } from "@/lib/scoring";
 import { redactAnswersIfHidden } from "@/lib/grading";
+import { computeStreakDays } from "@/lib/streak";
 import type { CorrectedAnswer, DailyQuestion } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +63,17 @@ export async function GET(
     .eq("id", submission.participant_id)
     .maybeSingle();
 
+  // Série (streak) : jours consécutifs avec au moins une vraie soumission,
+  // tous quiz confondus (un par jour) — pas seulement celui-ci.
+  const { data: streakSubmissions } = await supabase
+    .from("daily_submissions")
+    .select("submitted_at")
+    .eq("participant_id", submission.participant_id)
+    .eq("cancelled", false)
+    .order("submitted_at", { ascending: false })
+    .limit(60);
+  const streakDays = computeStreakDays((streakSubmissions ?? []).map((s) => s.submitted_at));
+
   const { data: questions, error: questionsError } = await supabase
     .from("daily_questions")
     .select("*")
@@ -115,6 +127,7 @@ export async function GET(
     attemptNumber: submission.attempt_number,
     canRetry,
     attemptsRemaining: remaining,
+    streakDays,
     answers: redactAnswersIfHidden(corrected, reveal),
   });
 }

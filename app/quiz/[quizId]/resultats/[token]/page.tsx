@@ -18,6 +18,7 @@ interface ResultsData {
   attemptNumber: number;
   canRetry: boolean;
   attemptsRemaining: number;
+  streakDays: number;
   answers: CorrectedAnswer[];
 }
 
@@ -227,6 +228,11 @@ export default function ResultsPage() {
                   {data.score} / {data.maxScore}
                 </span>
               </div>
+              {data.streakDays >= 2 && (
+                <p className="relative mt-4 text-sm font-semibold text-white/80">
+                  🔥 {data.streakDays} jours d&apos;affilée !
+                </p>
+              )}
             </div>
           ) : (
             <>
@@ -249,6 +255,11 @@ export default function ResultsPage() {
                   {data.score} / {data.maxScore}
                 </span>
               </div>
+              {data.streakDays >= 2 && (
+                <p className="mt-3 text-sm font-semibold text-accent-dark">
+                  🔥 {data.streakDays} jours d&apos;affilée !
+                </p>
+              )}
               {data.canRetry && (
                 <div className="mx-auto mt-6 max-w-sm rounded-2xl border-2 border-dashed border-navy/20 bg-navy/5 px-6 py-5">
                   <p className="text-sm text-navy">

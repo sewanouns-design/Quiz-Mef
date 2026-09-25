@@ -1,32 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { sendReengagementEmail } from "@/lib/email";
+import { computeStreakDays } from "@/lib/streak";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const MILESTONES: (24 | 48 | 72)[] = [24, 48, 72];
 const SITE_URL = "https://quiz.mefzogbadje.org";
-
-/** Nombre de jours consécutifs (calendaires) se terminant à la dernière soumission. */
-function computeStreakDays(submittedAtList: string[]): number {
-  const uniqueDays = Array.from(
-    new Set(submittedAtList.map((d) => new Date(d).toISOString().slice(0, 10)))
-  ).sort((a, b) => b.localeCompare(a));
-
-  if (uniqueDays.length === 0) return 0;
-
-  let streak = 1;
-  let current = new Date(`${uniqueDays[0]}T00:00:00Z`);
-  for (let i = 1; i < uniqueDays.length; i++) {
-    const prev = new Date(`${uniqueDays[i]}T00:00:00Z`);
-    const diffDays = Math.round((current.getTime() - prev.getTime()) / 86400000);
-    if (diffDays !== 1) break;
-    streak += 1;
-    current = prev;
-  }
-  return streak;
-}
 
 /**
  * Relance quotidienne (cf. vercel.json) des participants n'ayant pas repassé
