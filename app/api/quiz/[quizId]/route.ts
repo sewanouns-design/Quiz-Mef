@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { isPassingScore, MAX_ATTEMPTS } from "@/lib/scoring";
+import { attemptsRemaining, isPassingScore, MAX_ATTEMPTS } from "@/lib/scoring";
 import type { PublicQuestion } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export async function GET(
 
   const { data: quiz, error: quizError } = await supabase
     .from("daily_quizzes")
-    .select("id, title, lesson_date, is_active, duration_seconds")
+    .select("id, title, lesson_date, is_active, duration_seconds, quiz_mode")
     .eq("id", params.quizId)
     .maybeSingle();
 
@@ -38,6 +38,7 @@ export async function GET(
   let alreadySubmitted = false;
   let isRetry = false;
   let resultToken: string | null = null;
+  let remaining: number | null = null;
   if (deviceKey) {
     const { data: participant } = await supabase
       .from("participants")
@@ -66,6 +67,7 @@ export async function GET(
           resultToken = realAttempts[realAttempts.length - 1].result_token;
         } else {
           isRetry = true;
+          remaining = attemptsRemaining(realAttempts.length, passedAny);
         }
       }
     }
@@ -77,5 +79,6 @@ export async function GET(
     alreadySubmitted,
     isRetry,
     resultToken,
+    attemptsRemaining: remaining,
   });
 }

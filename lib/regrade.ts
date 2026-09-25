@@ -55,8 +55,15 @@ export async function regradeQuiz(quizId: string): Promise<RegradeResult> {
   if (answersError) throw new Error(answersError.message);
 
   let answersUpdated = 0;
+  // Une soumission sans AUCUNE réponse enregistrée (anomalie de données,
+  // insertion interrompue...) n'est jamais réinitialisée à 0 ici : elle est
+  // tout simplement exclue du recalcul, plutôt que d'écraser une note déjà
+  // existante avec un score à zéro.
+  const answeredSubmissionIds = new Set((answers ?? []).map((a) => a.submission_id as string));
   const totalsBySubmission = new Map<string, { score: number; maxScore: number }>();
-  for (const id of submissionIds) totalsBySubmission.set(id, { score: 0, maxScore: 0 });
+  for (const id of submissionIds) {
+    if (answeredSubmissionIds.has(id)) totalsBySubmission.set(id, { score: 0, maxScore: 0 });
+  }
 
   for (const answer of answers ?? []) {
     const totals = totalsBySubmission.get(answer.submission_id);

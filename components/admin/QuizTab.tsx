@@ -244,6 +244,7 @@ export default function QuizTab() {
   const [durationHours, setDurationHours] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
   const [durationSecondsPart, setDurationSecondsPart] = useState("");
+  const [quizMode, setQuizMode] = useState<"overview" | "sequential">("overview");
   const [questionsJson, setQuestionsJson] = useState("[]");
   const [editorMode, setEditorMode] = useState<"visual" | "json">("visual");
   const [submitting, setSubmitting] = useState(false);
@@ -320,6 +321,7 @@ export default function QuizTab() {
     setDurationHours("");
     setDurationMinutes("");
     setDurationSecondsPart("");
+    setQuizMode("overview");
     setQuestionsJson("[]");
     setEditorMode("visual");
     setError("");
@@ -346,6 +348,7 @@ export default function QuizTab() {
       setTitle(data.quiz.title);
       setLessonDate(data.quiz.lesson_date);
       setIsActive(data.quiz.is_active);
+      setQuizMode(data.quiz.quiz_mode === "sequential" ? "sequential" : "overview");
       const totalSeconds: number = data.quiz.duration_seconds ?? 0;
       if (totalSeconds > 0) {
         setDurationHours(String(Math.floor(totalSeconds / 3600)));
@@ -415,6 +418,7 @@ export default function QuizTab() {
             isActive,
             questions,
             durationSeconds: parsedDuration,
+            quizMode,
           }),
         }
       );
@@ -669,9 +673,38 @@ export default function QuizTab() {
                 </div>
               </div>
               <p className="mt-1 text-xs text-gray-400">
-                Un compte à rebours s&apos;affiche au participant, démarrant dès sa première
-                réponse. Le test est soumis automatiquement à l&apos;expiration du temps. Laisser
-                à 0 = pas de limite.
+                Un compte à rebours s&apos;affiche au participant, démarrant au clic sur
+                « Commencer le test » (jamais avant). Le test est soumis automatiquement à
+                l&apos;expiration du temps. Laisser à 0 = pas de limite.
+              </p>
+            </div>
+
+            <div>
+              <label className="label-field">Mode d&apos;affichage des questions</label>
+              <div className="inline-flex rounded-lg border border-gray-300 bg-white p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setQuizMode("overview")}
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    quizMode === "overview" ? "bg-navy text-white" : "text-gray-500"
+                  }`}
+                >
+                  Aperçu global
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuizMode("sequential")}
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    quizMode === "sequential" ? "bg-navy text-white" : "text-gray-500"
+                  }`}
+                >
+                  Séquentiel
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-gray-400">
+                {quizMode === "overview"
+                  ? "Toutes les questions apparaissent d'un coup au clic sur « Commencer le test »."
+                  : "Une seule question à la fois, avec boutons Précédent/Suivant — impossible de voir la suite à l'avance."}
               </p>
             </div>
 

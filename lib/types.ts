@@ -1,11 +1,14 @@
 export type QuestionType = "mcq" | "true_false" | "short" | "fill_blank" | "open";
 
+export type QuizMode = "overview" | "sequential";
+
 export interface DailyQuiz {
   id: string;
   title: string;
   lesson_date: string;
   is_active: boolean;
   duration_seconds: number | null;
+  quiz_mode: QuizMode;
   created_at: string;
 }
 

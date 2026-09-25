@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { generateResultsImage } from "@/lib/generate-results-image";
 import { isPassingScore } from "@/lib/scoring";
+import { clearQuizProgress, getStoredParticipant } from "@/lib/participant-storage";
 import type { CorrectedAnswer } from "@/lib/types";
 
 interface ResultsData {
@@ -44,6 +45,7 @@ export default function ResultsPage() {
   const [data, setData] = useState<ResultsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [wasReset, setWasReset] = useState(false);
   const [timeExpired, setTimeExpired] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState("");
@@ -62,12 +64,25 @@ export default function ResultsPage() {
     fetch(`/api/quiz/${quizId}/results/${token}`, { cache: "no-store" })
       .then(async (res) => {
         if (!res.ok) {
+          if (res.status === 404) {
+            // La soumission n'existe plus (réinitialisation par l'admin) :
+            // on efface tout le cache local de progression de CE quiz pour
+            // que la personne reparte proprement de l'écran de départ, même
+            // sur ce même appareil — sinon elle resterait bloquée sur un
+            // ancien résultat en cache.
+            const deviceKey = getStoredParticipant()?.deviceKey;
+            if (deviceKey) clearQuizProgress(quizId, deviceKey);
+            setWasReset(true);
+            return null;
+          }
           const err = await res.json().catch(() => ({}));
           throw new Error(err.error || "Résultats introuvables.");
         }
         return res.json();
       })
-      .then((resultsData: ResultsData) => setData(resultsData))
+      .then((resultsData: ResultsData | null) => {
+        if (resultsData) setData(resultsData);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [quizId, token]);
@@ -127,6 +142,19 @@ export default function ResultsPage() {
     return (
       <main className="flex min-h-screen items-center justify-center px-6">
         <p className="text-gray-500">Chargement des résultats...</p>
+      </main>
+    );
+  }
+
+  if (wasReset) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+        <p className="text-gray-600">
+          Ce résultat a été réinitialisé. Tu peux reprendre le quiz depuis le début.
+        </p>
+        <Link href={`/quiz/${quizId}`} className="btn-primary mt-6">
+          🔁 Reprendre le quiz
+        </Link>
       </main>
     );
   }

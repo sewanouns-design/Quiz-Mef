@@ -55,7 +55,7 @@ export async function PUT(
   }
 
   const body = await request.json().catch(() => ({}));
-  const { title, lessonDate, questions, durationSeconds } = body ?? {};
+  const { title, lessonDate, questions, durationSeconds, quizMode } = body ?? {};
 
   const supabase = getSupabaseAdmin();
 
@@ -65,6 +65,9 @@ export async function PUT(
   if (durationSeconds !== undefined) {
     updates.duration_seconds =
       typeof durationSeconds === "number" && durationSeconds > 0 ? durationSeconds : null;
+  }
+  if (quizMode !== undefined) {
+    updates.quiz_mode = quizMode === "sequential" ? "sequential" : "overview";
   }
 
   if (Object.keys(updates).length > 0) {

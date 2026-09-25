@@ -33,3 +33,26 @@ export function getOrCreateDeviceKey(): string {
 
   return crypto.randomUUID();
 }
+
+/**
+ * Efface tout le cache local de progression d'un quiz (écran de départ
+ * franchi, date limite du chrono, index de la question en cours en mode
+ * séquentiel) pour cet appareil. Utilisé après une réinitialisation admin
+ * (soumission supprimée) pour que le participant reparte de l'écran de
+ * départ sur CE MÊME appareil, pas seulement sur un autre.
+ */
+export function clearQuizProgress(quizId: string, deviceKey: string): void {
+  if (typeof window === "undefined") return;
+  const keys = [
+    `quiz_started_${quizId}_${deviceKey}`,
+    `quiz_deadline_${quizId}_${deviceKey}`,
+    `quiz_seq_index_${quizId}_${deviceKey}`,
+  ];
+  for (const key of keys) {
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // stockage indisponible, tant pis
+    }
+  }
+}

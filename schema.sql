@@ -30,6 +30,9 @@ create table if not exists daily_quizzes (
   lesson_date date not null unique,
   is_active boolean default false,
   duration_seconds int,
+  -- 'overview' : toutes les questions révélées d'un coup au clic "Commencer".
+  -- 'sequential' : une question à la fois, impossible de voir la suite à l'avance.
+  quiz_mode text not null default 'overview' check (quiz_mode in ('overview', 'sequential')),
   created_at timestamptz default now()
 );
 
