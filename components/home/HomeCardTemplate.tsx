@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { SiteSettings } from "@/lib/types";
 import { getRandomVerse } from "@/lib/verses";
+import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import LogoIcon from "@/components/LogoIcon";
 
 interface Props {
@@ -18,9 +19,9 @@ export default function HomeCardTemplate({ settings, activeQuiz, stats }: Props)
 
   return (
     <main
-      className="flex min-h-screen items-center justify-center px-6 py-16"
+      className={`flex min-h-screen items-center justify-center px-6 py-16 ${ALL_HOME_FONT_VARIABLES}`}
       style={{
-        fontFamily: `'${settings.font_family}', sans-serif`,
+        fontFamily: resolveFontFamily(settings.font_family),
         background: `linear-gradient(160deg, ${primary}, ${primaryDark})`,
       }}
     >

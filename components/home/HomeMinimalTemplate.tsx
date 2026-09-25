@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { SiteSettings } from "@/lib/types";
 import { getRandomVerse } from "@/lib/verses";
+import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import DesktopSideDecoration from "./DesktopSideDecoration";
 import LogoIcon from "@/components/LogoIcon";
 
@@ -17,9 +18,9 @@ export default function HomeMinimalTemplate({ settings, activeQuiz }: Props) {
 
   return (
     <main
-      className="flex min-h-screen flex-col items-center justify-center px-6 py-16"
+      className={`flex min-h-screen flex-col items-center justify-center px-6 py-16 ${ALL_HOME_FONT_VARIABLES}`}
       style={{
-        fontFamily: `'${settings.font_family}', sans-serif`,
+        fontFamily: resolveFontFamily(settings.font_family),
         backgroundColor: settings.color_background,
       }}
     >
