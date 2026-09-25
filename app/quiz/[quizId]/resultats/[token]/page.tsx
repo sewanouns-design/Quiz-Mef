@@ -326,9 +326,14 @@ export default function ResultsPage() {
         </div>
 
         <div className="mt-10 flex flex-col items-center gap-3">
-          <Link href={`/quiz/${quizId}/classement`} className="text-sm font-semibold text-navy hover:underline">
-            🏆 Voir le classement de ce quiz
-          </Link>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            <Link href={`/quiz/${quizId}/classement`} className="text-sm font-semibold text-navy hover:underline">
+              🏆 Voir le classement de ce quiz
+            </Link>
+            <Link href="/mes-stats" className="text-sm font-semibold text-navy hover:underline">
+              📊 Voir mes stats
+            </Link>
+          </div>
           <Link href="/" className="btn-secondary">
             Retour à l&apos;accueil
           </Link>
