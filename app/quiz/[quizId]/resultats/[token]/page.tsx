@@ -280,13 +280,32 @@ export default function ResultsPage() {
         </div>
 
         {passed && (
-          <div className="mb-8 flex flex-col items-center gap-2">
+          <div className="mb-6 flex flex-col items-center gap-2">
             <button onClick={handleShare} disabled={sharing} className="btn-accent">
               {sharing ? "Préparation de l'image..." : "📤 Partager mon score"}
             </button>
             {shareError && <p className="text-xs font-medium text-red-500">{shareError}</p>}
           </div>
         )}
+
+        <div className="mb-8 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href={`/quiz/${quizId}/classement`}
+            className="inline-flex items-center gap-1.5 rounded-full border-2 border-navy/15 bg-white px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition-colors hover:border-navy/30"
+          >
+            🏆 Classement
+          </Link>
+          <Link
+            href="/mes-stats"
+            className="inline-flex items-center gap-1.5 rounded-full border-2 border-navy/15 bg-white px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition-colors hover:border-navy/30"
+          >
+            📊 Mes stats
+          </Link>
+        </div>
+
+        <div className="mb-8 flex justify-center">
+          <PushOptIn />
+        </div>
 
         <div className="space-y-4">
           {data.answers.map((answer, index) => (
@@ -326,16 +345,7 @@ export default function ResultsPage() {
           ))}
         </div>
 
-        <div className="mt-10 flex flex-col items-center gap-3">
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-            <Link href={`/quiz/${quizId}/classement`} className="text-sm font-semibold text-navy hover:underline">
-              🏆 Voir le classement de ce quiz
-            </Link>
-            <Link href="/mes-stats" className="text-sm font-semibold text-navy hover:underline">
-              📊 Voir mes stats
-            </Link>
-          </div>
-          <PushOptIn />
+        <div className="mt-10 flex justify-center">
           <Link href="/" className="btn-secondary">
             Retour à l&apos;accueil
           </Link>
