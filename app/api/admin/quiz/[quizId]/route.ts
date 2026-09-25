@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
 import { validateQuizQuestions } from "@/lib/quiz-validation";
 import { regradeQuiz } from "@/lib/regrade";
+import { logAdminActivity } from "@/lib/admin-activity";
 import type { QuestionImport } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -162,6 +163,20 @@ export async function PUT(
     }
   }
 
+  const quizTitle =
+    title ??
+    (await supabase.from("daily_quizzes").select("title").eq("id", params.quizId).maybeSingle())
+      .data?.title ??
+    params.quizId;
+  await logAdminActivity(
+    "quiz_updated",
+    `Quiz modifié : ${quizTitle}` +
+      (regrade
+        ? ` (recalcul : ${regrade.answersUpdated} réponse(s), ${regrade.submissionsUpdated} copie(s))`
+        : ""),
+    { quizId: params.quizId, regrade }
+  );
+
   return NextResponse.json({ ok: true, regrade });
 }
 
@@ -177,6 +192,12 @@ export async function DELETE(
   }
 
   const supabase = getSupabaseAdmin();
+
+  const { data: quizToDelete } = await supabase
+    .from("daily_quizzes")
+    .select("title")
+    .eq("id", params.quizId)
+    .maybeSingle();
 
   // daily_submissions.quiz_id n'a pas de "on delete cascade" (contrairement
   // à daily_questions et lesson_questions) : les copies déjà soumises ne
@@ -200,6 +221,12 @@ export async function DELETE(
   if (quizError) {
     return NextResponse.json({ error: quizError.message }, { status: 500 });
   }
+
+  await logAdminActivity(
+    "quiz_deleted",
+    `Quiz supprimé : ${quizToDelete?.title ?? params.quizId}`,
+    { quizId: params.quizId }
+  );
 
   return NextResponse.json({ ok: true });
 }

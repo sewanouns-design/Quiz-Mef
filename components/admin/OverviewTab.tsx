@@ -2,6 +2,25 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+interface SubmissionActivity {
+  type: "submission";
+  timestamp: string;
+  score: number;
+  maxScore: number;
+  cancelled: boolean;
+  participant: { name: string; address: string } | null;
+  quiz: { title: string } | null;
+}
+
+interface AdminActivity {
+  type: "admin";
+  timestamp: string;
+  action: string;
+  summary: string;
+}
+
+type ActivityEntry = SubmissionActivity | AdminActivity;
+
 interface OverviewData {
   participantsCount: number;
   quizzesCount: number;
@@ -11,15 +30,21 @@ interface OverviewData {
   averageScorePercent: number | null;
   lessonQuestionsCount: number;
   activeQuizTitle: string | null;
-  recentSubmissions: {
-    score: number;
-    max_score: number;
-    cancelled: boolean;
-    submitted_at: string;
-    participant: { name: string; address: string } | null;
-    quiz: { title: string } | null;
-  }[];
+  activity: ActivityEntry[];
 }
+
+const ADMIN_ACTION_ICONS: Record<string, string> = {
+  submissions_deleted: "🗑️",
+  participants_deleted: "🗑️",
+  participants_merged: "🔀",
+  quiz_created: "➕",
+  quiz_updated: "✏️",
+  quiz_deleted: "🗑️",
+  quiz_activated: "▶️",
+  quiz_deactivated: "⏸️",
+  quiz_regraded: "🔁",
+  settings_updated: "🎨",
+};
 
 type PeriodPreset =
   | "today"
@@ -240,6 +265,7 @@ export default function OverviewTab() {
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [activityOpen, setActivityOpen] = useState(false);
+  const [activityFilter, setActivityFilter] = useState<"all" | "submission" | "admin">("all");
 
   const range = useMemo(() => computeRange(preset, customFrom, customTo), [
     preset,
@@ -352,9 +378,9 @@ export default function OverviewTab() {
             >
               <span className="flex items-center gap-2 text-lg font-bold text-navy">
                 Activité récente
-                {data.recentSubmissions.length > 0 && (
+                {data.activity.length > 0 && (
                   <span className="rounded-full bg-navy/10 px-2 py-0.5 text-xs font-semibold text-navy">
-                    {data.recentSubmissions.length}
+                    {data.activity.length}
                   </span>
                 )}
               </span>
@@ -368,48 +394,96 @@ export default function OverviewTab() {
 
             {activityOpen && (
               <div className="border-t border-gray-100 px-6 pb-5 pt-1">
-                {data.recentSubmissions.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-400">
-                    Aucune soumission sur cette période.
-                  </p>
-                ) : (
-                  <ul className="divide-y divide-gray-100">
-                    {data.recentSubmissions.map((s, i) => (
-                      <li key={i} className="flex items-center justify-between gap-3 py-3">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy/10 text-xs font-bold text-navy">
-                            {initials(s.participant?.name ?? "?")}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="truncate font-medium text-navy">
-                              {s.participant?.name ?? "—"}{" "}
-                              <span className="font-normal text-gray-400">
-                                · {s.participant?.address}
-                              </span>
-                            </p>
-                            <p className="truncate text-xs text-gray-500">
-                              {s.quiz?.title ?? "Quiz supprimé"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          {s.cancelled ? (
-                            <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
-                              Annulé
+                <div className="flex gap-1.5 py-3">
+                  {(
+                    [
+                      { id: "all", label: "Tout" },
+                      { id: "submission", label: "Participants" },
+                      { id: "admin", label: "Admin" },
+                    ] as const
+                  ).map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setActivityFilter(f.id)}
+                      className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                        activityFilter === f.id
+                          ? "bg-navy text-white"
+                          : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                {(() => {
+                  const filtered = data.activity.filter(
+                    (a) => activityFilter === "all" || a.type === activityFilter
+                  );
+                  if (filtered.length === 0) {
+                    return (
+                      <p className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-400">
+                        Aucune activité sur cette période.
+                      </p>
+                    );
+                  }
+                  return (
+                    <ul className="divide-y divide-gray-100">
+                      {filtered.map((a, i) =>
+                        a.type === "submission" ? (
+                          <li key={i} className="flex items-center justify-between gap-3 py-3">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy/10 text-xs font-bold text-navy">
+                                {initials(a.participant?.name ?? "?")}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate font-medium text-navy">
+                                  {a.participant?.name ?? "—"}{" "}
+                                  <span className="font-normal text-gray-400">
+                                    · {a.participant?.address}
+                                  </span>
+                                </p>
+                                <p className="truncate text-xs text-gray-500">
+                                  {a.quiz?.title ?? "Quiz supprimé"}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="shrink-0 text-right">
+                              {a.cancelled ? (
+                                <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
+                                  Annulé
+                                </span>
+                              ) : (
+                                <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent-dark">
+                                  {a.score} / {a.maxScore}
+                                </span>
+                              )}
+                              <p className="mt-1 text-[10px] text-gray-400">
+                                {new Date(a.timestamp).toLocaleString("fr-FR")}
+                              </p>
+                            </div>
+                          </li>
+                        ) : (
+                          <li key={i} className="flex items-center gap-3 py-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-base">
+                              {ADMIN_ACTION_ICONS[a.action] ?? "⚙️"}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate font-medium text-navy">{a.summary}</p>
+                              <p className="text-[10px] text-gray-400">
+                                {new Date(a.timestamp).toLocaleString("fr-FR")}
+                              </p>
+                            </div>
+                            <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+                              Admin
                             </span>
-                          ) : (
-                            <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent-dark">
-                              {s.score} / {s.max_score}
-                            </span>
-                          )}
-                          <p className="mt-1 text-[10px] text-gray-400">
-                            {new Date(s.submitted_at).toLocaleString("fr-FR")}
-                          </p>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                          </li>
+                        )
+                      )}
+                    </ul>
+                  );
+                })()}
               </div>
             )}
           </section>

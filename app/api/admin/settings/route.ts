@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
 import { getSiteSettings } from "@/lib/site-settings";
+import { logAdminActivity } from "@/lib/admin-activity";
 import type { HomeStep, HomeTemplate } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -102,6 +103,11 @@ export async function PUT(request: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  await logAdminActivity(
+    "settings_updated",
+    `Personnalisation du site modifiée (${Object.keys(updates).filter((k) => k !== "updated_at").join(", ") || "aucun champ"})`
+  );
 
   return NextResponse.json({ settings: data });
 }

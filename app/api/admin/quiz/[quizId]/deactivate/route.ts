@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
+import { logAdminActivity } from "@/lib/admin-activity";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,8 @@ export async function POST(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  await logAdminActivity("quiz_deactivated", `Quiz désactivé : ${data.title}`, { quizId: data.id });
 
   return NextResponse.json({ quiz: data });
 }

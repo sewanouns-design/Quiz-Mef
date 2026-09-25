@@ -40,6 +40,9 @@ export async function GET(request: NextRequest) {
     .select(
       "score, max_score, cancelled, submitted_at, participant:participants(name, address), quiz:daily_quizzes(title)"
     );
+  let recentActivityQuery = supabase
+    .from("admin_activity_log")
+    .select("action, summary, created_at");
 
   if (fromTs) {
     participantsQuery = participantsQuery.gte("created_at", fromTs);
@@ -47,6 +50,7 @@ export async function GET(request: NextRequest) {
     lessonQuestionsQuery = lessonQuestionsQuery.gte("created_at", fromTs);
     submissionsQuery = submissionsQuery.gte("submitted_at", fromTs);
     recentSubmissionsQuery = recentSubmissionsQuery.gte("submitted_at", fromTs);
+    recentActivityQuery = recentActivityQuery.gte("created_at", fromTs);
   }
   if (toTs) {
     participantsQuery = participantsQuery.lte("created_at", toTs);
@@ -54,6 +58,7 @@ export async function GET(request: NextRequest) {
     lessonQuestionsQuery = lessonQuestionsQuery.lte("created_at", toTs);
     submissionsQuery = submissionsQuery.lte("submitted_at", toTs);
     recentSubmissionsQuery = recentSubmissionsQuery.lte("submitted_at", toTs);
+    recentActivityQuery = recentActivityQuery.lte("created_at", toTs);
   }
 
   const [
@@ -63,13 +68,15 @@ export async function GET(request: NextRequest) {
     submissionsRows,
     activeQuiz,
     recentSubmissions,
+    recentActivity,
   ] = await Promise.all([
     participantsQuery,
     quizzesQuery,
     lessonQuestionsQuery,
     submissionsQuery,
     supabase.from("daily_quizzes").select("title").eq("is_active", true).maybeSingle(),
-    recentSubmissionsQuery.order("submitted_at", { ascending: false }).limit(8),
+    recentSubmissionsQuery.order("submitted_at", { ascending: false }).limit(15),
+    recentActivityQuery.order("created_at", { ascending: false }).limit(15),
   ]);
 
   const errors = [
@@ -79,6 +86,7 @@ export async function GET(request: NextRequest) {
     submissionsRows.error,
     activeQuiz.error,
     recentSubmissions.error,
+    recentActivity.error,
   ].filter(Boolean);
 
   if (errors.length > 0) {
@@ -98,6 +106,30 @@ export async function GET(request: NextRequest) {
         )
       : null;
 
+  // Timeline unifiée : soumissions des participants + actions du super-admin
+  // (suppression, fusion, quiz créé/modifié/activé...), classées par type
+  // pour que l'admin puisse filtrer entre "ce que font les participants" et
+  // "ce que je fais moi-même" tout en gardant une seule chronologie.
+  const activity = [
+    ...(recentSubmissions.data ?? []).map((s) => ({
+      type: "submission" as const,
+      timestamp: s.submitted_at,
+      score: s.score,
+      maxScore: s.max_score,
+      cancelled: s.cancelled,
+      participant: s.participant,
+      quiz: s.quiz,
+    })),
+    ...(recentActivity.data ?? []).map((a) => ({
+      type: "admin" as const,
+      timestamp: a.created_at,
+      action: a.action,
+      summary: a.summary,
+    })),
+  ]
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, 20);
+
   return NextResponse.json({
     period: { from, to },
     participantsCount: participantsCount.count ?? 0,
@@ -108,6 +140,6 @@ export async function GET(request: NextRequest) {
     averageScorePercent,
     lessonQuestionsCount: lessonQuestionsCount.count ?? 0,
     activeQuizTitle: activeQuiz.data?.title ?? null,
-    recentSubmissions: recentSubmissions.data ?? [],
+    activity,
   });
 }

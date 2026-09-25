@@ -214,6 +214,22 @@ create unique index if not exists idx_unique_reengagement_reminder
   on reengagement_reminders (participant_id, submission_id, milestone_hours);
 
 -- ------------------------------------------------------------
+-- Journal d'activité admin : trace des actions destructrices/notables du
+-- super-admin (suppression de résultat/participant, fusion, quiz
+-- créé/modifié/supprimé/activé/désactivé/recalculé, paramètres modifiés),
+-- affichées avec les soumissions dans "Activité récente" (Vue d'ensemble).
+-- ------------------------------------------------------------
+create table if not exists admin_activity_log (
+  id uuid primary key default gen_random_uuid(),
+  action text not null,
+  summary text not null,
+  metadata jsonb,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_admin_activity_log_created_at on admin_activity_log (created_at desc);
+
+-- ------------------------------------------------------------
 -- Row Level Security
 -- L'application n'accède à Supabase que via la clé service_role
 -- côté serveur (routes API Next.js). On active RLS sans policy
@@ -229,3 +245,4 @@ alter table site_settings enable row level security;
 alter table login_attempts enable row level security;
 alter table rate_limit_events enable row level security;
 alter table reengagement_reminders enable row level security;
+alter table admin_activity_log enable row level security;

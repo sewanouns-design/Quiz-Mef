@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
 import { regradeQuiz } from "@/lib/regrade";
+import { logAdminActivity } from "@/lib/admin-activity";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,19 @@ export async function POST(
 
   try {
     const result = await regradeQuiz(params.quizId);
+
+    const supabase = getSupabaseAdmin();
+    const { data: quiz } = await supabase
+      .from("daily_quizzes")
+      .select("title")
+      .eq("id", params.quizId)
+      .maybeSingle();
+    await logAdminActivity(
+      "quiz_regraded",
+      `Notes recalculées : ${quiz?.title ?? params.quizId} (${result.answersUpdated} réponse(s), ${result.submissionsUpdated} copie(s))`,
+      { quizId: params.quizId, ...result }
+    );
+
     return NextResponse.json(result);
   } catch (err) {
     return NextResponse.json(

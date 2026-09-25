@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
 import { validateQuizQuestions } from "@/lib/quiz-validation";
+import { logAdminActivity } from "@/lib/admin-activity";
 import type { QuestionImport } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -76,6 +77,11 @@ export async function POST(request: NextRequest) {
     await supabase.from("daily_quizzes").delete().eq("id", quiz.id);
     return NextResponse.json({ error: questionsError.message }, { status: 500 });
   }
+
+  await logAdminActivity("quiz_created", `Quiz créé : ${quiz.title}`, {
+    quizId: quiz.id,
+    isActive: Boolean(isActive),
+  });
 
   return NextResponse.json({ quiz });
 }

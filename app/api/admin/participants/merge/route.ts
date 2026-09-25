@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
+import { logAdminActivity } from "@/lib/admin-activity";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,13 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = getSupabaseAdmin();
+
+  const { data: namesData } = await supabase
+    .from("participants")
+    .select("id, name")
+    .in("id", [targetId, ...sourceIds]);
+  const targetName = namesData?.find((p) => p.id === targetId)?.name ?? "?";
+  const sourceNames = (namesData ?? []).filter((p) => p.id !== targetId).map((p) => p.name);
 
   const { data: sourceSubmissions, error: fetchError } = await supabase
     .from("daily_submissions")
@@ -107,6 +115,12 @@ export async function POST(request: NextRequest) {
     }
     target = data;
   }
+
+  await logAdminActivity(
+    "participants_merged",
+    `${sourceNames.join(", ") || sourceIds.length + " fiche(s)"} fusionné(s) dans ${targetName}`,
+    { targetId, sourceIds, reassigned, deletedDuplicates }
+  );
 
   return NextResponse.json({ ok: true, participant: target, reassigned, deletedDuplicates });
 }
