@@ -13,28 +13,32 @@ RÈGLES :
 - Réponds UNIQUEMENT avec le tableau JSON, sans texte avant/après, sans balises markdown ```.
 - Génère entre 10 et 20 questions.
 - Le total des "points" de toutes les questions doit être égal à 20.
-- Types autorisés : "mcq" (QCM), "true_false" (Vrai/Faux), "short" (réponse courte),
-  "fill_blank" (texte à trous), "open" (question ouverte).
-- Au moins UNE question de type "true_false".
-- AU MAXIMUM 1 seule question de type "open" dans tout le quiz (0 ou 1, jamais plus).
-- AU MAXIMUM 2 questions au total parmi les types "short" et "fill_blank" combinés.
-- Le reste (la quasi-totalité du quiz) doit être composé de "mcq" et "true_false".
-- Pour un "mcq", propose exactement 4 options plausibles et proches les unes des 
-  autres (pas de bonne réponse trop évidente par élimination), et varie la position 
-  de la bonne réponse ("correctOption") d'une question à l'autre plutôt que de toujours 
-  mettre la même position.
-- Pour "short" et "fill_blank", "correctText" doit être une réponse précise et courte 
-  (1 à 3 mots), jamais une question d'opinion, de ressenti ou d'interprétation 
-  personnelle (ce type de question est réservé à "open"). Si plusieurs orthographes 
-  sont plausibles (accents, variantes de transcription d'un nom propre), liste-les 
-  toutes séparées par "|" dans "correctText" (ex : "Moïse|Moise").
+- Un SEUL type de question est autorisé : "mcq" (QCM à 4 options). N'utilise JAMAIS 
+  les types "true_false", "short", "fill_blank" ou "open" : ils ne sont plus acceptés.
+- Chaque question a exactement 4 options dans "options", et une seule bonne réponse 
+  ("correctOption", index 0 à 3). Varie la position de la bonne réponse d'une question 
+  à l'autre plutôt que de toujours mettre la même position.
+- Deux styles de question "mcq" à alterner dans le quiz :
+  1. Question factuelle classique : 4 options plausibles et proches les unes des 
+     autres (pas de bonne réponse trop évidente par élimination).
+  2. Question de type « affirmation à évaluer » (l'équivalent vrai/faux) : NE PROPOSE 
+     JAMAIS seulement 2 options "Vrai"/"Faux". Formule plutôt 4 propositions complètes, 
+     chacune combinant un verdict (Vrai/Faux) ET une justification courte, par exemple :
+       "Vrai, car le travail existait déjà avant la chute de l'homme."
+       "Faux, car Dieu a maudit le sol seulement après la chute de l'homme."
+       "Vrai, car Dieu lui-même a dit à l'homme qu'il mangerait à la sueur de son front."
+       "Faux, car la leçon ne mentionne jamais la malédiction du travail."
+     Une seule des 4 propositions doit être entièrement exacte (bon verdict ET bonne 
+     justification) ; les trois autres doivent être fausses par le verdict, par la 
+     justification, ou par les deux — tout en restant plausibles, jamais absurdes.
+  Inclue au moins 3 questions du style « affirmation à évaluer » décrit ci-dessus.
 - Les questions doivent porter UNIQUEMENT sur des faits présents dans le texte fourni — 
   n'invente rien et ne pioche pas dans des connaissances bibliques externes au texte.
-- Le champ "justification" est OBLIGATOIRE pour toute question qui n'est pas de type 
-  "open" (ne le laisse jamais vide) : il doit citer ou paraphraser précisément le passage 
-  de la leçon qui justifie la bonne réponse. Un participant qui se trompe la verra 
-  affichée à côté de la bonne réponse, donc elle doit se suffire à elle-même pour 
-  comprendre son erreur sans avoir à relire toute la leçon.
+- Le champ "justification" est OBLIGATOIRE pour chaque question (ne le laisse jamais 
+  vide) : il doit citer ou paraphraser précisément le passage de la leçon qui justifie 
+  la bonne réponse. Un participant qui se trompe la verra affichée à côté de la bonne 
+  réponse, donc elle doit se suffire à elle-même pour comprendre son erreur sans avoir 
+  à relire toute la leçon.
 - Le champ "question" doit être rédigé en français clair, sans ambiguïté.
 - Ne mets JAMAIS le titre du test, la date/période ou une durée limite dans le JSON : 
   ces informations sont toujours saisies séparément par la personne qui importe.
@@ -42,10 +46,7 @@ RÈGLES :
 FORMAT JSON EXACT À RESPECTER (le tableau de questions, rien d'autre) :
 [
   { "type": "mcq", "question": "Texte de la question ?", "options": ["Option A", "Option B", "Option C", "Option D"], "correctOption": 0, "justification": "Citation ou paraphrase du passage de la leçon.", "points": 2 },
-  { "type": "true_false", "question": "Affirmation à évaluer.", "options": ["Vrai", "Faux"], "correctOption": 0, "justification": "...", "points": 2 },
-  { "type": "short", "question": "Question à réponse courte ?", "correctText": "réponse en 1 à 3 mots", "justification": "...", "points": 2 },
-  { "type": "fill_blank", "question": "Une phrase avec ________ à compléter.", "correctText": "mot manquant", "justification": "...", "points": 2 },
-  { "type": "open", "question": "Question ouverte, à correction manuelle ?", "justification": "...", "points": 4 }
+  { "type": "mcq", "question": "Le travail est-il présenté comme une malédiction dans la leçon ?", "options": ["Vrai, car le travail existait déjà avant la chute de l'homme.", "Faux, car Dieu a maudit le sol seulement après la chute de l'homme.", "Vrai, car Dieu lui-même a dit à l'homme qu'il mangerait à la sueur de son front.", "Faux, car la leçon ne mentionne jamais la malédiction du travail."], "correctOption": 3, "justification": "Le texte dit au contraire : « le travail n'est pas une malédiction, mais un devoir contractuel. »", "points": 2 }
 ]
 
 Voici le contenu de la leçon :
