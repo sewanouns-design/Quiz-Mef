@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-const DISMISS_KEY = "mef_install_dismissed";
+// Pas de dismiss permanent : elle doit se répéter tant que le site n'est
+// pas réellement installé (demande explicite), juste pas à chaque page vue
+// dans la foulée après un clic sur "✕" — d'où un simple délai de grâce.
+const SNOOZE_KEY = "mef_install_snooze_until";
+const SNOOZE_DAYS = 3;
 
 // Événement non standardisé (Chrome/Edge/Android uniquement) : pas de type
 // officiel dans lib.dom.d.ts.
@@ -25,10 +29,30 @@ function isIos(): boolean {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
 
+function isSnoozed(): boolean {
+  try {
+    const until = Number(window.localStorage.getItem(SNOOZE_KEY)) || 0;
+    return Date.now() < until;
+  } catch {
+    return false;
+  }
+}
+
+function snooze() {
+  try {
+    window.localStorage.setItem(SNOOZE_KEY, String(Date.now() + SNOOZE_DAYS * 24 * 60 * 60 * 1000));
+  } catch {
+    // stockage indisponible, la bannière réapparaîtra simplement à chaque visite
+  }
+}
+
 /**
  * Bannière discrète invitant à installer le site en PWA ("Ajouter à l'écran
  * d'accueil") : transforme un lien qu'on oublie en icône sur l'écran
- * d'accueil, consultée comme une vraie appli. Deux chemins :
+ * d'accueil, consultée comme une vraie appli. Tant que le site n'est pas
+ * réellement installé (isStandalone), elle revient à chaque visite après un
+ * court délai de grâce (fermeture avec ✕ ou invite native refusée) plutôt
+ * que de disparaître définitivement après un seul passage. Deux chemins :
  * - Android/Chrome/Edge : l'événement natif beforeinstallprompt est capturé,
  *   le clic déclenche directement l'invite native du navigateur.
  * - iOS Safari : cet événement n'existe pas, on affiche des instructions
@@ -43,14 +67,7 @@ export default function InstallPrompt() {
     // Réservé au site public : pas de bruit pour l'équipe dans l'admin.
     if (window.location.pathname.startsWith("/admin")) return;
     if (isStandalone()) return;
-
-    let dismissed = false;
-    try {
-      dismissed = window.localStorage.getItem(DISMISS_KEY) === "1";
-    } catch {
-      // stockage indisponible, on affiche quand même la bannière
-    }
-    if (dismissed) return;
+    if (isSnoozed()) return;
 
     if (isIos()) {
       setShowIosInstructions(true);
@@ -70,24 +87,19 @@ export default function InstallPrompt() {
 
   function dismiss() {
     setVisible(false);
-    try {
-      window.localStorage.setItem(DISMISS_KEY, "1");
-    } catch {
-      // stockage indisponible, la bannière pourra réapparaître
-    }
+    snooze();
   }
 
   async function handleInstallClick() {
     if (!deferredPrompt) return;
     await deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
+    const { outcome } = await deferredPrompt.userChoice;
     setDeferredPrompt(null);
     setVisible(false);
-    try {
-      window.localStorage.setItem(DISMISS_KEY, "1");
-    } catch {
-      // stockage indisponible, tant pis
-    }
+    // Installé pour de vrai : isStandalone() empêchera la bannière de
+    // revenir. Refusé : simple délai de grâce, elle reviendra dans
+    // quelques jours plutôt que de disparaître pour toujours.
+    if (outcome !== "accepted") snooze();
   }
 
   if (!visible) return null;
