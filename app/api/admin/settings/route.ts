@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
 import { getSiteSettings } from "@/lib/site-settings";
@@ -108,6 +109,11 @@ export async function PUT(request: NextRequest) {
     "settings_updated",
     `Personnalisation du site modifiée (${Object.keys(updates).filter((k) => k !== "updated_at").join(", ") || "aucun champ"})`
   );
+
+  // La page d'accueil est mise en cache (ISR) pour la vitesse : sans ça, un
+  // changement de couleurs/template resterait invisible jusqu'à expiration
+  // du cache (5 min).
+  revalidateTag("home");
 
   return NextResponse.json({ settings: data });
 }

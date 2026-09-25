@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
 import { validateQuizQuestions } from "@/lib/quiz-validation";
@@ -82,6 +83,8 @@ export async function POST(request: NextRequest) {
     quizId: quiz.id,
     isActive: Boolean(isActive),
   });
+
+  if (isActive) revalidateTag("home");
 
   return NextResponse.json({ quiz });
 }

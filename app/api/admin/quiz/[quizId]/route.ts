@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
 import { validateQuizQuestions } from "@/lib/quiz-validation";
@@ -177,6 +178,10 @@ export async function PUT(
     { quizId: params.quizId, regrade }
   );
 
+  // Le titre/la durée affichés sur la page d'accueil (si ce quiz est actif)
+  // peuvent avoir changé.
+  revalidateTag("home");
+
   return NextResponse.json({ ok: true, regrade });
 }
 
@@ -227,6 +232,8 @@ export async function DELETE(
     `Quiz supprimé : ${quizToDelete?.title ?? params.quizId}`,
     { quizId: params.quizId }
   );
+
+  revalidateTag("home");
 
   return NextResponse.json({ ok: true });
 }

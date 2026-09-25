@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
 import { logAdminActivity } from "@/lib/admin-activity";
@@ -30,6 +31,8 @@ export async function POST(
   }
 
   await logAdminActivity("quiz_deactivated", `Quiz désactivé : ${data.title}`, { quizId: data.id });
+
+  revalidateTag("home");
 
   return NextResponse.json({ quiz: data });
 }

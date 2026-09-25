@@ -43,11 +43,24 @@ export async function POST(
 
   const supabase = getSupabaseAdmin();
 
-  const { data: participant, error: participantError } = await supabase
-    .from("participants")
-    .select("*")
-    .eq("device_key", deviceKey)
-    .maybeSingle();
+  // Participant, quiz et questions sont indépendants les uns des autres :
+  // les charger en parallèle plutôt que séquentiellement réduit d'autant la
+  // latence perçue par le participant au moment le plus sensible (l'envoi de
+  // ses réponses). Les vérifications qui suivent gardent le même ordre de
+  // priorité qu'avant pour ne rien changer au comportement observé.
+  const [
+    { data: participant, error: participantError },
+    { data: quiz, error: quizError },
+    { data: questions, error: questionsError },
+  ] = await Promise.all([
+    supabase.from("participants").select("*").eq("device_key", deviceKey).maybeSingle(),
+    supabase.from("daily_quizzes").select("*").eq("id", params.quizId).maybeSingle(),
+    supabase
+      .from("daily_questions")
+      .select("*")
+      .eq("quiz_id", params.quizId)
+      .order("position", { ascending: true }),
+  ]);
 
   if (participantError) {
     return NextResponse.json({ error: participantError.message }, { status: 500 });
@@ -55,12 +68,6 @@ export async function POST(
   if (!participant) {
     return NextResponse.json({ error: "Participant introuvable" }, { status: 404 });
   }
-
-  const { data: quiz, error: quizError } = await supabase
-    .from("daily_quizzes")
-    .select("*")
-    .eq("id", params.quizId)
-    .maybeSingle();
 
   if (quizError) {
     return NextResponse.json({ error: quizError.message }, { status: 500 });
@@ -95,12 +102,6 @@ export async function POST(
     );
   }
   const attemptNumber = realAttempts.length + 1;
-
-  const { data: questions, error: questionsError } = await supabase
-    .from("daily_questions")
-    .select("*")
-    .eq("quiz_id", params.quizId)
-    .order("position", { ascending: true });
 
   if (questionsError) {
     return NextResponse.json({ error: questionsError.message }, { status: 500 });

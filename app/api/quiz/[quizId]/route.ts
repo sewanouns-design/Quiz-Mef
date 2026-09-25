@@ -12,11 +12,23 @@ export async function GET(
   const supabase = getSupabaseAdmin();
   const deviceKey = request.nextUrl.searchParams.get("deviceKey");
 
-  const { data: quiz, error: quizError } = await supabase
-    .from("daily_quizzes")
-    .select("id, title, lesson_date, is_active, duration_seconds, quiz_mode")
-    .eq("id", params.quizId)
-    .maybeSingle();
+  // Le quiz et ses questions sont indépendants : les charger en parallèle
+  // évite un aller-retour réseau supplémentaire à chaque ouverture du quiz.
+  const [
+    { data: quiz, error: quizError },
+    { data: questions, error: questionsError },
+  ] = await Promise.all([
+    supabase
+      .from("daily_quizzes")
+      .select("id, title, lesson_date, is_active, duration_seconds, quiz_mode")
+      .eq("id", params.quizId)
+      .maybeSingle(),
+    supabase
+      .from("daily_questions")
+      .select("id, quiz_id, type, question, options, points, position")
+      .eq("quiz_id", params.quizId)
+      .order("position", { ascending: true }),
+  ]);
 
   if (quizError) {
     return NextResponse.json({ error: quizError.message }, { status: 500 });
@@ -24,12 +36,6 @@ export async function GET(
   if (!quiz) {
     return NextResponse.json({ error: "Quiz introuvable" }, { status: 404 });
   }
-
-  const { data: questions, error: questionsError } = await supabase
-    .from("daily_questions")
-    .select("id, quiz_id, type, question, options, points, position")
-    .eq("quiz_id", params.quizId)
-    .order("position", { ascending: true });
 
   if (questionsError) {
     return NextResponse.json({ error: questionsError.message }, { status: 500 });
