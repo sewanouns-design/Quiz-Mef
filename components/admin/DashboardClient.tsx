@@ -23,6 +23,36 @@ type TabId = (typeof TABS)[number]["id"];
 export default function DashboardClient() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [backingUp, setBackingUp] = useState(false);
+  const [backupError, setBackupError] = useState<string | null>(null);
+
+  async function handleBackup() {
+    setBackingUp(true);
+    setBackupError(null);
+    try {
+      const res = await fetch("/api/admin/backup", { cache: "no-store" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Échec de la sauvegarde.");
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const filename =
+        /filename="([^"]+)"/.exec(disposition)?.[1] ?? "quiz-mef-sauvegarde.json";
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setBackupError(err instanceof Error ? err.message : "Échec de la sauvegarde.");
+    } finally {
+      setBackingUp(false);
+    }
+  }
 
   async function handleLogout() {
     await fetch("/api/admin/logout", { method: "POST", cache: "no-store" });
@@ -33,19 +63,34 @@ export default function DashboardClient() {
   return (
     <main className="min-h-screen bg-gray-50 pb-16">
       <header className="border-b border-gray-200 bg-navy">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-2 text-white">
             <span className="text-2xl">⁉️</span>
             <span className="font-bold">Quiz Biblique — Admin</span>
           </div>
-          <button
-            onClick={handleLogout}
-            className="rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
-          >
-            Déconnexion
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBackup}
+              disabled={backingUp}
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-navy transition-opacity hover:opacity-90 disabled:opacity-60"
+            >
+              {backingUp ? "Sauvegarde…" : "💾 Sauvegarder toutes les données"}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
+            >
+              Déconnexion
+            </button>
+          </div>
         </div>
       </header>
+
+      {backupError && (
+        <div className="bg-red-50 px-4 py-2 text-center text-sm text-red-700" role="alert">
+          {backupError}
+        </div>
+      )}
 
       <div className="sticky top-0 z-10 border-b border-gray-200 bg-white shadow-sm">
         <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4 sm:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
