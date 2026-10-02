@@ -20,19 +20,27 @@ function sign(value: string): string {
   return hmac.digest("hex");
 }
 
-/** Construit la valeur de cookie signée : "<valeur>.<signature>". */
+/**
+ * Construit la valeur de cookie signée : "<valeur>.<expiration>.<signature>".
+ * L'expiration (timestamp en ms) est incluse dans la signature : un cookie
+ * volé cesse donc d'être valable à l'échéance, même s'il est rejoué tel quel.
+ */
 export function createSignedSessionValue(): string {
-  const signature = sign(SESSION_VALUE);
-  return `${SESSION_VALUE}.${signature}`;
+  const expiresAt = Date.now() + MAX_AGE_SECONDS * 1000;
+  const payload = `${SESSION_VALUE}.${expiresAt}`;
+  return `${payload}.${sign(payload)}`;
 }
 
 export function isValidSessionValue(cookieValue: string | undefined): boolean {
   if (!cookieValue) return false;
-  const [value, signature] = cookieValue.split(".");
-  if (!value || !signature) return false;
+  const [value, expiresAtRaw, signature] = cookieValue.split(".");
+  if (!value || !expiresAtRaw || !signature) return false;
   if (value !== SESSION_VALUE) return false;
 
-  const expected = sign(value);
+  const expiresAt = Number(expiresAtRaw);
+  if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return false;
+
+  const expected = sign(`${value}.${expiresAtRaw}`);
   const expectedBuf = Buffer.from(expected, "hex");
   const actualBuf = Buffer.from(signature, "hex");
   if (expectedBuf.length !== actualBuf.length) return false;
