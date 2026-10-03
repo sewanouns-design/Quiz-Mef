@@ -8,8 +8,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { quizId: string } }
+  { params: paramsPromise }: { params: Promise<{ quizId: string }> }
 ) {
+  const params = await paramsPromise;
   if (!isAdminRequestAuthenticated(request)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }

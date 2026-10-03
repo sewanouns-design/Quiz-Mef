@@ -48,8 +48,8 @@ export function isValidSessionValue(cookieValue: string | undefined): boolean {
 }
 
 /** À utiliser dans les Server Components / route handlers ayant accès à next/headers. */
-export function isAdminAuthenticated(): boolean {
-  const cookieStore = cookies();
+export async function isAdminAuthenticated(): Promise<boolean> {
+  const cookieStore = await cookies();
   const cookie = cookieStore.get(ADMIN_COOKIE_NAME);
   return isValidSessionValue(cookie?.value);
 }

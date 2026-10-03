@@ -6,8 +6,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { participantId: string } }
+  { params: paramsPromise }: { params: Promise<{ participantId: string }> }
 ) {
+  const params = await paramsPromise;
   if (!isAdminRequestAuthenticated(request)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
