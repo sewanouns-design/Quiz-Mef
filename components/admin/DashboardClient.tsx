@@ -63,34 +63,19 @@ export default function DashboardClient() {
   return (
     <main className="min-h-screen bg-gray-50 pb-16">
       <header className="border-b border-gray-200 bg-navy">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-2 text-white">
             <span className="text-2xl">⁉️</span>
             <span className="font-bold">Quiz Biblique — Admin</span>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleBackup}
-              disabled={backingUp}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-navy transition-opacity hover:opacity-90 disabled:opacity-60"
-            >
-              {backingUp ? "Sauvegarde…" : "💾 Sauvegarder toutes les données"}
-            </button>
-            <button
-              onClick={handleLogout}
-              className="rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
-            >
-              Déconnexion
-            </button>
-          </div>
+          <button
+            onClick={handleLogout}
+            className="rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
+          >
+            Déconnexion
+          </button>
         </div>
       </header>
-
-      {backupError && (
-        <div className="bg-red-50 px-4 py-2 text-center text-sm text-red-700" role="alert">
-          {backupError}
-        </div>
-      )}
 
       <div className="sticky top-0 z-10 border-b border-gray-200 bg-white shadow-sm">
         <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4 sm:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -119,6 +104,21 @@ export default function DashboardClient() {
           {activeTab === "results" && <ResultsTab />}
           {activeTab === "leaderboard" && <LeaderboardTab />}
           {activeTab === "settings" && <SettingsTab />}
+        </div>
+
+        <div className="mt-10 flex flex-col items-center gap-1 border-t border-gray-200 pt-4">
+          <button
+            onClick={handleBackup}
+            disabled={backingUp}
+            className="rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-60"
+          >
+            {backingUp ? "Sauvegarde…" : "💾 Sauvegarde"}
+          </button>
+          {backupError && (
+            <p className="text-xs text-red-700" role="alert">
+              {backupError}
+            </p>
+          )}
         </div>
       </div>
     </main>
