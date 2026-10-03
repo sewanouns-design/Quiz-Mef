@@ -40,10 +40,12 @@ export default function HomeStepsTemplate({ settings, activeQuiz, stats }: Props
 
   return (
     <main
-      className={`min-h-screen px-6 py-16 ${ALL_HOME_FONT_VARIABLES}`}
+      className={`site-bg min-h-screen px-6 py-16 ${ALL_HOME_FONT_VARIABLES}`}
       style={{
         fontFamily: resolveFontFamily(settings.font_family),
         backgroundColor: settings.color_background,
+        ["--bg-primary" as string]: settings.color_primary,
+        ["--bg-accent" as string]: settings.color_accent,
       }}
     >
       <div className="mx-auto w-full max-w-7xl lg:grid lg:grid-cols-[1fr_min(42rem,100%)_1fr] lg:items-start lg:gap-6">

@@ -22,7 +22,8 @@ export default function HomeCardTemplate({ settings, activeQuiz, stats }: Props)
       className={`flex min-h-screen items-center justify-center px-6 py-16 ${ALL_HOME_FONT_VARIABLES}`}
       style={{
         fontFamily: resolveFontFamily(settings.font_family),
-        background: `linear-gradient(160deg, ${primary}, ${primaryDark})`,
+        backgroundImage: `radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1.6px), radial-gradient(45rem 32rem at 100% 100%, ${accent}33, transparent 70%), linear-gradient(160deg, ${primary}, ${primaryDark})`,
+        backgroundSize: "22px 22px, auto, auto",
       }}
     >
       <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
