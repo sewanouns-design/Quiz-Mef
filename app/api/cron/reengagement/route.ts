@@ -18,7 +18,13 @@ const SITE_URL = "https://quiz.mefzogbadje.org";
  * d'un coup après une longue absence.
  */
 export async function GET(request: NextRequest) {
+  // En production, le secret est obligatoire : sans lui, n'importe qui
+  // pourrait déclencher l'envoi d'e-mails et de notifications. En local, on
+  // l'ignore s'il n'est pas défini pour pouvoir tester la route à la main.
   const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret && process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "CRON_SECRET non configuré" }, { status: 500 });
+  }
   if (cronSecret) {
     const auth = request.headers.get("authorization");
     if (auth !== `Bearer ${cronSecret}`) {
