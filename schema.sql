@@ -30,7 +30,7 @@ create index if not exists idx_participants_address on participants (address);
 create table if not exists daily_quizzes (
   id uuid primary key default gen_random_uuid(),
   title text not null,
-  lesson_date date not null unique,
+  lesson_date date not null,
   is_active boolean default false,
   duration_seconds int,
   -- 'overview' : toutes les questions révélées d'un coup au clic "Commencer".
@@ -41,7 +41,12 @@ create table if not exists daily_quizzes (
   -- (de n'importe quelle catégorie) peuvent être actifs en même temps —
   -- activer un quiz ne désactive plus automatiquement les autres.
   category text not null default 'daily' check (category in ('daily', 'weekly')),
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  -- Unicité par date ET catégorie (pas juste par date) : un quiz du jour et
+  -- un quiz hebdo peuvent partager la même date (ex. le récap de la semaine
+  -- publié le même jour que la leçon du jour), seuls deux quiz de la MÊME
+  -- catégorie ne peuvent pas partager une date.
+  constraint daily_quizzes_lesson_date_category_key unique (lesson_date, category)
 );
 
 create index if not exists idx_daily_quizzes_is_active on daily_quizzes (is_active);
