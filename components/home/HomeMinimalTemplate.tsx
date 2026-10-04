@@ -3,7 +3,7 @@ import type { SiteSettings } from "@/lib/types";
 import { getRandomVerse } from "@/lib/verses";
 import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import DesktopSideDecoration from "./DesktopSideDecoration";
-import WeeklyQuizBanner from "./WeeklyQuizBanner";
+import WeeklyQuizPopup from "./WeeklyQuizPopup";
 import LogoIcon from "@/components/LogoIcon";
 
 interface Props {
@@ -50,7 +50,6 @@ export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz }
         </p>
 
         <div className="mt-10">
-          <WeeklyQuizBanner weeklyQuiz={weeklyQuiz} />
           {activeQuiz ? (
             <Link
               href="/quiz"
@@ -88,6 +87,7 @@ export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz }
           mirrored
         />
       </div>
+      <WeeklyQuizPopup weeklyQuiz={weeklyQuiz} />
     </main>
   );
 }

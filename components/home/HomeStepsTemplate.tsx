@@ -3,7 +3,7 @@ import type { SiteSettings } from "@/lib/types";
 import { getRandomVerse } from "@/lib/verses";
 import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import DesktopSideDecoration from "./DesktopSideDecoration";
-import WeeklyQuizBanner from "./WeeklyQuizBanner";
+import WeeklyQuizPopup from "./WeeklyQuizPopup";
 import LogoIcon from "@/components/LogoIcon";
 
 interface Props {
@@ -73,7 +73,6 @@ export default function HomeStepsTemplate({ settings, activeQuiz, weeklyQuiz, st
           </p>
 
           <div className="mx-auto mt-10 max-w-md">
-            <WeeklyQuizBanner weeklyQuiz={weeklyQuiz} />
             {activeQuiz ? (
               <div className="card">
                 <p
@@ -173,6 +172,7 @@ export default function HomeStepsTemplate({ settings, activeQuiz, weeklyQuiz, st
           mirrored
         />
       </div>
+      <WeeklyQuizPopup weeklyQuiz={weeklyQuiz} />
     </main>
   );
 }

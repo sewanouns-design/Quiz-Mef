@@ -3,7 +3,7 @@ import type { SiteSettings } from "@/lib/types";
 import { getRandomVerse } from "@/lib/verses";
 import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import LogoIcon from "@/components/LogoIcon";
-import WeeklyQuizBanner from "./WeeklyQuizBanner";
+import WeeklyQuizPopup from "./WeeklyQuizPopup";
 
 interface Props {
   settings: SiteSettings;
@@ -44,7 +44,6 @@ export default function HomeCardTemplate({ settings, activeQuiz, weeklyQuiz, sta
           </p>
 
           <div className="mt-8">
-            <WeeklyQuizBanner weeklyQuiz={weeklyQuiz} />
             {activeQuiz ? (
               <>
                 <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
@@ -108,6 +107,7 @@ export default function HomeCardTemplate({ settings, activeQuiz, weeklyQuiz, sta
       >
         Espace admin
       </Link>
+      <WeeklyQuizPopup weeklyQuiz={weeklyQuiz} />
     </main>
   );
 }
