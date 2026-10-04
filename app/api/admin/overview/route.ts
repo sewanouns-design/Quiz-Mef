@@ -74,7 +74,11 @@ export async function GET(request: NextRequest) {
     quizzesQuery,
     lessonQuestionsQuery,
     submissionsQuery,
-    supabase.from("daily_quizzes").select("title").eq("is_active", true).maybeSingle(),
+    supabase
+      .from("daily_quizzes")
+      .select("title")
+      .eq("is_active", true)
+      .order("lesson_date", { ascending: false }),
     recentSubmissionsQuery.order("submitted_at", { ascending: false }).limit(15),
     recentActivityQuery.order("created_at", { ascending: false }).limit(15),
   ]);
@@ -139,7 +143,10 @@ export async function GET(request: NextRequest) {
     passedCount,
     averageScorePercent,
     lessonQuestionsCount: lessonQuestionsCount.count ?? 0,
-    activeQuizTitle: activeQuiz.data?.title ?? null,
+    // Plusieurs quiz peuvent être actifs : on les affiche tous, séparés par « · ».
+    activeQuizTitle: activeQuiz.data?.length
+      ? activeQuiz.data.map((q) => q.title).join(" · ")
+      : null,
     activity,
   });
 }

@@ -1,17 +1,18 @@
 import Link from "next/link";
-import type { SiteSettings } from "@/lib/types";
+import type { ActiveQuiz, SiteSettings } from "@/lib/types";
 import { getRandomVerse } from "@/lib/verses";
 import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import DesktopSideDecoration from "./DesktopSideDecoration";
 import LogoIcon from "@/components/LogoIcon";
+import ActiveQuizzes from "./ActiveQuizzes";
 
 interface Props {
   settings: SiteSettings;
-  activeQuiz: { id: string; title: string; lesson_date: string } | null;
+  activeQuizzes: ActiveQuiz[];
   stats: { participants: number; submissions: number; quizzes: number };
 }
 
-export default function HomeMinimalTemplate({ settings, activeQuiz }: Props) {
+export default function HomeMinimalTemplate({ settings, activeQuizzes }: Props) {
   const primary = settings.color_primary;
   const accentDark = settings.color_accent_dark;
   const verse = getRandomVerse();
@@ -50,19 +51,13 @@ export default function HomeMinimalTemplate({ settings, activeQuiz }: Props) {
         </p>
 
         <div className="mt-10">
-          {activeQuiz ? (
-            <Link
-              href="/quiz"
-              className="inline-flex w-full items-center justify-center rounded-full px-8 py-4 font-semibold text-white shadow-md transition-opacity hover:opacity-90"
-              style={{ backgroundColor: settings.color_accent }}
-            >
-              Commencer le quiz
-            </Link>
-          ) : (
-            <p className="text-sm text-gray-400">
-              Aucun quiz disponible aujourd&apos;hui. Reviens bientôt.
-            </p>
-          )}
+          <ActiveQuizzes
+            quizzes={activeQuizzes}
+            primary={primary}
+            accent={settings.color_accent}
+            accentDark={accentDark}
+            variant="minimal"
+          />
         </div>
 
         <p className="mt-14 text-xs italic text-gray-400">« {verse.text} »</p>

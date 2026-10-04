@@ -1,16 +1,17 @@
 import Link from "next/link";
-import type { SiteSettings } from "@/lib/types";
+import type { ActiveQuiz, SiteSettings } from "@/lib/types";
 import { getRandomVerse } from "@/lib/verses";
 import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import LogoIcon from "@/components/LogoIcon";
+import ActiveQuizzes from "./ActiveQuizzes";
 
 interface Props {
   settings: SiteSettings;
-  activeQuiz: { id: string; title: string; lesson_date: string } | null;
+  activeQuizzes: ActiveQuiz[];
   stats: { participants: number; submissions: number; quizzes: number };
 }
 
-export default function HomeCardTemplate({ settings, activeQuiz, stats }: Props) {
+export default function HomeCardTemplate({ settings, activeQuizzes, stats }: Props) {
   const primary = settings.color_primary;
   const primaryDark = settings.color_primary_dark;
   const accent = settings.color_accent;
@@ -43,27 +44,13 @@ export default function HomeCardTemplate({ settings, activeQuiz, stats }: Props)
           </p>
 
           <div className="mt-8">
-            {activeQuiz ? (
-              <>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  Quiz du jour
-                </p>
-                <p className="mb-5 text-lg font-bold" style={{ color: primary }}>
-                  {activeQuiz.title}
-                </p>
-                <Link
-                  href="/quiz"
-                  className="inline-flex w-full items-center justify-center rounded-xl px-6 py-3 font-semibold text-white shadow-md transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: accent }}
-                >
-                  Commencer le quiz
-                </Link>
-              </>
-            ) : (
-              <p className="text-sm text-gray-400">
-                Aucun quiz disponible aujourd&apos;hui. Reviens bientôt.
-              </p>
-            )}
+            <ActiveQuizzes
+              quizzes={activeQuizzes}
+              primary={primary}
+              accent={accent}
+              accentDark={settings.color_accent_dark}
+              variant="minimal"
+            />
           </div>
 
           {settings.show_stats && stats.submissions > 0 && (

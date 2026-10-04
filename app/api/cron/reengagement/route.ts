@@ -38,6 +38,12 @@ export async function GET(request: NextRequest) {
     .from("daily_quizzes")
     .select("id")
     .eq("is_active", true)
+    // Plusieurs quiz peuvent être actifs : la relance pointe vers le quiz
+    // quotidien le plus récent (« daily » < « weekly » à l'ordre alphabétique),
+    // à défaut vers le quiz hebdomadaire.
+    .order("quiz_type", { ascending: true })
+    .order("lesson_date", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (activeQuizError) {

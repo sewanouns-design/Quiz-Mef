@@ -1,21 +1,13 @@
 import { NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { fetchActiveQuizzes } from "@/lib/active-quizzes";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Liste des quiz actifs. `quiz` (le premier) est conservé pour les anciens
+ * clients ; la page d'identification utilise `quizzes`.
+ */
 export async function GET() {
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("daily_quizzes")
-    .select("id, title, lesson_date")
-    .eq("is_active", true)
-    .order("lesson_date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ quiz: data });
+  const quizzes = await fetchActiveQuizzes();
+  return NextResponse.json({ quizzes, quiz: quizzes[0] ?? null });
 }

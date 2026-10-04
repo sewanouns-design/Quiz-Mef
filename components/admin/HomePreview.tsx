@@ -4,13 +4,22 @@ import { useState } from "react";
 import HomeStepsTemplate from "@/components/home/HomeStepsTemplate";
 import HomeMinimalTemplate from "@/components/home/HomeMinimalTemplate";
 import HomeCardTemplate from "@/components/home/HomeCardTemplate";
-import type { SiteSettings } from "@/lib/types";
+import type { ActiveQuiz, SiteSettings } from "@/lib/types";
 
-const PREVIEW_QUIZ = {
-  id: "preview",
-  title: "Leçon du dimanche — Exemple",
-  lesson_date: new Date().toISOString(),
-};
+const PREVIEW_QUIZZES: ActiveQuiz[] = [
+  {
+    id: "preview-weekly",
+    title: "Récapitulatif de la semaine — Exemple",
+    lesson_date: new Date().toISOString(),
+    quiz_type: "weekly",
+  },
+  {
+    id: "preview-daily",
+    title: "Leçon du dimanche — Exemple",
+    lesson_date: new Date().toISOString(),
+    quiz_type: "daily",
+  },
+];
 
 const PREVIEW_STATS = { participants: 128, submissions: 94, quizzes: 12 };
 
@@ -68,7 +77,7 @@ export default function HomePreview({ settings }: { settings: SiteSettings }) {
       >
         <div className="h-full w-full overflow-y-auto">
           <div style={{ width, transform: `scale(${scale})`, transformOrigin: "top left" }}>
-            <Template settings={settings} activeQuiz={PREVIEW_QUIZ} stats={PREVIEW_STATS} />
+            <Template settings={settings} activeQuizzes={PREVIEW_QUIZZES} stats={PREVIEW_STATS} />
           </div>
         </div>
       </div>

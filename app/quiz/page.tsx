@@ -10,6 +10,7 @@ import {
 import { isValidEmail } from "@/lib/validation";
 import { isValidWhatsappValue } from "@/lib/phone-countries";
 import PhoneInput from "@/components/PhoneInput";
+import type { ActiveQuiz } from "@/lib/types";
 
 export default function QuizIdentificationPage() {
   const router = useRouter();
@@ -23,10 +24,15 @@ export default function QuizIdentificationPage() {
   const [checkingQuiz, setCheckingQuiz] = useState(true);
   const [error, setError] = useState("");
   const [phoneInputKey, setPhoneInputKey] = useState("initial");
+  // Quiz choisi depuis la page d'accueil (?quiz=<id>), s'il y en a un.
+  const [requestedQuizId, setRequestedQuizId] = useState<string | null>(null);
+  // Renseigné quand plusieurs quiz sont actifs et qu'aucun n'a été choisi.
+  const [choices, setChoices] = useState<ActiveQuiz[] | null>(null);
 
   useEffect(() => {
     const key = getOrCreateDeviceKey();
     setDeviceKey(key);
+    setRequestedQuizId(new URLSearchParams(window.location.search).get("quiz"));
 
     const stored = getStoredParticipant();
     if (stored) {
@@ -55,7 +61,7 @@ export default function QuizIdentificationPage() {
     fetch("/api/quiz/active", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (!data?.quiz) {
+        if (!data?.quizzes?.length) {
           setError("Aucun quiz disponible aujourd'hui. Reviens bientôt.");
         }
       })
@@ -100,17 +106,66 @@ export default function QuizIdentificationPage() {
       const quizRes = await fetch("/api/quiz/active", { cache: "no-store" });
       const quizData = await quizRes.json();
 
-      if (!quizData?.quiz) {
+      const available: ActiveQuiz[] = quizData?.quizzes ?? [];
+
+      if (available.length === 0) {
         setError("Aucun quiz disponible aujourd'hui. Reviens bientôt.");
         setLoading(false);
         return;
       }
 
-      router.push(`/quiz/${quizData.quiz.id}`);
+      // Quiz choisi depuis l'accueil (s'il est toujours actif), sinon le
+      // seul quiz actif ; avec plusieurs quiz actifs, le participant choisit.
+      const target =
+        available.find((q) => q.id === requestedQuizId) ??
+        (available.length === 1 ? available[0] : null);
+
+      if (target) {
+        router.push(`/quiz/${target.id}`);
+        return;
+      }
+
+      setChoices(available);
+      setLoading(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
       setLoading(false);
     }
+  }
+
+  if (choices) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md">
+          <div className="mb-8 text-center">
+            <h1 className="text-2xl font-bold text-navy">Choisis ton quiz</h1>
+            <p className="mt-1 text-gray-600">Plusieurs quiz sont disponibles</p>
+          </div>
+          <div className="space-y-3">
+            {choices.map((quiz) => (
+              <button
+                key={quiz.id}
+                type="button"
+                onClick={() => router.push(`/quiz/${quiz.id}`)}
+                className="card flex w-full items-center justify-between gap-3 text-left transition-colors hover:bg-gray-50"
+              >
+                <span className="min-w-0">
+                  {quiz.quiz_type === "weekly" && (
+                    <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-accent">
+                      ⭐ Quiz de la semaine
+                    </span>
+                  )}
+                  <span className="block font-semibold text-navy">{quiz.title}</span>
+                </span>
+                <span aria-hidden="true" className="text-xl text-accent">
+                  →
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (

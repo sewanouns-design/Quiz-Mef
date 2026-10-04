@@ -30,8 +30,12 @@ create index if not exists idx_participants_address on participants (address);
 create table if not exists daily_quizzes (
   id uuid primary key default gen_random_uuid(),
   title text not null,
-  lesson_date date not null unique,
+  lesson_date date not null,
   is_active boolean default false,
+  -- 'daily' : quiz quotidien (leçon du jour).
+  -- 'weekly' : quiz hebdomadaire récapitulatif, mis en avant par une bannière
+  -- sur la page d'accueil. Plusieurs quiz peuvent être actifs en même temps.
+  quiz_type text not null default 'daily' check (quiz_type in ('daily', 'weekly')),
   duration_seconds int,
   -- 'overview' : toutes les questions révélées d'un coup au clic "Commencer".
   -- 'sequential' : une question à la fois, impossible de voir la suite à l'avance.
@@ -40,6 +44,18 @@ create table if not exists daily_quizzes (
 );
 
 create index if not exists idx_daily_quizzes_is_active on daily_quizzes (is_active);
+
+-- Un quiz quotidien ET un quiz hebdomadaire peuvent partager la même date.
+create unique index if not exists daily_quizzes_lesson_date_type_key
+  on daily_quizzes (lesson_date, quiz_type);
+
+-- Migration pour une base existante (idempotente) :
+alter table daily_quizzes
+  add column if not exists quiz_type text not null default 'daily'
+  check (quiz_type in ('daily', 'weekly'));
+alter table daily_quizzes drop constraint if exists daily_quizzes_lesson_date_key;
+create unique index if not exists daily_quizzes_lesson_date_type_key
+  on daily_quizzes (lesson_date, quiz_type);
 
 -- ------------------------------------------------------------
 -- Questions

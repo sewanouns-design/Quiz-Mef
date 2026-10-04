@@ -10,6 +10,7 @@ interface QuizListItem {
   title: string;
   lesson_date: string;
   is_active: boolean;
+  quiz_type: "daily" | "weekly";
   duration_seconds: number | null;
   created_at: string;
 }
@@ -245,6 +246,7 @@ export default function QuizTab() {
   const [durationMinutes, setDurationMinutes] = useState("");
   const [durationSecondsPart, setDurationSecondsPart] = useState("");
   const [quizMode, setQuizMode] = useState<"overview" | "sequential">("overview");
+  const [quizType, setQuizType] = useState<"daily" | "weekly">("daily");
   const [questionsJson, setQuestionsJson] = useState("[]");
   const [editorMode, setEditorMode] = useState<"visual" | "json">("visual");
   const [submitting, setSubmitting] = useState(false);
@@ -322,6 +324,7 @@ export default function QuizTab() {
     setDurationMinutes("");
     setDurationSecondsPart("");
     setQuizMode("overview");
+    setQuizType("daily");
     setQuestionsJson("[]");
     setEditorMode("visual");
     setError("");
@@ -349,6 +352,7 @@ export default function QuizTab() {
       setLessonDate(data.quiz.lesson_date);
       setIsActive(data.quiz.is_active);
       setQuizMode(data.quiz.quiz_mode === "sequential" ? "sequential" : "overview");
+      setQuizType(data.quiz.quiz_type === "weekly" ? "weekly" : "daily");
       const totalSeconds: number = data.quiz.duration_seconds ?? 0;
       if (totalSeconds > 0) {
         setDurationHours(String(Math.floor(totalSeconds / 3600)));
@@ -419,6 +423,7 @@ export default function QuizTab() {
             questions,
             durationSeconds: parsedDuration,
             quizMode,
+            quizType,
           }),
         }
       );
@@ -680,6 +685,35 @@ export default function QuizTab() {
             </div>
 
             <div>
+              <label className="label-field">Type de quiz</label>
+              <div className="inline-flex rounded-lg border border-gray-300 bg-white p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setQuizType("daily")}
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    quizType === "daily" ? "bg-navy text-white" : "text-gray-500"
+                  }`}
+                >
+                  Quotidien
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuizType("weekly")}
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    quizType === "weekly" ? "bg-navy text-white" : "text-gray-500"
+                  }`}
+                >
+                  ⭐ Hebdomadaire
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-gray-400">
+                {quizType === "weekly"
+                  ? "Récapitulatif de la semaine : mis en avant par une grande bannière sur la page d'accueil. Les autres quiz actifs restent disponibles."
+                  : "Quiz de la leçon du jour, listé sur la page d'accueil. Plusieurs quiz peuvent être actifs en même temps."}
+              </p>
+            </div>
+
+            <div>
               <label className="label-field">Mode d&apos;affichage des questions</label>
               <div className="inline-flex rounded-lg border border-gray-300 bg-white p-0.5">
                 <button
@@ -715,7 +749,9 @@ export default function QuizTab() {
                 onChange={(e) => setIsActive(e.target.checked)}
                 className="h-4 w-4 rounded border-gray-300"
               />
-              {isEdit ? "Actif (quiz du jour)" : "Activer immédiatement (devient le quiz du jour)"}
+              {isEdit
+                ? "Actif (visible sur la page d'accueil)"
+                : "Activer immédiatement (visible sur la page d'accueil)"}
             </label>
 
             <div>
@@ -854,7 +890,14 @@ export default function QuizTab() {
               <tbody>
                 {quizzes.map((quiz) => (
                   <tr key={quiz.id} className="border-b border-gray-100">
-                    <td className="py-3 pr-4 font-medium text-navy">{quiz.title}</td>
+                    <td className="py-3 pr-4 font-medium text-navy">
+                      {quiz.quiz_type === "weekly" && (
+                        <span className="mr-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                          ⭐ Hebdo
+                        </span>
+                      )}
+                      {quiz.title}
+                    </td>
                     <td className="py-3 pr-4 text-gray-600">
                       {new Date(quiz.lesson_date).toLocaleDateString("fr-FR")}
                     </td>
@@ -885,7 +928,7 @@ export default function QuizTab() {
                             onClick={() => handleDeactivate(quiz.id)}
                             disabled={deactivatingQuizId === quiz.id}
                             className="text-sm font-semibold text-gray-500 hover:underline disabled:opacity-50"
-                            title="Retire ce quiz du statut « quiz du jour » sans en activer un autre"
+                            title="Retire ce quiz de la page d'accueil (les autres quiz actifs ne changent pas)"
                           >
                             {deactivatingQuizId === quiz.id ? "Désactivation..." : "Désactiver"}
                           </button>

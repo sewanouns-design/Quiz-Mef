@@ -17,7 +17,8 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const { title, lessonDate, isActive, questions, durationSeconds, quizMode } = body ?? {};
+  const { title, lessonDate, isActive, questions, durationSeconds, quizMode, quizType } =
+    body ?? {};
 
   if (!title || !lessonDate) {
     return NextResponse.json(
@@ -34,12 +35,9 @@ export async function POST(request: NextRequest) {
   const parsedDuration =
     typeof durationSeconds === "number" && durationSeconds > 0 ? durationSeconds : null;
   const parsedMode = quizMode === "sequential" ? "sequential" : "overview";
+  const parsedType = quizType === "weekly" ? "weekly" : "daily";
 
   const supabase = getSupabaseAdmin();
-
-  if (isActive) {
-    await supabase.from("daily_quizzes").update({ is_active: false }).eq("is_active", true);
-  }
 
   const { data: quiz, error: quizError } = await supabase
     .from("daily_quizzes")
@@ -49,6 +47,7 @@ export async function POST(request: NextRequest) {
       is_active: Boolean(isActive),
       duration_seconds: parsedDuration,
       quiz_mode: parsedMode,
+      quiz_type: parsedType,
     })
     .select()
     .single();

@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getSiteSettings } from "@/lib/site-settings";
+import { fetchActiveQuizzes } from "@/lib/active-quizzes";
 import HomeStepsTemplate from "@/components/home/HomeStepsTemplate";
 import HomeMinimalTemplate from "@/components/home/HomeMinimalTemplate";
 import HomeCardTemplate from "@/components/home/HomeCardTemplate";
@@ -20,26 +21,10 @@ const getCachedSiteSettings = unstable_cache(getSiteSettings, ["home-site-settin
   tags: ["home"],
 });
 
-const getCachedActiveQuiz = unstable_cache(
-  async () => {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("daily_quizzes")
-      .select("id, title, lesson_date")
-      .eq("is_active", true)
-      .order("lesson_date", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) {
-      console.error("Erreur récupération quiz actif :", error.message);
-      return null;
-    }
-    return data;
-  },
-  ["home-active-quiz"],
-  { revalidate: 300, tags: ["home"] }
-);
+const getCachedActiveQuizzes = unstable_cache(fetchActiveQuizzes, ["home-active-quizzes"], {
+  revalidate: 300,
+  tags: ["home"],
+});
 
 const getCachedStats = unstable_cache(
   async () => {
@@ -66,13 +51,13 @@ const getCachedStats = unstable_cache(
 );
 
 export default async function HomePage() {
-  const [settings, activeQuiz, stats] = await Promise.all([
+  const [settings, activeQuizzes, stats] = await Promise.all([
     getCachedSiteSettings(),
-    getCachedActiveQuiz(),
+    getCachedActiveQuizzes(),
     getCachedStats(),
   ]);
 
-  const props = { settings, activeQuiz, stats };
+  const props = { settings, activeQuizzes, stats };
 
   if (settings.template === "minimal") {
     return <HomeMinimalTemplate {...props} />;
