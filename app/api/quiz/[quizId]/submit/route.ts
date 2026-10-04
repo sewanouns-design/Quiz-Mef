@@ -222,7 +222,6 @@ export async function POST(
         to: participant.email,
         participantName: participant.name,
         quizTitle: quiz.title,
-        lessonDate: quiz.lesson_date,
         score,
         maxScore,
         answers: visibleAnswers,

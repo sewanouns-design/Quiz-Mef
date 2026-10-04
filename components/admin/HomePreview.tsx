@@ -9,7 +9,7 @@ import type { SiteSettings } from "@/lib/types";
 const PREVIEW_QUIZ = {
   id: "preview",
   title: "Leçon du dimanche — Exemple",
-  lesson_date: new Date().toISOString(),
+  subtitle: "Genèse 6-9 : Noé et le déluge",
 };
 
 const PREVIEW_STATS = { participants: 128, submissions: 94, quizzes: 12 };

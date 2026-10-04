@@ -9,9 +9,10 @@ export type QuizCategory = "daily" | "weekly";
 export interface DailyQuiz {
   id: string;
   title: string;
-  lesson_date: string;
+  subtitle: string | null;
   is_active: boolean;
   duration_seconds: number | null;
+  expires_at: string | null;
   quiz_mode: QuizMode;
   category: QuizCategory;
   created_at: string;

@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 interface QuizOption {
   id: string;
   title: string;
-  lesson_date: string;
 }
 
 export default function QuizSelect({
@@ -63,7 +62,7 @@ export default function QuizSelect({
     >
       {quizzes.map((quiz) => (
         <option key={quiz.id} value={quiz.id}>
-          {quiz.title} — {new Date(quiz.lesson_date).toLocaleDateString("fr-FR")}
+          {quiz.title}
         </option>
       ))}
     </select>

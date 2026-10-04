@@ -20,7 +20,7 @@ export async function GET(
   ] = await Promise.all([
     supabase
       .from("daily_quizzes")
-      .select("id, title, lesson_date, is_active, duration_seconds, quiz_mode")
+      .select("id, title, subtitle, is_active, duration_seconds, quiz_mode")
       .eq("id", params.quizId)
       .maybeSingle(),
     supabase

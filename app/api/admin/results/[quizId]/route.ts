@@ -16,7 +16,7 @@ export async function GET(
 
   const { data: quiz, error: quizError } = await supabase
     .from("daily_quizzes")
-    .select("id, title, lesson_date")
+    .select("id, title")
     .eq("id", params.quizId)
     .maybeSingle();
 

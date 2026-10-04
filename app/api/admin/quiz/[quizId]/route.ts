@@ -57,16 +57,22 @@ export async function PUT(
   }
 
   const body = await request.json().catch(() => ({}));
-  const { title, lessonDate, questions, durationSeconds, quizMode, category } = body ?? {};
+  const { title, subtitle, questions, durationSeconds, expiresAt, quizMode, category } =
+    body ?? {};
 
   const supabase = getSupabaseAdmin();
 
   const updates: Record<string, unknown> = {};
   if (title) updates.title = title;
-  if (lessonDate) updates.lesson_date = lessonDate;
+  if (subtitle !== undefined) {
+    updates.subtitle = typeof subtitle === "string" && subtitle.trim() ? subtitle.trim() : null;
+  }
   if (durationSeconds !== undefined) {
     updates.duration_seconds =
       typeof durationSeconds === "number" && durationSeconds > 0 ? durationSeconds : null;
+  }
+  if (expiresAt !== undefined) {
+    updates.expires_at = typeof expiresAt === "string" && expiresAt ? expiresAt : null;
   }
   if (quizMode !== undefined) {
     updates.quiz_mode = quizMode === "sequential" ? "sequential" : "overview";

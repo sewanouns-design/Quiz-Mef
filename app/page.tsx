@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getSiteSettings } from "@/lib/site-settings";
+import { notExpiredClause } from "@/lib/quiz-availability";
 import HomeStepsTemplate from "@/components/home/HomeStepsTemplate";
 import HomeMinimalTemplate from "@/components/home/HomeMinimalTemplate";
 import HomeCardTemplate from "@/components/home/HomeCardTemplate";
@@ -29,9 +30,10 @@ const getCachedActiveQuizzes = unstable_cache(
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("daily_quizzes")
-      .select("id, title, lesson_date, category")
+      .select("id, title, subtitle, category")
       .eq("is_active", true)
-      .order("lesson_date", { ascending: false });
+      .or(notExpiredClause())
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Erreur récupération quiz actifs :", error.message);

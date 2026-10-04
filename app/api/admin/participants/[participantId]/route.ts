@@ -29,7 +29,7 @@ export async function GET(
 
   const { data: submissions, error: submissionsError } = await supabase
     .from("daily_submissions")
-    .select("id, score, max_score, submitted_at, quiz:daily_quizzes(id, title, lesson_date)")
+    .select("id, score, max_score, submitted_at, quiz:daily_quizzes(id, title)")
     .eq("participant_id", params.participantId)
     .order("submitted_at", { ascending: false });
 

@@ -17,14 +17,11 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const { title, lessonDate, isActive, questions, durationSeconds, quizMode, category } =
+  const { title, subtitle, isActive, questions, durationSeconds, expiresAt, quizMode, category } =
     body ?? {};
 
-  if (!title || !lessonDate) {
-    return NextResponse.json(
-      { error: "title et lessonDate sont requis" },
-      { status: 400 }
-    );
+  if (!title) {
+    return NextResponse.json({ error: "Le titre est requis" }, { status: 400 });
   }
 
   const validation = validateQuizQuestions(questions);
@@ -36,6 +33,8 @@ export async function POST(request: NextRequest) {
     typeof durationSeconds === "number" && durationSeconds > 0 ? durationSeconds : null;
   const parsedMode = quizMode === "sequential" ? "sequential" : "overview";
   const parsedCategory = category === "weekly" ? "weekly" : "daily";
+  const parsedSubtitle = typeof subtitle === "string" && subtitle.trim() ? subtitle.trim() : null;
+  const parsedExpiresAt = typeof expiresAt === "string" && expiresAt ? expiresAt : null;
 
   const supabase = getSupabaseAdmin();
 
@@ -45,9 +44,10 @@ export async function POST(request: NextRequest) {
     .from("daily_quizzes")
     .insert({
       title,
-      lesson_date: lessonDate,
+      subtitle: parsedSubtitle,
       is_active: Boolean(isActive),
       duration_seconds: parsedDuration,
+      expires_at: parsedExpiresAt,
       quiz_mode: parsedMode,
       category: parsedCategory,
     })

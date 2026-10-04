@@ -7,8 +7,8 @@ import WeeklyQuizPopup from "./WeeklyQuizPopup";
 
 interface Props {
   settings: SiteSettings;
-  activeQuiz: { id: string; title: string; lesson_date: string } | null;
-  weeklyQuiz: { id: string; title: string } | null;
+  activeQuiz: { id: string; title: string; subtitle: string | null } | null;
+  weeklyQuiz: { id: string; title: string; subtitle: string | null } | null;
   stats: { participants: number; submissions: number; quizzes: number };
 }
 
@@ -49,12 +49,15 @@ export default function HomeCardTemplate({ settings, activeQuiz, weeklyQuiz, sta
                 <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Quiz du jour
                 </p>
-                <p className="mb-5 text-lg font-bold" style={{ color: primary }}>
+                <p className="text-lg font-bold" style={{ color: primary }}>
                   {activeQuiz.title}
                 </p>
+                {activeQuiz.subtitle && (
+                  <p className="mt-1 text-sm text-gray-500">{activeQuiz.subtitle}</p>
+                )}
                 <Link
                   href="/quiz"
-                  className="inline-flex w-full items-center justify-center rounded-xl px-6 py-3 font-semibold text-white shadow-md transition-opacity hover:opacity-90"
+                  className="mt-5 inline-flex w-full items-center justify-center rounded-xl px-6 py-3 font-semibold text-white shadow-md transition-opacity hover:opacity-90"
                   style={{ backgroundColor: accent }}
                 >
                   Commencer le quiz

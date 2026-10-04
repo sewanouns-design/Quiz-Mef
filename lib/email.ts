@@ -86,7 +86,6 @@ function noticeBox(html: string, tone: { bg: string; border: string; text: strin
 export function buildResultsEmailHtml(params: {
   participantName: string;
   quizTitle: string;
-  lessonDate: string;
   score: number;
   maxScore: number;
   answers: CorrectedAnswer[];
@@ -198,7 +197,6 @@ export async function sendResultsEmail(params: {
   to: string;
   participantName: string;
   quizTitle: string;
-  lessonDate: string;
   score: number;
   maxScore: number;
   answers: CorrectedAnswer[];
@@ -227,12 +225,6 @@ export async function sendResultsEmail(params: {
     },
   });
 
-  const formattedDate = new Date(params.lessonDate).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-
   const subjectPrefix = params.cancelled
     ? "[Test annulé] "
     : params.attemptNumber && params.attemptNumber > 1
@@ -241,7 +233,7 @@ export async function sendResultsEmail(params: {
   const result = await resend.emails.send({
     from,
     to: params.to,
-    subject: `${subjectPrefix}Tes résultats — Quiz Biblique du ${formattedDate}`,
+    subject: `${subjectPrefix}Tes résultats — ${params.quizTitle}`,
     html,
   });
 

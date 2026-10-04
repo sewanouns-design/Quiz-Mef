@@ -8,8 +8,8 @@ import LogoIcon from "@/components/LogoIcon";
 
 interface Props {
   settings: SiteSettings;
-  activeQuiz: { id: string; title: string; lesson_date: string } | null;
-  weeklyQuiz: { id: string; title: string } | null;
+  activeQuiz: { id: string; title: string; subtitle: string | null } | null;
+  weeklyQuiz: { id: string; title: string; subtitle: string | null } | null;
   stats: { participants: number; submissions: number; quizzes: number };
 }
 

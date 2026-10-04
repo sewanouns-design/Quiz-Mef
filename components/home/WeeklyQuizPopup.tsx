@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getStoredParticipant } from "@/lib/participant-storage";
 
 interface Props {
-  weeklyQuiz: { id: string; title: string } | null;
+  weeklyQuiz: { id: string; title: string; subtitle: string | null } | null;
 }
 
 /**
@@ -70,7 +70,7 @@ export default function WeeklyQuizPopup({ weeklyQuiz }: Props) {
         </p>
         <p className="mt-1 text-lg font-bold text-navy">{weeklyQuiz.title}</p>
         <p className="mt-2 text-sm text-gray-500">
-          Récapitule tout ce qu&apos;on a vu cette semaine.
+          {weeklyQuiz.subtitle || "Récapitule tout ce qu'on a vu cette semaine."}
         </p>
         <Link
           href={`/quiz?quiz=${weeklyQuiz.id}`}

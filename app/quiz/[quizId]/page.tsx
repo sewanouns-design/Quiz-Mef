@@ -14,7 +14,7 @@ interface QuizData {
   quiz: {
     id: string;
     title: string;
-    lesson_date: string;
+    subtitle: string | null;
     is_active: boolean;
     duration_seconds: number | null;
     quiz_mode: QuizMode;
@@ -517,13 +517,11 @@ export default function QuizPage() {
               )}
             </div>
           )}
-          <p className="text-sm font-semibold uppercase tracking-wide text-accent-dark">
-            {new Date(data.quiz.lesson_date).toLocaleDateString("fr-FR", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </p>
+          {data.quiz.subtitle && (
+            <p className="text-sm font-semibold uppercase tracking-wide text-accent-dark">
+              {data.quiz.subtitle}
+            </p>
+          )}
           <h1 className="mt-1 text-2xl font-bold text-navy sm:text-3xl">{data.quiz.title}</h1>
           {participantName && <p className="mt-2 text-gray-500">Bonjour, {participantName} !</p>}
           <p className="mt-4 text-sm text-gray-500">
@@ -576,13 +574,11 @@ export default function QuizPage() {
         )}
 
         <div className="mb-8 text-center">
-          <p className="text-sm font-semibold uppercase tracking-wide text-accent-dark">
-            {new Date(data.quiz.lesson_date).toLocaleDateString("fr-FR", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </p>
+          {data.quiz.subtitle && (
+            <p className="text-sm font-semibold uppercase tracking-wide text-accent-dark">
+              {data.quiz.subtitle}
+            </p>
+          )}
           <h1 className="mt-1 text-2xl font-bold text-navy sm:text-3xl">{data.quiz.title}</h1>
           <p className="mt-2 text-sm text-gray-500">
             {isSequential

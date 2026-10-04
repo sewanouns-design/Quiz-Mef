@@ -8,8 +8,8 @@ import LogoIcon from "@/components/LogoIcon";
 
 interface Props {
   settings: SiteSettings;
-  activeQuiz: { id: string; title: string; lesson_date: string } | null;
-  weeklyQuiz: { id: string; title: string } | null;
+  activeQuiz: { id: string; title: string; subtitle: string | null } | null;
+  weeklyQuiz: { id: string; title: string; subtitle: string | null } | null;
   stats: { participants: number; submissions: number; quizzes: number };
 }
 
@@ -81,12 +81,15 @@ export default function HomeStepsTemplate({ settings, activeQuiz, weeklyQuiz, st
                 >
                   Quiz du jour
                 </p>
-                <p className="mb-6 text-xl font-bold" style={{ color: primary }}>
+                <p className="text-xl font-bold" style={{ color: primary }}>
                   {activeQuiz.title}
                 </p>
+                {activeQuiz.subtitle && (
+                  <p className="mt-1 text-sm text-gray-500">{activeQuiz.subtitle}</p>
+                )}
                 <Link
                   href="/quiz"
-                  className="inline-flex w-full items-center justify-center rounded-xl px-6 py-3 font-semibold text-white transition-opacity hover:opacity-90"
+                  className="mt-6 inline-flex w-full items-center justify-center rounded-xl px-6 py-3 font-semibold text-white transition-opacity hover:opacity-90"
                   style={{ backgroundColor: settings.color_accent }}
                 >
                   Commencer le quiz

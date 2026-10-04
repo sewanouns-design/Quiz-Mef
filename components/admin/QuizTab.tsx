@@ -8,11 +8,29 @@ import { parseQuizQuestionsInput } from "@/lib/quiz-import-parser";
 interface QuizListItem {
   id: string;
   title: string;
-  lesson_date: string;
+  subtitle: string | null;
   is_active: boolean;
   duration_seconds: number | null;
+  expires_at: string | null;
   category: "daily" | "weekly";
   created_at: string;
+}
+
+function formatExpiry(expiresAt: string): string {
+  return new Date(expiresAt).toLocaleString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/** Convertit un ISO stocké en base vers la valeur attendue par un input datetime-local (heure locale, sans fuseau). */
+function toDatetimeLocalValue(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function formatDuration(totalSeconds: number): string {
@@ -240,7 +258,8 @@ export default function QuizTab() {
 
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
-  const [lessonDate, setLessonDate] = useState("");
+  const [subtitle, setSubtitle] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [durationHours, setDurationHours] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
@@ -318,7 +337,8 @@ export default function QuizTab() {
   function resetForm() {
     setEditingQuizId(null);
     setTitle("");
-    setLessonDate("");
+    setSubtitle("");
+    setExpiresAt("");
     setIsActive(true);
     setDurationHours("");
     setDurationMinutes("");
@@ -349,7 +369,8 @@ export default function QuizTab() {
       const data = await res.json();
       setEditingQuizId(quizId);
       setTitle(data.quiz.title);
-      setLessonDate(data.quiz.lesson_date);
+      setSubtitle(data.quiz.subtitle ?? "");
+      setExpiresAt(data.quiz.expires_at ? toDatetimeLocalValue(data.quiz.expires_at) : "");
       setIsActive(data.quiz.is_active);
       setQuizMode(data.quiz.quiz_mode === "sequential" ? "sequential" : "overview");
       setCategory(data.quiz.category === "weekly" ? "weekly" : "daily");
@@ -385,8 +406,8 @@ export default function QuizTab() {
       return;
     }
 
-    if (!title.trim() || !lessonDate) {
-      setError("Le titre et la date sont requis.");
+    if (!title.trim()) {
+      setError("Le titre est requis.");
       return;
     }
 
@@ -418,10 +439,11 @@ export default function QuizTab() {
           cache: "no-store",
           body: JSON.stringify({
             title,
-            lessonDate,
+            subtitle,
             isActive,
             questions,
             durationSeconds: parsedDuration,
+            expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
             quizMode,
             category,
           }),
@@ -559,7 +581,7 @@ export default function QuizTab() {
 
       const exportPayload = {
         title: data.quiz.title as string,
-        lessonDate: data.quiz.lesson_date as string,
+        subtitle: data.quiz.subtitle as string | null,
         durationSeconds: data.quiz.duration_seconds as number | null,
         questions,
       };
@@ -570,7 +592,13 @@ export default function QuizTab() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `quiz-${data.quiz.lesson_date}.json`;
+      const slug = (data.quiz.title as string)
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      link.download = `quiz-${slug || data.quiz.id}.json`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -620,17 +648,35 @@ export default function QuizTab() {
                 />
               </div>
               <div>
-                <label className="label-field" htmlFor="lessonDate">
-                  Date de la leçon
+                <label className="label-field" htmlFor="subtitle">
+                  Sous-titre (optionnel)
                 </label>
                 <input
-                  id="lessonDate"
-                  type="date"
+                  id="subtitle"
                   className="input-field"
-                  value={lessonDate}
-                  onChange={(e) => setLessonDate(e.target.value)}
+                  value={subtitle}
+                  onChange={(e) => setSubtitle(e.target.value)}
+                  placeholder="Ex : Genèse 6-9 : Noé et le déluge"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="label-field" htmlFor="expiresAt">
+                Échéance (optionnel)
+              </label>
+              <input
+                id="expiresAt"
+                type="datetime-local"
+                className="input-field sm:max-w-xs"
+                value={expiresAt}
+                onChange={(e) => setExpiresAt(e.target.value)}
+              />
+              <p className="mt-1 text-xs text-gray-400">
+                Passé ce moment, le quiz n&apos;est plus proposé aux participants (page d&apos;accueil,
+                sélecteur de quiz) même s&apos;il reste marqué actif — pas besoin de penser à le
+                désactiver. Laisser vide = pas d&apos;échéance.
+              </p>
             </div>
 
             <div>
@@ -884,7 +930,7 @@ export default function QuizTab() {
                 <tr className="border-b border-gray-200 text-gray-500">
                   <th className="py-2 pr-4">Titre</th>
                   <th className="py-2 pr-4">Catégorie</th>
-                  <th className="py-2 pr-4">Date</th>
+                  <th className="py-2 pr-4">Échéance</th>
                   <th className="py-2 pr-4">Durée</th>
                   <th className="py-2 pr-4">Statut</th>
                   <th className="py-2 pr-4"></th>
@@ -893,7 +939,12 @@ export default function QuizTab() {
               <tbody>
                 {quizzes.map((quiz) => (
                   <tr key={quiz.id} className="border-b border-gray-100">
-                    <td className="py-3 pr-4 font-medium text-navy">{quiz.title}</td>
+                    <td className="py-3 pr-4 font-medium text-navy">
+                      {quiz.title}
+                      {quiz.subtitle && (
+                        <p className="mt-0.5 text-xs font-normal text-gray-400">{quiz.subtitle}</p>
+                      )}
+                    </td>
                     <td className="py-3 pr-4">
                       {quiz.category === "weekly" ? (
                         <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
@@ -906,21 +957,31 @@ export default function QuizTab() {
                       )}
                     </td>
                     <td className="py-3 pr-4 text-gray-600">
-                      {new Date(quiz.lesson_date).toLocaleDateString("fr-FR")}
+                      {quiz.expires_at ? formatExpiry(quiz.expires_at) : "—"}
                     </td>
                     <td className="py-3 pr-4 text-gray-600">
                       {quiz.duration_seconds ? formatDuration(quiz.duration_seconds) : "—"}
                     </td>
                     <td className="py-3 pr-4">
-                      {quiz.is_active ? (
-                        <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
-                          Actif
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
-                          Inactif
-                        </span>
-                      )}
+                      {(() => {
+                        const expired = quiz.expires_at && new Date(quiz.expires_at) <= new Date();
+                        if (quiz.is_active && expired) {
+                          return (
+                            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                              Expiré
+                            </span>
+                          );
+                        }
+                        return quiz.is_active ? (
+                          <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
+                            Actif
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
+                            Inactif
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="py-3 pr-4">
                       <div className="flex items-center gap-3">

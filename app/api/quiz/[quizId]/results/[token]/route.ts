@@ -117,7 +117,7 @@ export async function GET(
     submission.cancelled || shouldRevealAnswers(submission.score, submission.max_score, submission.attempt_number);
 
   return NextResponse.json({
-    quiz: { id: quiz.id, title: quiz.title, lesson_date: quiz.lesson_date },
+    quiz: { id: quiz.id, title: quiz.title },
     participantName: participant?.name ?? "",
     score: submission.score,
     maxScore: submission.max_score,

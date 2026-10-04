@@ -16,7 +16,7 @@ interface SubmissionEntry {
   score: number;
   max_score: number;
   submitted_at: string;
-  quiz: { id: string; title: string; lesson_date: string } | null;
+  quiz: { id: string; title: string } | null;
 }
 
 function toWhatsappLink(whatsapp: string): string {
@@ -165,10 +165,7 @@ export default function ParticipantDetailModal({
                         {s.quiz?.title ?? "Quiz supprimé"}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {s.quiz?.lesson_date
-                          ? new Date(s.quiz.lesson_date).toLocaleDateString("fr-FR")
-                          : ""}{" "}
-                        · soumis le {new Date(s.submitted_at).toLocaleDateString("fr-FR")}
+                        Soumis le {new Date(s.submitted_at).toLocaleDateString("fr-FR")}
                       </p>
                     </div>
                     <span className="rounded-full bg-accent/20 px-2.5 py-1 text-xs font-semibold text-navy">

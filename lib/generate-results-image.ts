@@ -6,7 +6,6 @@ export interface ResultsImageParams {
   score: number;
   maxScore: number;
   quizTitle: string;
-  lessonDate: string;
   attemptNumber?: number;
 }
 
@@ -58,7 +57,7 @@ function wrapText(
 }
 
 export async function generateResultsImage(params: ResultsImageParams): Promise<Blob> {
-  const { participantName, score, maxScore, quizTitle, lessonDate, attemptNumber } = params;
+  const { participantName, score, maxScore, quizTitle, attemptNumber } = params;
   const width = 1080;
   const height = 1350;
 
@@ -187,17 +186,10 @@ export async function generateResultsImage(params: ResultsImageParams): Promise<
   ctx.font = "800 56px sans-serif";
   ctx.fillText(`${score} / ${maxScore}`, width / 2, badgeY + 96);
 
-  // Quiz + date
-  const formattedDate = new Date(lessonDate).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  // Titre du quiz
+  ctx.fillStyle = "rgba(255,255,255,0.75)";
   ctx.font = "500 26px sans-serif";
-  const afterQuiz = wrapText(ctx, quizTitle, width / 2, badgeY + badgeH + 65, width - 220, 34);
-  ctx.font = "400 22px sans-serif";
-  ctx.fillText(formattedDate, width / 2, afterQuiz + 40);
+  wrapText(ctx, quizTitle, width / 2, badgeY + badgeH + 65, width - 220, 34);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {

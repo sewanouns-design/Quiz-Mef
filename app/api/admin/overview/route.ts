@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated } from "@/lib/auth";
 import { isPassingScore } from "@/lib/scoring";
+import { notExpiredClause } from "@/lib/quiz-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -81,7 +82,8 @@ export async function GET(request: NextRequest) {
       .from("daily_quizzes")
       .select("title")
       .eq("is_active", true)
-      .order("lesson_date", { ascending: false }),
+      .or(notExpiredClause())
+      .order("created_at", { ascending: false }),
     recentSubmissionsQuery.order("submitted_at", { ascending: false }).limit(15),
     recentActivityQuery.order("created_at", { ascending: false }).limit(15),
   ]);

@@ -30,23 +30,26 @@ create index if not exists idx_participants_address on participants (address);
 create table if not exists daily_quizzes (
   id uuid primary key default gen_random_uuid(),
   title text not null,
-  lesson_date date not null,
+  -- Contexte court affiché sous le titre (page d'accueil, pop-up du quiz
+  -- hebdo, écran de départ du quiz). Optionnel.
+  subtitle text,
   is_active boolean default false,
   duration_seconds int,
+  -- Échéance optionnelle : passé ce moment, le quiz n'apparaît plus comme
+  -- disponible pour les participants (page d'accueil, sélecteur de quiz),
+  -- même si is_active reste à true — l'admin n'a pas besoin de penser à le
+  -- désactiver manuellement. Un lien direct déjà obtenu continue de
+  -- fonctionner (comme pour is_active=false), seule la découverte est filtrée.
+  expires_at timestamptz,
   -- 'overview' : toutes les questions révélées d'un coup au clic "Commencer".
   -- 'sequential' : une question à la fois, impossible de voir la suite à l'avance.
   quiz_mode text not null default 'overview' check (quiz_mode in ('overview', 'sequential')),
   -- 'daily' : quiz du jour habituel. 'weekly' : récap de la semaine, mis en
-  -- avant par une bannière dédiée sur la page d'accueil. Plusieurs quiz
-  -- (de n'importe quelle catégorie) peuvent être actifs en même temps —
-  -- activer un quiz ne désactive plus automatiquement les autres.
+  -- avant par un pop-up dédié sur la page d'accueil. Plusieurs quiz (de
+  -- n'importe quelle catégorie) peuvent être actifs en même temps — activer
+  -- un quiz ne désactive plus automatiquement les autres.
   category text not null default 'daily' check (category in ('daily', 'weekly')),
-  created_at timestamptz default now(),
-  -- Unicité par date ET catégorie (pas juste par date) : un quiz du jour et
-  -- un quiz hebdo peuvent partager la même date (ex. le récap de la semaine
-  -- publié le même jour que la leçon du jour), seuls deux quiz de la MÊME
-  -- catégorie ne peuvent pas partager une date.
-  constraint daily_quizzes_lesson_date_category_key unique (lesson_date, category)
+  created_at timestamptz default now()
 );
 
 create index if not exists idx_daily_quizzes_is_active on daily_quizzes (is_active);

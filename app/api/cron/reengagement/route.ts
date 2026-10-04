@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { sendReengagementEmail, REENGAGEMENT_COPY } from "@/lib/email";
 import { computeStreakDays } from "@/lib/streak";
 import { sendPushToParticipant } from "@/lib/push";
+import { notExpiredClause } from "@/lib/quiz-availability";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -36,7 +37,8 @@ export async function GET(request: NextRequest) {
     .select("id")
     .eq("is_active", true)
     .eq("category", "daily")
-    .order("lesson_date", { ascending: false })
+    .or(notExpiredClause())
+    .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 

@@ -10,7 +10,7 @@ import PushOptIn from "@/components/PushOptIn";
 import type { CorrectedAnswer } from "@/lib/types";
 
 interface ResultsData {
-  quiz: { id: string; title: string; lesson_date: string };
+  quiz: { id: string; title: string };
   participantName: string;
   score: number;
   maxScore: number;
@@ -94,9 +94,7 @@ export default function ResultsPage() {
     setShareError("");
     setSharing(true);
 
-    const message = `J'ai obtenu ${data.score}/${data.maxScore} au Quiz Biblique du ${new Date(
-      data.quiz.lesson_date
-    ).toLocaleDateString("fr-FR")} ! ⁉️ Teste tes connaissances toi aussi sur quiz.mefzogbadje.org`;
+    const message = `J'ai obtenu ${data.score}/${data.maxScore} au quiz « ${data.quiz.title} » ! ⁉️ Teste tes connaissances toi aussi sur quiz.mefzogbadje.org`;
 
     try {
       const blob = await generateResultsImage({
@@ -104,7 +102,6 @@ export default function ResultsPage() {
         score: data.score,
         maxScore: data.maxScore,
         quizTitle: data.quiz.title,
-        lessonDate: data.quiz.lesson_date,
         attemptNumber: data.attemptNumber,
       });
       const file = new File([blob], "quiz-biblique.png", { type: "image/png" });

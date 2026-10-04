@@ -14,7 +14,7 @@ import PhoneInput from "@/components/PhoneInput";
 interface ActiveQuizOption {
   id: string;
   title: string;
-  lesson_date: string;
+  subtitle: string | null;
   category: "daily" | "weekly";
 }
 
@@ -33,10 +33,12 @@ function QuizIdentificationForm() {
   const [checkingQuiz, setCheckingQuiz] = useState(true);
   const [error, setError] = useState("");
   const [phoneInputKey, setPhoneInputKey] = useState("initial");
-  const [activeQuizzes, setActiveQuizzes] = useState<ActiveQuizOption[]>([]);
-  // Rempli uniquement si plusieurs quiz sont actifs et qu'aucun n'était ciblé
-  // directement via ?quiz= : l'identification est déjà enregistrée, il ne
-  // reste qu'à choisir lequel commencer.
+  // Quiz déjà déterminé (lien direct ?quiz=, ou un seul quiz du jour actif) :
+  // on passe directement à l'identification pour celui-ci.
+  const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
+  // Rempli uniquement si plusieurs quiz du jour sont actifs et qu'aucun
+  // n'était ciblé directement via ?quiz= : on demande lequel commencer
+  // AVANT l'identification, pas après.
   const [quizChoices, setQuizChoices] = useState<ActiveQuizOption[] | null>(null);
 
   useEffect(() => {
@@ -71,23 +73,45 @@ function QuizIdentificationForm() {
       .then((res) => res.json())
       .then((data) => {
         const quizzes: ActiveQuizOption[] = data?.quizzes ?? [];
-        setActiveQuizzes(quizzes);
-        // Le quiz hebdo n'est accessible QUE via son lien direct (pop-up de
-        // la page d'accueil, ?quiz=<id>) : il ne compte jamais dans le flux
-        // normal d'identification (ni pour l'auto-redirection, ni dans le
-        // sélecteur), même s'il est le seul quiz actif.
-        const requestedValid = requestedQuizId && quizzes.some((q) => q.id === requestedQuizId);
+
+        // Un lien direct (pop-up du quiz hebdo) passe toujours en priorité,
+        // même si ce quiz n'est pas de catégorie "daily".
+        const requested = requestedQuizId
+          ? quizzes.find((q) => q.id === requestedQuizId)
+          : undefined;
+        if (requested) {
+          setSelectedQuizId(requested.id);
+          return;
+        }
+
+        // Sinon, seuls les quiz du jour sont proposés : le quiz hebdo n'est
+        // jamais accessible par ce flux normal, uniquement par son lien
+        // direct depuis la page d'accueil.
         const daily = quizzes.filter((q) => q.category !== "weekly");
-        if (!requestedValid && daily.length === 0) {
+        if (daily.length === 0) {
           setError("Aucun quiz disponible aujourd'hui. Reviens bientôt.");
+        } else if (daily.length === 1) {
+          setSelectedQuizId(daily[0].id);
+        } else {
+          // Plusieurs quiz du jour actifs : on demande lequel commencer
+          // tout de suite, avant même de montrer le formulaire.
+          setQuizChoices(daily);
         }
       })
+      .catch(() => setError("Erreur lors du chargement des quiz disponibles."))
       .finally(() => setCheckingQuiz(false));
   }, [requestedQuizId]);
+
+  function handleChooseQuiz(quizId: string) {
+    setSelectedQuizId(quizId);
+    setQuizChoices(null);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (!selectedQuizId) return;
 
     if (!name.trim() || !address.trim() || !email.trim()) {
       setError("Le nom, l'adresse et l'email sont requis.");
@@ -120,41 +144,19 @@ function QuizIdentificationForm() {
 
       saveStoredParticipant({ deviceKey, name, address, email, whatsapp, showInLeaderboard });
 
-      const quizRes = await fetch("/api/quiz/active", { cache: "no-store" });
-      const quizData = await quizRes.json();
-      const quizzes: ActiveQuizOption[] = quizData?.quizzes ?? [];
-
-      // Un lien direct (pop-up du quiz hebdo) passe toujours en priorité,
-      // même si ce quiz n'est pas de catégorie "daily".
-      const requested = requestedQuizId
-        ? quizzes.find((q) => q.id === requestedQuizId)
-        : undefined;
-      if (requested) {
-        router.push(`/quiz/${requested.id}`);
-        return;
-      }
-
-      // Sinon, seuls les quiz du jour sont proposés : le quiz hebdo n'est
-      // jamais accessible par ce flux normal, uniquement par son lien direct.
-      const daily = quizzes.filter((q) => q.category !== "weekly");
-      if (daily.length === 0) {
-        setError("Aucun quiz disponible aujourd'hui. Reviens bientôt.");
-        setLoading(false);
-        return;
-      }
-      if (daily.length === 1) {
-        router.push(`/quiz/${daily[0].id}`);
-        return;
-      }
-
-      // Plusieurs quiz du jour actifs et aucun n'était ciblé précisément :
-      // on laisse la personne choisir plutôt que de deviner à sa place.
-      setQuizChoices(daily);
-      setLoading(false);
+      router.push(`/quiz/${selectedQuizId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
       setLoading(false);
     }
+  }
+
+  if (checkingQuiz) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
+        <p className="text-gray-400">Chargement...</p>
+      </main>
+    );
   }
 
   if (quizChoices) {
@@ -174,7 +176,7 @@ function QuizIdentificationForm() {
               <button
                 key={quiz.id}
                 type="button"
-                onClick={() => router.push(`/quiz/${quiz.id}`)}
+                onClick={() => handleChooseQuiz(quiz.id)}
                 className="flex w-full items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 text-left transition-colors hover:border-accent hover:bg-accent/5"
               >
                 <span className="text-2xl">⁉️</span>
@@ -183,6 +185,9 @@ function QuizIdentificationForm() {
                     Quiz du jour
                   </p>
                   <p className="truncate font-semibold text-navy">{quiz.title}</p>
+                  {quiz.subtitle && (
+                    <p className="truncate text-xs text-gray-400">{quiz.subtitle}</p>
+                  )}
                 </div>
               </button>
             ))}
@@ -277,19 +282,10 @@ function QuizIdentificationForm() {
 
           {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
-          {!checkingQuiz &&
-            !requestedQuizId &&
-            activeQuizzes.filter((q) => q.category !== "weekly").length > 1 && (
-              <p className="text-xs text-gray-400">
-                Plusieurs quiz du jour sont actifs : tu pourras choisir lequel commencer juste
-                après.
-              </p>
-            )}
-
           <button
             type="submit"
             className="btn-accent w-full"
-            disabled={loading || checkingQuiz}
+            disabled={loading || !selectedQuizId}
           >
             {loading ? "Chargement..." : "Commencer"}
           </button>
