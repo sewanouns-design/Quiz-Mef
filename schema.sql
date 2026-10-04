@@ -36,6 +36,11 @@ create table if not exists daily_quizzes (
   -- 'overview' : toutes les questions révélées d'un coup au clic "Commencer".
   -- 'sequential' : une question à la fois, impossible de voir la suite à l'avance.
   quiz_mode text not null default 'overview' check (quiz_mode in ('overview', 'sequential')),
+  -- 'daily' : quiz du jour habituel. 'weekly' : récap de la semaine, mis en
+  -- avant par une bannière dédiée sur la page d'accueil. Plusieurs quiz
+  -- (de n'importe quelle catégorie) peuvent être actifs en même temps —
+  -- activer un quiz ne désactive plus automatiquement les autres.
+  category text not null default 'daily' check (category in ('daily', 'weekly')),
   created_at timestamptz default now()
 );
 

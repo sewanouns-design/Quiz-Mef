@@ -68,7 +68,12 @@ export default function HomePreview({ settings }: { settings: SiteSettings }) {
       >
         <div className="h-full w-full overflow-y-auto">
           <div style={{ width, transform: `scale(${scale})`, transformOrigin: "top left" }}>
-            <Template settings={settings} activeQuiz={PREVIEW_QUIZ} stats={PREVIEW_STATS} />
+            <Template
+              settings={settings}
+              activeQuiz={PREVIEW_QUIZ}
+              weeklyQuiz={null}
+              stats={PREVIEW_STATS}
+            />
           </div>
         </div>
       </div>

@@ -17,7 +17,8 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const { title, lessonDate, isActive, questions, durationSeconds, quizMode } = body ?? {};
+  const { title, lessonDate, isActive, questions, durationSeconds, quizMode, category } =
+    body ?? {};
 
   if (!title || !lessonDate) {
     return NextResponse.json(
@@ -34,13 +35,12 @@ export async function POST(request: NextRequest) {
   const parsedDuration =
     typeof durationSeconds === "number" && durationSeconds > 0 ? durationSeconds : null;
   const parsedMode = quizMode === "sequential" ? "sequential" : "overview";
+  const parsedCategory = category === "weekly" ? "weekly" : "daily";
 
   const supabase = getSupabaseAdmin();
 
-  if (isActive) {
-    await supabase.from("daily_quizzes").update({ is_active: false }).eq("is_active", true);
-  }
-
+  // Plusieurs quiz peuvent rester actifs en même temps (quiz du jour +
+  // quiz hebdo, par exemple) : on n'en désactive plus d'autres ici.
   const { data: quiz, error: quizError } = await supabase
     .from("daily_quizzes")
     .insert({
@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
       is_active: Boolean(isActive),
       duration_seconds: parsedDuration,
       quiz_mode: parsedMode,
+      category: parsedCategory,
     })
     .select()
     .single();

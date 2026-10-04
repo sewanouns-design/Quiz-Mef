@@ -20,22 +20,24 @@ const getCachedSiteSettings = unstable_cache(getSiteSettings, ["home-site-settin
   tags: ["home"],
 });
 
-const getCachedActiveQuiz = unstable_cache(
+// Plusieurs quiz peuvent être actifs en même temps (quiz du jour + quiz
+// hebdomadaire, ou plusieurs quotidiens) : on récupère tous les quiz actifs
+// et HomePage() ci-dessous en dérive le quiz du jour le plus récent et,
+// séparément, un éventuel quiz hebdo à mettre en avant.
+const getCachedActiveQuizzes = unstable_cache(
   async () => {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("daily_quizzes")
-      .select("id, title, lesson_date")
+      .select("id, title, lesson_date, category")
       .eq("is_active", true)
-      .order("lesson_date", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order("lesson_date", { ascending: false });
 
     if (error) {
-      console.error("Erreur récupération quiz actif :", error.message);
-      return null;
+      console.error("Erreur récupération quiz actifs :", error.message);
+      return [];
     }
-    return data;
+    return data ?? [];
   },
   ["home-active-quiz"],
   { revalidate: 300, tags: ["home"] }
@@ -66,13 +68,16 @@ const getCachedStats = unstable_cache(
 );
 
 export default async function HomePage() {
-  const [settings, activeQuiz, stats] = await Promise.all([
+  const [settings, activeQuizzes, stats] = await Promise.all([
     getCachedSiteSettings(),
-    getCachedActiveQuiz(),
+    getCachedActiveQuizzes(),
     getCachedStats(),
   ]);
 
-  const props = { settings, activeQuiz, stats };
+  const activeQuiz = activeQuizzes.find((q) => q.category !== "weekly") ?? null;
+  const weeklyQuiz = activeQuizzes.find((q) => q.category === "weekly") ?? null;
+
+  const props = { settings, activeQuiz, weeklyQuiz, stats };
 
   if (settings.template === "minimal") {
     return <HomeMinimalTemplate {...props} />;

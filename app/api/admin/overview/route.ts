@@ -74,7 +74,14 @@ export async function GET(request: NextRequest) {
     quizzesQuery,
     lessonQuestionsQuery,
     submissionsQuery,
-    supabase.from("daily_quizzes").select("title").eq("is_active", true).maybeSingle(),
+    // Plusieurs quiz peuvent être actifs en même temps (quiz du jour + quiz
+    // hebdomadaire) : on les récupère tous plutôt que .maybeSingle(), qui
+    // échouerait dès qu'il y en a plus d'un.
+    supabase
+      .from("daily_quizzes")
+      .select("title")
+      .eq("is_active", true)
+      .order("lesson_date", { ascending: false }),
     recentSubmissionsQuery.order("submitted_at", { ascending: false }).limit(15),
     recentActivityQuery.order("created_at", { ascending: false }).limit(15),
   ]);
@@ -139,7 +146,9 @@ export async function GET(request: NextRequest) {
     passedCount,
     averageScorePercent,
     lessonQuestionsCount: lessonQuestionsCount.count ?? 0,
-    activeQuizTitle: activeQuiz.data?.title ?? null,
+    activeQuizTitle: activeQuiz.data?.length
+      ? activeQuiz.data.map((q) => q.title).join(" · ")
+      : null,
     activity,
   });
 }

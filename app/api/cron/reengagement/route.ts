@@ -28,10 +28,16 @@ export async function GET(request: NextRequest) {
 
   const supabase = getSupabaseAdmin();
 
+  // Plusieurs quiz peuvent être actifs en même temps désormais (quiz du jour
+  // + quiz hebdomadaire) : la relance ne porte que sur le quiz du jour
+  // (catégorie "daily"), le plus récent s'il y en a plusieurs.
   const { data: activeQuiz, error: activeQuizError } = await supabase
     .from("daily_quizzes")
     .select("id")
     .eq("is_active", true)
+    .eq("category", "daily")
+    .order("lesson_date", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (activeQuizError) {

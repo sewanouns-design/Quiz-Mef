@@ -2,6 +2,10 @@ export type QuestionType = "mcq" | "true_false" | "short" | "fill_blank" | "open
 
 export type QuizMode = "overview" | "sequential";
 
+/** 'daily' : quiz du jour habituel. 'weekly' : récap de la semaine, mis en
+ * avant par une bannière dédiée sur la page d'accueil. */
+export type QuizCategory = "daily" | "weekly";
+
 export interface DailyQuiz {
   id: string;
   title: string;
@@ -9,6 +13,7 @@ export interface DailyQuiz {
   is_active: boolean;
   duration_seconds: number | null;
   quiz_mode: QuizMode;
+  category: QuizCategory;
   created_at: string;
 }
 

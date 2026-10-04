@@ -57,7 +57,7 @@ export async function PUT(
   }
 
   const body = await request.json().catch(() => ({}));
-  const { title, lessonDate, questions, durationSeconds, quizMode } = body ?? {};
+  const { title, lessonDate, questions, durationSeconds, quizMode, category } = body ?? {};
 
   const supabase = getSupabaseAdmin();
 
@@ -70,6 +70,9 @@ export async function PUT(
   }
   if (quizMode !== undefined) {
     updates.quiz_mode = quizMode === "sequential" ? "sequential" : "overview";
+  }
+  if (category !== undefined) {
+    updates.category = category === "weekly" ? "weekly" : "daily";
   }
 
   if (Object.keys(updates).length > 0) {

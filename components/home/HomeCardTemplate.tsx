@@ -3,14 +3,16 @@ import type { SiteSettings } from "@/lib/types";
 import { getRandomVerse } from "@/lib/verses";
 import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import LogoIcon from "@/components/LogoIcon";
+import WeeklyQuizBanner from "./WeeklyQuizBanner";
 
 interface Props {
   settings: SiteSettings;
   activeQuiz: { id: string; title: string; lesson_date: string } | null;
+  weeklyQuiz: { id: string; title: string } | null;
   stats: { participants: number; submissions: number; quizzes: number };
 }
 
-export default function HomeCardTemplate({ settings, activeQuiz, stats }: Props) {
+export default function HomeCardTemplate({ settings, activeQuiz, weeklyQuiz, stats }: Props) {
   const primary = settings.color_primary;
   const primaryDark = settings.color_primary_dark;
   const accent = settings.color_accent;
@@ -42,6 +44,7 @@ export default function HomeCardTemplate({ settings, activeQuiz, stats }: Props)
           </p>
 
           <div className="mt-8">
+            <WeeklyQuizBanner weeklyQuiz={weeklyQuiz} />
             {activeQuiz ? (
               <>
                 <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">

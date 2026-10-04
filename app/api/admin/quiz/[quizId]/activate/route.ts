@@ -19,15 +19,9 @@ export async function POST(
 
   const supabase = getSupabaseAdmin();
 
-  const { error: deactivateError } = await supabase
-    .from("daily_quizzes")
-    .update({ is_active: false })
-    .eq("is_active", true);
-
-  if (deactivateError) {
-    return NextResponse.json({ error: deactivateError.message }, { status: 500 });
-  }
-
+  // Plusieurs quiz (quotidien + hebdomadaire, ou plusieurs quotidiens) peuvent
+  // être actifs en même temps : activer celui-ci ne désactive plus les
+  // autres — l'admin les désactive individuellement s'il le souhaite.
   const { data, error } = await supabase
     .from("daily_quizzes")
     .update({ is_active: true })

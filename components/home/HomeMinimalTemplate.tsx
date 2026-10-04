@@ -3,15 +3,17 @@ import type { SiteSettings } from "@/lib/types";
 import { getRandomVerse } from "@/lib/verses";
 import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import DesktopSideDecoration from "./DesktopSideDecoration";
+import WeeklyQuizBanner from "./WeeklyQuizBanner";
 import LogoIcon from "@/components/LogoIcon";
 
 interface Props {
   settings: SiteSettings;
   activeQuiz: { id: string; title: string; lesson_date: string } | null;
+  weeklyQuiz: { id: string; title: string } | null;
   stats: { participants: number; submissions: number; quizzes: number };
 }
 
-export default function HomeMinimalTemplate({ settings, activeQuiz }: Props) {
+export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz }: Props) {
   const primary = settings.color_primary;
   const accentDark = settings.color_accent_dark;
   const verse = getRandomVerse();
@@ -48,6 +50,7 @@ export default function HomeMinimalTemplate({ settings, activeQuiz }: Props) {
         </p>
 
         <div className="mt-10">
+          <WeeklyQuizBanner weeklyQuiz={weeklyQuiz} />
           {activeQuiz ? (
             <Link
               href="/quiz"

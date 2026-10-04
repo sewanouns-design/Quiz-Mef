@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   getOrCreateDeviceKey,
   getStoredParticipant,
@@ -11,8 +11,18 @@ import { isValidEmail } from "@/lib/validation";
 import { isValidWhatsappValue } from "@/lib/phone-countries";
 import PhoneInput from "@/components/PhoneInput";
 
-export default function QuizIdentificationPage() {
+interface ActiveQuizOption {
+  id: string;
+  title: string;
+  lesson_date: string;
+  category: "daily" | "weekly";
+}
+
+function QuizIdentificationForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedQuizId = searchParams.get("quiz");
+
   const [deviceKey, setDeviceKey] = useState("");
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
@@ -23,6 +33,11 @@ export default function QuizIdentificationPage() {
   const [checkingQuiz, setCheckingQuiz] = useState(true);
   const [error, setError] = useState("");
   const [phoneInputKey, setPhoneInputKey] = useState("initial");
+  const [activeQuizzes, setActiveQuizzes] = useState<ActiveQuizOption[]>([]);
+  // Rempli uniquement si plusieurs quiz sont actifs et qu'aucun n'était ciblé
+  // directement via ?quiz= : l'identification est déjà enregistrée, il ne
+  // reste qu'à choisir lequel commencer.
+  const [quizChoices, setQuizChoices] = useState<ActiveQuizOption[] | null>(null);
 
   useEffect(() => {
     const key = getOrCreateDeviceKey();
@@ -55,12 +70,24 @@ export default function QuizIdentificationPage() {
     fetch("/api/quiz/active", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (!data?.quiz) {
+        const quizzes: ActiveQuizOption[] = data?.quizzes ?? [];
+        setActiveQuizzes(quizzes);
+        if (quizzes.length === 0) {
           setError("Aucun quiz disponible aujourd'hui. Reviens bientôt.");
         }
       })
       .finally(() => setCheckingQuiz(false));
   }, []);
+
+  function resolveTargetQuizId(quizzes: ActiveQuizOption[]): string | null {
+    if (requestedQuizId && quizzes.some((q) => q.id === requestedQuizId)) {
+      return requestedQuizId;
+    }
+    if (quizzes.length === 1) {
+      return quizzes[0].id;
+    }
+    return null;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -99,18 +126,63 @@ export default function QuizIdentificationPage() {
 
       const quizRes = await fetch("/api/quiz/active", { cache: "no-store" });
       const quizData = await quizRes.json();
+      const quizzes: ActiveQuizOption[] = quizData?.quizzes ?? [];
 
-      if (!quizData?.quiz) {
+      if (quizzes.length === 0) {
         setError("Aucun quiz disponible aujourd'hui. Reviens bientôt.");
         setLoading(false);
         return;
       }
 
-      router.push(`/quiz/${quizData.quiz.id}`);
+      const targetId = resolveTargetQuizId(quizzes);
+      if (targetId) {
+        router.push(`/quiz/${targetId}`);
+        return;
+      }
+
+      // Plusieurs quiz actifs et aucun n'était ciblé précisément : on laisse
+      // la personne choisir plutôt que de deviner à sa place.
+      setQuizChoices(quizzes);
+      setLoading(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
       setLoading(false);
     }
+  }
+
+  if (quizChoices) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md">
+          <div className="mb-8 text-center">
+            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-navy text-3xl shadow-lg">
+              ⁉️
+            </div>
+            <h1 className="text-2xl font-bold text-navy">Quel quiz veux-tu faire ?</h1>
+            <p className="mt-1 text-gray-600">Plusieurs quiz sont disponibles en ce moment.</p>
+          </div>
+
+          <div className="card space-y-3">
+            {quizChoices.map((quiz) => (
+              <button
+                key={quiz.id}
+                type="button"
+                onClick={() => router.push(`/quiz/${quiz.id}`)}
+                className="flex w-full items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 text-left transition-colors hover:border-accent hover:bg-accent/5"
+              >
+                <span className="text-2xl">{quiz.category === "weekly" ? "📅" : "⁉️"}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    {quiz.category === "weekly" ? "Quiz hebdomadaire" : "Quiz du jour"}
+                  </p>
+                  <p className="truncate font-semibold text-navy">{quiz.title}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -198,6 +270,12 @@ export default function QuizIdentificationPage() {
 
           {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
+          {!checkingQuiz && activeQuizzes.length > 1 && !requestedQuizId && (
+            <p className="text-xs text-gray-400">
+              Plusieurs quiz sont actifs : tu pourras choisir lequel commencer juste après.
+            </p>
+          )}
+
           <button
             type="submit"
             className="btn-accent w-full"
@@ -208,5 +286,13 @@ export default function QuizIdentificationPage() {
         </form>
       </div>
     </main>
+  );
+}
+
+export default function QuizIdentificationPage() {
+  return (
+    <Suspense fallback={null}>
+      <QuizIdentificationForm />
+    </Suspense>
   );
 }

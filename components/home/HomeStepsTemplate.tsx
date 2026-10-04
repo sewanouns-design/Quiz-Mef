@@ -3,11 +3,13 @@ import type { SiteSettings } from "@/lib/types";
 import { getRandomVerse } from "@/lib/verses";
 import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import DesktopSideDecoration from "./DesktopSideDecoration";
+import WeeklyQuizBanner from "./WeeklyQuizBanner";
 import LogoIcon from "@/components/LogoIcon";
 
 interface Props {
   settings: SiteSettings;
   activeQuiz: { id: string; title: string; lesson_date: string } | null;
+  weeklyQuiz: { id: string; title: string } | null;
   stats: { participants: number; submissions: number; quizzes: number };
 }
 
@@ -32,7 +34,7 @@ function StatCard({
   );
 }
 
-export default function HomeStepsTemplate({ settings, activeQuiz, stats }: Props) {
+export default function HomeStepsTemplate({ settings, activeQuiz, weeklyQuiz, stats }: Props) {
   const primary = settings.color_primary;
   const accentDark = settings.color_accent_dark;
   const secondary = settings.color_secondary;
@@ -71,6 +73,7 @@ export default function HomeStepsTemplate({ settings, activeQuiz, stats }: Props
           </p>
 
           <div className="mx-auto mt-10 max-w-md">
+            <WeeklyQuizBanner weeklyQuiz={weeklyQuiz} />
             {activeQuiz ? (
               <div className="card">
                 <p
