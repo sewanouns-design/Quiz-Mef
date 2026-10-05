@@ -4,13 +4,33 @@ import { inter } from "@/lib/fonts";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import InstallPrompt from "@/components/InstallPrompt";
 
+const title = "Quiz Biblique";
+const description = "Teste tes connaissances sur la leçon du jour — Mission Évangélique de la Foi";
+
 export const metadata: Metadata = {
-  title: "Quiz Biblique",
-  description: "Teste tes connaissances sur la leçon du jour — Mission Évangélique de la Foi",
+  metadataBase: new URL("https://quiz.mefzogbadje.org"),
+  title,
+  description,
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Quiz Biblique",
+  },
+  // L'image d'aperçu (og:image / twitter:image) vient des fichiers
+  // app/opengraph-image.tsx et app/twitter-image.tsx, générés à partir des
+  // couleurs et du logo réels du site — Next.js les détecte et les associe
+  // automatiquement ici.
+  openGraph: {
+    title,
+    description,
+    siteName: title,
+    locale: "fr_FR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
   },
 };
 
