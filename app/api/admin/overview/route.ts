@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     // échouerait dès qu'il y en a plus d'un.
     supabase
       .from("daily_quizzes")
-      .select("title")
+      .select("title, category")
       .eq("is_active", true)
       .or(notExpiredClause())
       .order("created_at", { ascending: false }),
@@ -148,9 +148,7 @@ export async function GET(request: NextRequest) {
     passedCount,
     averageScorePercent,
     lessonQuestionsCount: lessonQuestionsCount.count ?? 0,
-    activeQuizTitle: activeQuiz.data?.length
-      ? activeQuiz.data.map((q) => q.title).join(" · ")
-      : null,
+    activeQuizzes: activeQuiz.data ?? [],
     activity,
   });
 }

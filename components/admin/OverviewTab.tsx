@@ -29,7 +29,7 @@ interface OverviewData {
   passedCount: number;
   averageScorePercent: number | null;
   lessonQuestionsCount: number;
-  activeQuizTitle: string | null;
+  activeQuizzes: { title: string; category: "daily" | "weekly" }[];
   activity: ActivityEntry[];
 }
 
@@ -338,11 +338,28 @@ export default function OverviewTab() {
           <section className="card overflow-hidden !p-0">
             <div className="bg-gradient-to-br from-navy to-navy-dark px-6 py-5 text-white">
               <p className="text-xs font-semibold uppercase tracking-wide text-white/60">
-                Quiz actif aujourd&apos;hui
+                Quiz actifs
               </p>
-              <p className="mt-1 text-xl font-bold">
-                {data.activeQuizTitle ?? "Aucun quiz actif pour le moment"}
-              </p>
+              {data.activeQuizzes.length === 0 ? (
+                <p className="mt-1 text-xl font-bold">Aucun quiz actif pour le moment</p>
+              ) : (
+                <div className="mt-2 space-y-2">
+                  {data.activeQuizzes.map((quiz, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                          quiz.category === "weekly"
+                            ? "bg-amber-400/20 text-amber-200"
+                            : "bg-white/15 text-white/80"
+                        }`}
+                      >
+                        {quiz.category === "weekly" ? "📅 Hebdo" : "Jour"}
+                      </span>
+                      <p className="truncate text-lg font-bold">{quiz.title}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
 
