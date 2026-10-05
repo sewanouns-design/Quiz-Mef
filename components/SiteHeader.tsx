@@ -33,7 +33,7 @@ export default function SiteHeader() {
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-navy text-base">
             <LogoIcon value={logoIcon} className="h-5 w-5" />
           </div>
-          <span className="truncate text-sm font-semibold text-navy">Quiz MEF</span>
+          <span className="truncate text-sm font-semibold text-navy">Quiz Biblique</span>
         </div>
         <Link
           href="/"

@@ -37,7 +37,7 @@ export default function HomeTopBar({
           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/15 text-sm">
             <LogoIcon value={settings.logo_icon} className="h-4 w-4" />
           </div>
-          <span>Quiz MEF</span>
+          <span>Quiz Biblique</span>
           {todayStats && todayStats.count > 0 && (
             <span className="hidden text-xs font-normal text-white/70 sm:inline">
               · 🔥 {todayStats.count} aujourd&apos;hui
