@@ -108,8 +108,8 @@ export default function HomeStepsTemplate({ settings, activeQuiz, weeklyQuiz, st
         {settings.show_stats && stats.submissions > 0 && (
           <div className="mt-14 grid grid-cols-3 gap-3 sm:gap-4">
             <StatCard value={stats.participants} label="Participants" primaryColor={secondary} />
+            <StatCard value={stats.quizzes} label="Quiz créés" primaryColor={secondary} />
             <StatCard value={stats.submissions} label="Quiz complétés" primaryColor={secondary} />
-            <StatCard value={stats.quizzes} label="Leçons publiées" primaryColor={secondary} />
           </div>
         )}
 

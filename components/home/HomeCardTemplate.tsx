@@ -80,15 +80,15 @@ export default function HomeCardTemplate({ settings, activeQuiz, weeklyQuiz, sta
               </div>
               <div>
                 <p className="text-lg font-extrabold" style={{ color: secondary }}>
-                  {stats.submissions}
+                  {stats.quizzes}
                 </p>
-                <p className="text-[10px] uppercase tracking-wide text-gray-400">Quiz faits</p>
+                <p className="text-[10px] uppercase tracking-wide text-gray-400">Quiz créés</p>
               </div>
               <div>
                 <p className="text-lg font-extrabold" style={{ color: secondary }}>
-                  {stats.quizzes}
+                  {stats.submissions}
                 </p>
-                <p className="text-[10px] uppercase tracking-wide text-gray-400">Leçons</p>
+                <p className="text-[10px] uppercase tracking-wide text-gray-400">Quiz faits</p>
               </div>
             </div>
           )}

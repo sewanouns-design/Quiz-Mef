@@ -1,23 +1,45 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import LogoIcon from "./LogoIcon";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/site-settings";
 
 /**
- * Repère discret en haut de chaque page (hors quiz en cours, pour ne pas
- * donner un moyen silencieux de quitter une tentative sans qu'elle soit
- * comptée) : un clic ramène toujours à l'accueil, quel que soit l'endroit
- * du site où on se trouve.
+ * Repère en haut de chaque page (hors quiz en cours, pour ne pas donner un
+ * moyen silencieux de quitter une tentative sans qu'elle soit comptée) :
+ * le vrai logo du site, et un bouton « Accueil » explicite plutôt qu'un
+ * simple lien discret — plus clair pour un public qui découvre le site.
+ * Un bouton « retour » (navigateur) a été volontairement écarté : son
+ * comportement dépend de l'historique de navigation et peut surprendre,
+ * alors qu'« Accueil » ramène toujours au même endroit, de façon prévisible.
  */
 export default function SiteHeader() {
+  const [logoIcon, setLogoIcon] = useState(DEFAULT_SITE_SETTINGS.logo_icon);
+
+  useEffect(() => {
+    fetch("/api/site-brand", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.logoIcon) setLogoIcon(data.logoIcon);
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="sticky top-0 z-30 border-b border-gray-100 bg-white/90 backdrop-blur">
-      <div className="mx-auto max-w-2xl px-4 py-2.5 sm:px-6">
+      <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-navy text-base">
+            <LogoIcon value={logoIcon} className="h-5 w-5" />
+          </div>
+          <span className="truncate text-sm font-semibold text-navy">Quiz MEF</span>
+        </div>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-navy transition-opacity hover:opacity-70"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 border-navy/15 bg-white px-3 py-1.5 text-xs font-semibold text-navy shadow-sm transition-colors hover:border-navy/30"
         >
-          <span className="text-lg" aria-hidden="true">
-            ⁉️
-          </span>
-          Quiz Biblique
+          🏠 Accueil
         </Link>
       </div>
     </div>
