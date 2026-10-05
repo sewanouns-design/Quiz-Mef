@@ -17,19 +17,19 @@ function escapeHtml(text: string): string {
 }
 
 export const REENGAGEMENT_COPY: Record<
-  24 | 48 | 72,
+  48 | 72 | 96,
   { subject: string; intro: string }
 > = {
-  24: {
-    subject: "On t'a gardé ta question du jour 📖",
-    intro:
-      "Hier, à pareil moment, tu répondais à ton quiz. Aujourd'hui, une nouvelle question t'attend — ça prend moins de 2 minutes.",
-  },
   48: {
-    subject: "2 minutes pour ne pas perdre le fil 🙏",
+    subject: "On t'a gardé ta question du jour 📖",
     intro: "Deux jours sans quiz, mais ta série n'est pas perdue si tu reviens maintenant.",
   },
   72: {
+    subject: "3 jours sans quiz, tu nous manques 🙏",
+    intro:
+      "Une petite pause, mais la communauté continue de sonder les Écritures chaque jour — ta place y est.",
+  },
+  96: {
     subject: "Dernier rappel : ton quiz t'attend encore 🕊️",
     intro:
       "On ne veut pas te harceler, mais on tenait à te dire : la communauté continue de sonder les Écritures chaque jour, et ta place y est.",
@@ -38,7 +38,7 @@ export const REENGAGEMENT_COPY: Record<
 
 function buildReengagementEmailHtml(params: {
   participantName: string;
-  milestoneHours: 24 | 48 | 72;
+  milestoneHours: 48 | 72 | 96;
   quizUrl: string;
   colors?: EmailColors;
   streakDays?: number;
@@ -91,7 +91,7 @@ function buildReengagementEmailHtml(params: {
 export async function sendReengagementEmail(params: {
   to: string;
   participantName: string;
-  milestoneHours: 24 | 48 | 72;
+  milestoneHours: 48 | 72 | 96;
   quizUrl: string;
   streakDays?: number;
   activeTodayCount?: number;

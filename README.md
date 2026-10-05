@@ -74,12 +74,12 @@ openssl rand -hex 32
 4. Renseigne `RESEND_FROM_EMAIL` avec une adresse du domaine vérifié
    (ex : `noreply@mefzogbadje.org`).
 
-### Relances automatiques (24h / 48h / 72h)
+### Relances automatiques (48h / 72h / 96h)
 
 Une tâche planifiée (`vercel.json` → Vercel Cron, tous les jours à 8h UTC)
 appelle `/api/cron/reengagement` : elle envoie un email d'encouragement, avec
 le lien direct vers le quiz actif, à tout participant n'ayant pas repassé de
-quiz 24h/48h/72h après sa dernière soumission (un seul email par exécution
+quiz 48h/72h/96h après sa dernière soumission (un seul email par exécution
 et par participant, jamais deux fois le même palier). Ne nécessite aucune
 configuration supplémentaire ; `CRON_SECRET` est optionnel (protège la route
 contre un déclenchement manuel par un tiers).

@@ -230,7 +230,7 @@ create index if not exists idx_rate_limit_events_ip_route_time
   on rate_limit_events (ip, route, created_at);
 
 -- ------------------------------------------------------------
--- Relances par email (24h / 48h / 72h d'inactivité depuis la
+-- Relances par email (48h / 72h / 96h d'inactivité depuis la
 -- dernière soumission d'un participant, cf. app/api/cron/reengagement).
 -- Une ligne par (participant, soumission de référence, palier) : garantit
 -- qu'un même palier n'est jamais renvoyé deux fois pour la même période

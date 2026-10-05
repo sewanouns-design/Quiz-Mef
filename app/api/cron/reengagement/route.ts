@@ -8,12 +8,12 @@ import { notExpiredClause } from "@/lib/quiz-availability";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const MILESTONES: (24 | 48 | 72)[] = [24, 48, 72];
+const MILESTONES: (48 | 72 | 96)[] = [48, 72, 96];
 const SITE_URL = "https://quiz.mefzogbadje.org";
 
 /**
  * Relance quotidienne (cf. vercel.json) des participants n'ayant pas repassé
- * de quiz 24h / 48h / 72h après leur dernière soumission, tant qu'un quiz
+ * de quiz 48h / 72h / 96h après leur dernière soumission, tant qu'un quiz
  * est actif. Une seule relance envoyée par exécution et par participant
  * (le palier suivant non encore envoyé), pour éviter une rafale de 3 emails
  * d'un coup après une longue absence.
