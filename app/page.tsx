@@ -46,9 +46,8 @@ const getCachedActiveQuizzes = unstable_cache(
 );
 
 // Activité du jour pour LE quiz du jour mis en avant (pas le quiz hebdo) :
-// nombre de vraies réponses déjà données aujourd'hui et meilleur score du
-// jour, pour donner un effet d'entraînement juste à côté du bouton
-// "Commencer". Revalidation plus courte que les stats globales : c'est
+// nombre de vraies réponses déjà données aujourd'hui, affiché dans
+// l'entête. Revalidation plus courte que les stats globales : c'est
 // justement l'aspect "en direct" qui doit rester à jour.
 const getCachedTodayQuizStats = unstable_cache(
   async (quizId: string) => {
@@ -56,23 +55,14 @@ const getCachedTodayQuizStats = unstable_cache(
     const startOfTodayUTC = new Date();
     startOfTodayUTC.setUTCHours(0, 0, 0, 0);
 
-    const { data } = await supabase
+    const { count } = await supabase
       .from("daily_submissions")
-      .select("score, max_score")
+      .select("*", { count: "exact", head: true })
       .eq("quiz_id", quizId)
       .eq("cancelled", false)
       .gte("submitted_at", startOfTodayUTC.toISOString());
 
-    const rows = data ?? [];
-    const count = rows.length;
-    const bestPercent =
-      count > 0
-        ? Math.round(
-            Math.max(...rows.map((r) => (r.max_score > 0 ? r.score / r.max_score : 0))) * 100
-          )
-        : null;
-
-    return { count, bestPercent };
+    return { count: count ?? 0 };
   },
   ["home-today-quiz-stats"],
   { revalidate: 120, tags: ["home"] }

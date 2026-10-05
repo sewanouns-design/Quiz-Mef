@@ -4,7 +4,7 @@ import { getRandomVerse } from "@/lib/verses";
 import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import LogoIcon from "@/components/LogoIcon";
 import WeeklyQuizPopup from "./WeeklyQuizPopup";
-import TodayActivityBadge, { TodayStats } from "./TodayActivityBadge";
+import type { TodayStats } from "./todayStats";
 import LiveActivityTicker from "./LiveActivityTicker";
 import HomeTopBar from "./HomeTopBar";
 
@@ -74,8 +74,6 @@ export default function HomeCardTemplate({
                 >
                   Commencer le quiz
                 </Link>
-                <TodayActivityBadge todayStats={todayStats} accentColor={settings.color_accent_dark} />
-                <LiveActivityTicker quizId={activeQuiz.id} quizTitle={activeQuiz.title} />
               </>
             ) : (
               <p className="text-sm text-gray-400">
@@ -84,8 +82,14 @@ export default function HomeCardTemplate({
             )}
           </div>
 
+          {activeQuiz && (
+            <div className="mt-6">
+              <LiveActivityTicker quizId={activeQuiz.id} quizTitle={activeQuiz.title} />
+            </div>
+          )}
+
           {settings.show_stats && stats.submissions > 0 && (
-            <div className="mt-8 grid grid-cols-3 gap-2 border-t border-gray-100 pt-6 text-center">
+            <div className="mt-6 grid grid-cols-3 gap-2 border-t border-gray-100 pt-6 text-center">
               <div>
                 <p className="text-lg font-extrabold" style={{ color: secondary }}>
                   {stats.participants}

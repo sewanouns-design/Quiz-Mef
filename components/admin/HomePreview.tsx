@@ -13,7 +13,7 @@ const PREVIEW_QUIZ = {
 };
 
 const PREVIEW_STATS = { participants: 128, submissions: 94, quizzes: 12 };
-const PREVIEW_TODAY_STATS = { count: 8, bestPercent: 92 };
+const PREVIEW_TODAY_STATS = { count: 8 };
 
 const DEVICES = {
   desktop: { width: 1280, frameWidth: 380 },

@@ -5,7 +5,7 @@ import Link from "next/link";
 import LogoIcon from "@/components/LogoIcon";
 import { getStoredParticipant } from "@/lib/participant-storage";
 import type { SiteSettings } from "@/lib/types";
-import type { TodayStats } from "./TodayActivityBadge";
+import type { TodayStats } from "./todayStats";
 
 /**
  * Entête sticky de la page d'accueil : identité du site + preuve sociale en

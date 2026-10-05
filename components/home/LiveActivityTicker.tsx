@@ -71,10 +71,13 @@ export default function LiveActivityTicker({
   const current = entries[index % entries.length];
 
   return (
-    <div className="mt-3 overflow-hidden rounded-lg bg-black/5 px-3 py-2 text-xs sm:text-sm">
-      <p key={`${current.displayName}-${current.submittedAt}`} className="animate-ticker-in">
+    <div className="overflow-hidden rounded-xl border-2 border-accent/20 bg-accent/5 px-4 py-3 text-center sm:px-6 sm:py-4">
+      <p
+        key={`${current.displayName}-${current.submittedAt}`}
+        className="animate-ticker-in text-sm font-medium text-navy sm:text-base"
+      >
         🎉 <strong>{current.displayName}</strong> vient de passer le quiz « {quizTitle} » ·{" "}
-        {formatRelativeTime(current.submittedAt)}
+        <span className="text-gray-500">{formatRelativeTime(current.submittedAt)}</span>
       </p>
     </div>
   );

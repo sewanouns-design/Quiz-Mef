@@ -5,7 +5,7 @@ import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import DesktopSideDecoration from "./DesktopSideDecoration";
 import WeeklyQuizPopup from "./WeeklyQuizPopup";
 import LogoIcon from "@/components/LogoIcon";
-import TodayActivityBadge, { TodayStats } from "./TodayActivityBadge";
+import type { TodayStats } from "./todayStats";
 import LiveActivityTicker from "./LiveActivityTicker";
 import HomeTopBar from "./HomeTopBar";
 
@@ -65,8 +65,9 @@ export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz, 
               >
                 Commencer le quiz
               </Link>
-              <TodayActivityBadge todayStats={todayStats} accentColor={accentDark} />
-              <LiveActivityTicker quizId={activeQuiz.id} quizTitle={activeQuiz.title} />
+              <div className="mt-4">
+                <LiveActivityTicker quizId={activeQuiz.id} quizTitle={activeQuiz.title} />
+              </div>
             </>
           ) : (
             <p className="text-sm text-gray-400">

@@ -5,7 +5,7 @@ import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import DesktopSideDecoration from "./DesktopSideDecoration";
 import WeeklyQuizPopup from "./WeeklyQuizPopup";
 import LogoIcon from "@/components/LogoIcon";
-import TodayActivityBadge, { TodayStats } from "./TodayActivityBadge";
+import type { TodayStats } from "./todayStats";
 import LiveActivityTicker from "./LiveActivityTicker";
 import HomeTopBar from "./HomeTopBar";
 
@@ -106,8 +106,6 @@ export default function HomeStepsTemplate({
                 >
                   Commencer le quiz
                 </Link>
-                <TodayActivityBadge todayStats={todayStats} accentColor={accentDark} />
-                <LiveActivityTicker quizId={activeQuiz.id} quizTitle={activeQuiz.title} />
               </div>
             ) : (
               <div className="card">
@@ -119,8 +117,14 @@ export default function HomeStepsTemplate({
           </div>
         </div>
 
+        {activeQuiz && (
+          <div className="mx-auto mt-10 max-w-xl">
+            <LiveActivityTicker quizId={activeQuiz.id} quizTitle={activeQuiz.title} />
+          </div>
+        )}
+
         {settings.show_stats && stats.submissions > 0 && (
-          <div className="mt-14 grid grid-cols-3 gap-3 sm:gap-4">
+          <div className="mt-10 grid grid-cols-3 gap-3 sm:gap-4">
             <StatCard value={stats.participants} label="Participants" primaryColor={secondary} />
             <StatCard value={stats.quizzes} label="Quiz créés" primaryColor={secondary} />
             <StatCard value={stats.submissions} label="Quiz complétés" primaryColor={secondary} />
