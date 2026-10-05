@@ -40,7 +40,7 @@ export type PublicQuestion = Omit<
 export interface Participant {
   id: string;
   name: string;
-  address: string;
+  address: string | null;
   email: string | null;
   whatsapp: string | null;
   device_key: string;

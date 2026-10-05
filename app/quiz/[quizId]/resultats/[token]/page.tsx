@@ -51,6 +51,7 @@ export default function ResultsPage() {
   const [timeExpired, setTimeExpired] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState("");
+  const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
     try {
@@ -135,6 +136,22 @@ export default function ResultsPage() {
     } finally {
       setSharing(false);
     }
+  }
+
+  async function handleCopyLink() {
+    const url = `${window.location.origin}/quiz/${quizId}/resultats/${token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const input = document.createElement("input");
+      input.value = url;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      input.remove();
+    }
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
   }
 
   if (loading) {
@@ -298,6 +315,13 @@ export default function ResultsPage() {
           >
             📊 Mes stats
           </Link>
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className="inline-flex items-center gap-1.5 rounded-full border-2 border-navy/15 bg-white px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition-colors hover:border-navy/30"
+          >
+            {linkCopied ? "✅ Lien copié" : "🔗 Copier le lien"}
+          </button>
         </div>
 
         <div className="mb-8 flex justify-center">

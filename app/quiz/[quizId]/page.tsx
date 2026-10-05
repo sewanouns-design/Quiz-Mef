@@ -34,7 +34,7 @@ function formatTime(totalSeconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-const LEAVE_THRESHOLD_MS = 5000;
+const LEAVE_THRESHOLD_MS = 15000;
 const RING_CIRCUMFERENCE = 100; // r = 15.9155 -> 2πr ≈ 100, pratique pour le %
 
 function QuizTimer({
@@ -556,8 +556,9 @@ export default function QuizPage() {
         {showLeaveWarning && (
           <div className="mb-6 flex items-start justify-between gap-3 rounded-xl border-2 border-accent bg-accent/10 px-4 py-3">
             <p className="text-sm font-medium text-accent-dark">
-              ⚠️ Tu as quitté la page du quiz. Si tu recommences, ton test sera automatiquement
-              annulé.
+              ⚠️ On dirait que tu as quitté cette page un moment. Reste bien ici jusqu&apos;à la
+              fin : si ça se reproduit, ton test sera automatiquement annulé (pour que le quiz
+              reste équitable pour tous).
             </p>
             <button
               onClick={() => setShowLeaveWarning(false)}

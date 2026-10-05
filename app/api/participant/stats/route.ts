@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
   const { data: submissions, error: submissionsError } = await supabase
     .from("daily_submissions")
-    .select("score, max_score, submitted_at")
+    .select("score, max_score, submitted_at, result_token, quiz_id, quiz:daily_quizzes(title)")
     .eq("participant_id", participant.id)
     .eq("cancelled", false)
     .order("submitted_at", { ascending: false });
@@ -43,6 +43,17 @@ export async function GET(request: NextRequest) {
   }
 
   const rows = submissions ?? [];
+  const history = rows.map((s) => {
+    const quiz = s.quiz as unknown as { title: string } | null;
+    return {
+      quizId: s.quiz_id,
+      quizTitle: quiz?.title ?? "Quiz supprimé",
+      score: s.score,
+      maxScore: s.max_score,
+      submittedAt: s.submitted_at,
+      resultToken: s.result_token,
+    };
+  });
   const quizzesCount = rows.length;
   const passedCount = rows.filter((s) => isPassingScore(s.score, s.max_score)).length;
   const averagePercent =
@@ -62,5 +73,6 @@ export async function GET(request: NextRequest) {
     averagePercent,
     bestScorePercent,
     streakDays,
+    history,
   });
 }

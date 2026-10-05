@@ -48,9 +48,9 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { deviceKey, name, address, email, whatsapp, showInLeaderboard } = body ?? {};
 
-  if (!deviceKey || !name || !address || !email) {
+  if (!deviceKey || !name || !email) {
     return NextResponse.json(
-      { error: "deviceKey, name, address et email sont requis" },
+      { error: "deviceKey, name et email sont requis" },
       { status: 400 }
     );
   }
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       {
         device_key: deviceKey,
         name,
-        address,
+        address: address || null,
         email: email || null,
         whatsapp: whatsapp || null,
         show_in_leaderboard: Boolean(showInLeaderboard),

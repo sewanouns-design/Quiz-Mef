@@ -8,7 +8,7 @@ interface SubmissionActivity {
   score: number;
   maxScore: number;
   cancelled: boolean;
-  participant: { name: string; address: string } | null;
+  participant: { name: string; address: string | null } | null;
   quiz: { title: string } | null;
 }
 
@@ -458,7 +458,7 @@ export default function OverviewTab() {
                                 <p className="truncate font-medium text-navy">
                                   {a.participant?.name ?? "—"}{" "}
                                   <span className="font-normal text-gray-400">
-                                    · {a.participant?.address}
+                                    · {a.participant?.address ?? "—"}
                                   </span>
                                 </p>
                                 <p className="truncate text-xs text-gray-500">

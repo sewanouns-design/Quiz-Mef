@@ -7,7 +7,7 @@ interface Submission {
   id: string;
   score: number;
   max_score: number;
-  participant: { id: string; name: string; address: string } | null;
+  participant: { id: string; name: string; address: string | null } | null;
 }
 
 const MEDALS = ["🥇", "🥈", "🥉"];

@@ -7,7 +7,7 @@ import MergeParticipantsModal from "./MergeParticipantsModal";
 interface Participant {
   id: string;
   name: string;
-  address: string;
+  address: string | null;
   email: string | null;
   whatsapp: string | null;
   created_at: string;
@@ -52,7 +52,7 @@ export default function ParticipantsTab() {
 
   const filtered = participants.filter((p) => {
     const q = search.toLowerCase();
-    return p.name.toLowerCase().includes(q) || p.address.toLowerCase().includes(q);
+    return p.name.toLowerCase().includes(q) || (p.address ?? "").toLowerCase().includes(q);
   });
 
   function toggleOne(id: string) {
@@ -190,7 +190,7 @@ export default function ParticipantsTab() {
                       {p.name}
                     </button>
                   </td>
-                  <td className="py-3 pr-4 text-gray-600">{p.address}</td>
+                  <td className="py-3 pr-4 text-gray-600">{p.address ?? "—"}</td>
                   <td className="py-3 pr-4">
                     {p.email ? (
                       <a href={`mailto:${p.email}`} className="text-accent-dark hover:underline">

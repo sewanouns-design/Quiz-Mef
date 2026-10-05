@@ -5,7 +5,7 @@ import { useState } from "react";
 interface Participant {
   id: string;
   name: string;
-  address: string;
+  address: string | null;
   email: string | null;
   whatsapp: string | null;
   created_at: string;

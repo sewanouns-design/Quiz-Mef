@@ -11,7 +11,7 @@ create extension if not exists "pgcrypto";
 create table if not exists participants (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  address text not null,
+  address text,
   email text,
   whatsapp text,
   device_key text unique not null,

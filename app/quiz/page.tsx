@@ -143,8 +143,8 @@ function QuizIdentificationForm() {
 
     if (!selectedQuizId) return;
 
-    if (!name.trim() || !address.trim() || !email.trim()) {
-      setError("Le nom, l'adresse et l'email sont requis.");
+    if (!name.trim() || !email.trim()) {
+      setError("Le nom et l'email sont requis.");
       return;
     }
 
@@ -263,7 +263,6 @@ function QuizIdentificationForm() {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Ex : Zogbadjè, Cotonou"
-              required
             />
           </div>
 

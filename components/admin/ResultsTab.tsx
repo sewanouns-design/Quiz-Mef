@@ -10,7 +10,7 @@ interface Submission {
   max_score: number;
   cancelled: boolean;
   submitted_at: string;
-  participant: { id: string; name: string; address: string; email: string | null; whatsapp: string | null } | null;
+  participant: { id: string; name: string; address: string | null; email: string | null; whatsapp: string | null } | null;
 }
 
 function toWhatsappLink(whatsapp: string): string {

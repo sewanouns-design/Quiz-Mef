@@ -4,6 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getOrCreateDeviceKey } from "@/lib/participant-storage";
 
+interface HistoryEntry {
+  quizId: string;
+  quizTitle: string;
+  score: number;
+  maxScore: number;
+  submittedAt: string;
+  resultToken: string;
+}
+
 interface StatsData {
   participant: { name: string } | null;
   quizzesCount?: number;
@@ -11,6 +20,7 @@ interface StatsData {
   averagePercent?: number | null;
   bestScorePercent?: number | null;
   streakDays?: number;
+  history?: HistoryEntry[];
 }
 
 function StatCard({ icon, value, label }: { icon: string; value: string | number; label: string }) {
@@ -91,6 +101,39 @@ export default function MesStatsPage() {
                 <StatCard icon="🔥" value={`${data.streakDays} jours`} label="Série en cours" />
               </div>
             )}
+          </div>
+        )}
+
+        {data?.history && data.history.length > 0 && (
+          <div className="mt-8">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+              Historique
+            </h2>
+            <ul className="space-y-2">
+              {data.history.map((h, i) => {
+                const percent = Math.round((h.score / h.maxScore) * 100);
+                return (
+                  <li key={i}>
+                    <Link
+                      href={`/quiz/${h.quizId}/resultats/${h.resultToken}`}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-colors hover:border-accent"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-navy">{h.quizTitle}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(h.submittedAt).toLocaleDateString("fr-FR", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+                      <span className="shrink-0 font-bold text-navy">{percent}%</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         )}
 
