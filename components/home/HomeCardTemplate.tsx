@@ -4,15 +4,23 @@ import { getRandomVerse } from "@/lib/verses";
 import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import LogoIcon from "@/components/LogoIcon";
 import WeeklyQuizPopup from "./WeeklyQuizPopup";
+import TodayActivityBadge, { TodayStats } from "./TodayActivityBadge";
 
 interface Props {
   settings: SiteSettings;
   activeQuiz: { id: string; title: string; subtitle: string | null } | null;
   weeklyQuiz: { id: string; title: string; subtitle: string | null } | null;
   stats: { participants: number; submissions: number; quizzes: number };
+  todayStats: TodayStats | null;
 }
 
-export default function HomeCardTemplate({ settings, activeQuiz, weeklyQuiz, stats }: Props) {
+export default function HomeCardTemplate({
+  settings,
+  activeQuiz,
+  weeklyQuiz,
+  stats,
+  todayStats,
+}: Props) {
   const primary = settings.color_primary;
   const primaryDark = settings.color_primary_dark;
   const accent = settings.color_accent;
@@ -62,6 +70,7 @@ export default function HomeCardTemplate({ settings, activeQuiz, weeklyQuiz, sta
                 >
                   Commencer le quiz
                 </Link>
+                <TodayActivityBadge todayStats={todayStats} accentColor={settings.color_accent_dark} />
               </>
             ) : (
               <p className="text-sm text-gray-400">

@@ -5,12 +5,14 @@ import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import DesktopSideDecoration from "./DesktopSideDecoration";
 import WeeklyQuizPopup from "./WeeklyQuizPopup";
 import LogoIcon from "@/components/LogoIcon";
+import TodayActivityBadge, { TodayStats } from "./TodayActivityBadge";
 
 interface Props {
   settings: SiteSettings;
   activeQuiz: { id: string; title: string; subtitle: string | null } | null;
   weeklyQuiz: { id: string; title: string; subtitle: string | null } | null;
   stats: { participants: number; submissions: number; quizzes: number };
+  todayStats: TodayStats | null;
 }
 
 function StatCard({
@@ -34,7 +36,13 @@ function StatCard({
   );
 }
 
-export default function HomeStepsTemplate({ settings, activeQuiz, weeklyQuiz, stats }: Props) {
+export default function HomeStepsTemplate({
+  settings,
+  activeQuiz,
+  weeklyQuiz,
+  stats,
+  todayStats,
+}: Props) {
   const primary = settings.color_primary;
   const accentDark = settings.color_accent_dark;
   const secondary = settings.color_secondary;
@@ -94,6 +102,7 @@ export default function HomeStepsTemplate({ settings, activeQuiz, weeklyQuiz, st
                 >
                   Commencer le quiz
                 </Link>
+                <TodayActivityBadge todayStats={todayStats} accentColor={accentDark} />
               </div>
             ) : (
               <div className="card">

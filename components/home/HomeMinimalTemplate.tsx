@@ -5,15 +5,17 @@ import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import DesktopSideDecoration from "./DesktopSideDecoration";
 import WeeklyQuizPopup from "./WeeklyQuizPopup";
 import LogoIcon from "@/components/LogoIcon";
+import TodayActivityBadge, { TodayStats } from "./TodayActivityBadge";
 
 interface Props {
   settings: SiteSettings;
   activeQuiz: { id: string; title: string; subtitle: string | null } | null;
   weeklyQuiz: { id: string; title: string; subtitle: string | null } | null;
   stats: { participants: number; submissions: number; quizzes: number };
+  todayStats: TodayStats | null;
 }
 
-export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz }: Props) {
+export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz, todayStats }: Props) {
   const primary = settings.color_primary;
   const accentDark = settings.color_accent_dark;
   const verse = getRandomVerse();
@@ -51,13 +53,16 @@ export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz }
 
         <div className="mt-10">
           {activeQuiz ? (
-            <Link
-              href="/quiz"
-              className="inline-flex w-full items-center justify-center rounded-full px-8 py-4 font-semibold text-white shadow-md transition-opacity hover:opacity-90"
-              style={{ backgroundColor: settings.color_accent }}
-            >
-              Commencer le quiz
-            </Link>
+            <>
+              <Link
+                href="/quiz"
+                className="inline-flex w-full items-center justify-center rounded-full px-8 py-4 font-semibold text-white shadow-md transition-opacity hover:opacity-90"
+                style={{ backgroundColor: settings.color_accent }}
+              >
+                Commencer le quiz
+              </Link>
+              <TodayActivityBadge todayStats={todayStats} accentColor={accentDark} />
+            </>
           ) : (
             <p className="text-sm text-gray-400">
               Aucun quiz disponible aujourd&apos;hui. Reviens bientôt.

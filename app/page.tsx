@@ -45,6 +45,39 @@ const getCachedActiveQuizzes = unstable_cache(
   { revalidate: 300, tags: ["home"] }
 );
 
+// Activité du jour pour LE quiz du jour mis en avant (pas le quiz hebdo) :
+// nombre de vraies réponses déjà données aujourd'hui et meilleur score du
+// jour, pour donner un effet d'entraînement juste à côté du bouton
+// "Commencer". Revalidation plus courte que les stats globales : c'est
+// justement l'aspect "en direct" qui doit rester à jour.
+const getCachedTodayQuizStats = unstable_cache(
+  async (quizId: string) => {
+    const supabase = getSupabaseAdmin();
+    const startOfTodayUTC = new Date();
+    startOfTodayUTC.setUTCHours(0, 0, 0, 0);
+
+    const { data } = await supabase
+      .from("daily_submissions")
+      .select("score, max_score")
+      .eq("quiz_id", quizId)
+      .eq("cancelled", false)
+      .gte("submitted_at", startOfTodayUTC.toISOString());
+
+    const rows = data ?? [];
+    const count = rows.length;
+    const bestPercent =
+      count > 0
+        ? Math.round(
+            Math.max(...rows.map((r) => (r.max_score > 0 ? r.score / r.max_score : 0))) * 100
+          )
+        : null;
+
+    return { count, bestPercent };
+  },
+  ["home-today-quiz-stats"],
+  { revalidate: 120, tags: ["home"] }
+);
+
 const getCachedStats = unstable_cache(
   async () => {
     const supabase = getSupabaseAdmin();
@@ -79,7 +112,9 @@ export default async function HomePage() {
   const activeQuiz = activeQuizzes.find((q) => q.category !== "weekly") ?? null;
   const weeklyQuiz = activeQuizzes.find((q) => q.category === "weekly") ?? null;
 
-  const props = { settings, activeQuiz, weeklyQuiz, stats };
+  const todayStats = activeQuiz ? await getCachedTodayQuizStats(activeQuiz.id) : null;
+
+  const props = { settings, activeQuiz, weeklyQuiz, stats, todayStats };
 
   if (settings.template === "minimal") {
     return <HomeMinimalTemplate {...props} />;

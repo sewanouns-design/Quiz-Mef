@@ -13,6 +13,7 @@ const PREVIEW_QUIZ = {
 };
 
 const PREVIEW_STATS = { participants: 128, submissions: 94, quizzes: 12 };
+const PREVIEW_TODAY_STATS = { count: 8, bestPercent: 92 };
 
 const DEVICES = {
   desktop: { width: 1280, frameWidth: 380 },
@@ -73,6 +74,7 @@ export default function HomePreview({ settings }: { settings: SiteSettings }) {
               activeQuiz={PREVIEW_QUIZ}
               weeklyQuiz={null}
               stats={PREVIEW_STATS}
+              todayStats={PREVIEW_TODAY_STATS}
             />
           </div>
         </div>
