@@ -25,6 +25,26 @@ create index if not exists idx_participants_device_key on participants (device_k
 create index if not exists idx_participants_address on participants (address);
 
 -- ------------------------------------------------------------
+-- Jetons de connexion ("lien magique") : reconnaître un participant sur un
+-- nouvel appareil/navigateur sans compte ni mot de passe. Jeton à usage
+-- unique, expirant, envoyé par email (demande explicite sur /quiz, ou
+-- glissé automatiquement dans l'email de résultats avec une échéance plus
+-- longue). Consommer le jeton réécrit le device_key d'origine du
+-- participant dans le localStorage du nouvel appareil.
+-- ------------------------------------------------------------
+create table if not exists participant_login_tokens (
+  id uuid primary key default gen_random_uuid(),
+  participant_id uuid references participants(id) on delete cascade,
+  token text not null unique,
+  expires_at timestamptz not null,
+  used_at timestamptz,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_participant_login_tokens_token on participant_login_tokens (token);
+create index if not exists idx_participant_login_tokens_participant_id on participant_login_tokens (participant_id);
+
+-- ------------------------------------------------------------
 -- Quiz quotidiens
 -- ------------------------------------------------------------
 create table if not exists daily_quizzes (
@@ -269,6 +289,7 @@ create index if not exists idx_admin_activity_log_created_at on admin_activity_l
 -- (clé anon) ne soit possible.
 -- ------------------------------------------------------------
 alter table participants enable row level security;
+alter table participant_login_tokens enable row level security;
 alter table daily_quizzes enable row level security;
 alter table daily_questions enable row level security;
 alter table daily_submissions enable row level security;

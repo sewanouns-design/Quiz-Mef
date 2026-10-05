@@ -93,10 +93,22 @@ export function buildResultsEmailHtml(params: {
   attemptNumber?: number;
   attemptsRemaining?: number;
   colors?: EmailColors;
+  /** Lien magique longue durée (voir lib/magic-link.ts) : retrouver son profil
+   * depuis un autre appareil sans tout ressaisir, glissé passivement ici. */
+  magicLinkUrl?: string;
 }): string {
-  const { participantName, quizTitle, score, maxScore, answers, cancelled, attemptNumber, attemptsRemaining } =
-    params;
-  const { primary } = params.colors ?? {
+  const {
+    participantName,
+    quizTitle,
+    score,
+    maxScore,
+    answers,
+    cancelled,
+    attemptNumber,
+    attemptsRemaining,
+    magicLinkUrl,
+  } = params;
+  const { primary, accent } = params.colors ?? {
     primary: "#1a2e5a",
     accent: "#dc2626",
     accentDark: "#7f1414",
@@ -181,6 +193,11 @@ export function buildResultsEmailHtml(params: {
                   ${buildResultsTableRows(answers)}
                 </table>
                 <p style="margin:24px 0 0 0;color:#374151;">Continue à sonder les Écritures chaque jour. « Sonde les écritures, car ce sont elles qui rendent témoignage de moi » (Jean 5:39).</p>
+                ${
+                  magicLinkUrl
+                    ? `<p style="margin:16px 0 0 0;font-size:13px;color:#6b7280;">Sur un autre appareil ? <a href="${magicLinkUrl}" style="color:${accent};">Retrouve ton profil ici</a> sans tout ressaisir.</p>`
+                    : ""
+                }
                 <p style="margin:24px 0 0 0;font-size:13px;color:#9ca3af;">Quiz Biblique — quiz.mefzogbadje.org</p>
               </td>
             </tr>
@@ -203,6 +220,7 @@ export async function sendResultsEmail(params: {
   cancelled?: boolean;
   attemptNumber?: number;
   attemptsRemaining?: number;
+  magicLinkUrl?: string;
 }): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL;
@@ -358,4 +376,83 @@ export async function sendReengagementEmail(params: {
   console.log(
     `Relance ${params.milestoneHours}h envoyée à ${params.to} (id: ${result.data?.id})`
   );
+}
+
+function buildMagicLinkEmailHtml(params: {
+  participantName: string;
+  magicLinkUrl: string;
+  colors?: EmailColors;
+}): string {
+  const { participantName, magicLinkUrl } = params;
+  const { accent } = params.colors ?? {
+    primary: "#1a2e5a",
+    accent: "#dc2626",
+    accentDark: "#7f1414",
+  };
+
+  return `
+  <!DOCTYPE html>
+  <html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>Quiz Biblique</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#ffffff;">
+    <div style="font-family:Arial,Helvetica,sans-serif;max-width:580px;margin:0 auto;padding:16px;color:#222222;font-size:15px;line-height:1.6;">
+      <p>Bonjour ${escapeHtml(participantName)},</p>
+      <p>Clique sur ce lien pour retrouver ton profil sur cet appareil, sans tout ressaisir :</p>
+      <p><a href="${magicLinkUrl}" style="color:${accent};">${magicLinkUrl}</a></p>
+      <p style="color:#555555;font-size:13px;">Ce lien est à usage unique et expire dans 30 minutes. Si tu n'as rien demandé, ignore cet email.</p>
+      <p style="margin-top:24px;color:#555555;">— Quiz Biblique</p>
+    </div>
+  </body>
+  </html>
+  `;
+}
+
+/**
+ * Envoie un lien de connexion à usage unique (voir participant_login_tokens) :
+ * reconnaît le participant sur un nouvel appareil/navigateur sans compte ni
+ * mot de passe, en réécrivant son device_key d'origine dans le localStorage
+ * de ce nouvel appareil au clic (voir app/lien/page.tsx).
+ */
+export async function sendMagicLinkEmail(params: {
+  to: string;
+  participantName: string;
+  magicLinkUrl: string;
+}): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL;
+
+  if (!apiKey || !from) {
+    console.warn("RESEND_API_KEY ou RESEND_FROM_EMAIL manquant, lien magique non envoyé.");
+    return;
+  }
+
+  const resend = new Resend(apiKey);
+  const settings = await getSiteSettings();
+  const html = buildMagicLinkEmailHtml({
+    ...params,
+    colors: {
+      primary: settings.color_primary,
+      accent: settings.color_accent,
+      accentDark: settings.color_accent_dark,
+    },
+  });
+
+  const result = await resend.emails.send({
+    from,
+    to: params.to,
+    subject: "Ton lien pour retrouver ton profil — Quiz Biblique",
+    html,
+  });
+
+  if (result.error) {
+    throw new Error(`Resend a refusé l'envoi : ${result.error.name} — ${result.error.message}`);
+  }
+
+  console.log(`Lien magique envoyé à ${params.to} (id: ${result.data?.id})`);
 }

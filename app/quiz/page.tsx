@@ -33,6 +33,10 @@ function QuizIdentificationForm() {
   const [checkingQuiz, setCheckingQuiz] = useState(true);
   const [error, setError] = useState("");
   const [phoneInputKey, setPhoneInputKey] = useState("initial");
+  const [showMagicLinkForm, setShowMagicLinkForm] = useState(false);
+  const [magicLinkEmail, setMagicLinkEmail] = useState("");
+  const [magicLinkSending, setMagicLinkSending] = useState(false);
+  const [magicLinkMessage, setMagicLinkMessage] = useState("");
   // Quiz déjà déterminé (lien direct ?quiz=, ou un seul quiz du jour actif) :
   // on passe directement à l'identification pour celui-ci.
   const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
@@ -105,6 +109,32 @@ function QuizIdentificationForm() {
   function handleChooseQuiz(quizId: string) {
     setSelectedQuizId(quizId);
     setQuizChoices(null);
+  }
+
+  async function handleRequestMagicLink(e: React.FormEvent) {
+    e.preventDefault();
+    if (!isValidEmail(magicLinkEmail)) {
+      setMagicLinkMessage("Le format de l'email n'est pas valide.");
+      return;
+    }
+    setMagicLinkSending(true);
+    setMagicLinkMessage("");
+    try {
+      const res = await fetch("/api/participant/magic-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ email: magicLinkEmail }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setMagicLinkMessage(
+        data.message || data.error || "Si cette adresse est associée à un profil, un lien vient d'être envoyé."
+      );
+    } catch {
+      setMagicLinkMessage("Une erreur est survenue, réessaie plus tard.");
+    } finally {
+      setMagicLinkSending(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -290,6 +320,38 @@ function QuizIdentificationForm() {
             {loading ? "Chargement..." : "Commencer"}
           </button>
         </form>
+
+        <div className="mt-4 text-center">
+          {!showMagicLinkForm ? (
+            <button
+              type="button"
+              onClick={() => setShowMagicLinkForm(true)}
+              className="text-sm font-semibold text-navy hover:underline"
+            >
+              Déjà identifié sur un autre appareil ?
+            </button>
+          ) : (
+            <form onSubmit={handleRequestMagicLink} className="card space-y-3 text-left">
+              <p className="text-sm font-semibold text-navy">
+                Reçois un lien par email pour retrouver ton profil ici, sans tout ressaisir.
+              </p>
+              <input
+                type="email"
+                className="input-field"
+                placeholder="ton.email@exemple.com"
+                value={magicLinkEmail}
+                onChange={(e) => setMagicLinkEmail(e.target.value)}
+                required
+              />
+              {magicLinkMessage && (
+                <p className="text-sm font-medium text-gray-600">{magicLinkMessage}</p>
+              )}
+              <button type="submit" className="btn-primary w-full" disabled={magicLinkSending}>
+                {magicLinkSending ? "Envoi..." : "Envoyer le lien"}
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </main>
   );
