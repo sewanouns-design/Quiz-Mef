@@ -5,6 +5,7 @@ import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import LogoIcon from "@/components/LogoIcon";
 import WeeklyQuizPopup from "./WeeklyQuizPopup";
 import TodayActivityBadge, { TodayStats } from "./TodayActivityBadge";
+import LiveActivityTicker from "./LiveActivityTicker";
 import HomeTopBar from "./HomeTopBar";
 
 interface Props {
@@ -74,6 +75,7 @@ export default function HomeCardTemplate({
                   Commencer le quiz
                 </Link>
                 <TodayActivityBadge todayStats={todayStats} accentColor={settings.color_accent_dark} />
+                <LiveActivityTicker quizId={activeQuiz.id} quizTitle={activeQuiz.title} />
               </>
             ) : (
               <p className="text-sm text-gray-400">

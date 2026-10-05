@@ -3,8 +3,8 @@ export interface TodayStats {
   bestPercent: number | null;
 }
 
-/** Effet d'entraînement juste à côté du bouton "Commencer" : combien de
- * personnes ont déjà répondu aujourd'hui, et le meilleur score du jour. */
+/** Meilleur score du jour, juste à côté du bouton "Commencer" — l'activité
+ * nommée (qui vient de passer le quiz) est affichée par LiveActivityTicker. */
 export default function TodayActivityBadge({
   todayStats,
   accentColor,
@@ -12,12 +12,11 @@ export default function TodayActivityBadge({
   todayStats: TodayStats | null;
   accentColor: string;
 }) {
-  if (!todayStats || todayStats.count === 0) return null;
+  if (!todayStats || todayStats.count === 0 || todayStats.bestPercent === null) return null;
 
   return (
     <p className="mt-3 text-sm font-medium" style={{ color: accentColor }}>
-      🔥 {todayStats.count} personne{todayStats.count > 1 ? "s" : ""} déjà répondu aujourd&apos;hui
-      {todayStats.bestPercent !== null && <> · 🏆 Meilleur score : {todayStats.bestPercent}%</>}
+      🏆 Meilleur score aujourd&apos;hui : {todayStats.bestPercent}%
     </p>
   );
 }

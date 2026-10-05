@@ -6,6 +6,7 @@ import DesktopSideDecoration from "./DesktopSideDecoration";
 import WeeklyQuizPopup from "./WeeklyQuizPopup";
 import LogoIcon from "@/components/LogoIcon";
 import TodayActivityBadge, { TodayStats } from "./TodayActivityBadge";
+import LiveActivityTicker from "./LiveActivityTicker";
 import HomeTopBar from "./HomeTopBar";
 
 interface Props {
@@ -65,6 +66,7 @@ export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz, 
                 Commencer le quiz
               </Link>
               <TodayActivityBadge todayStats={todayStats} accentColor={accentDark} />
+              <LiveActivityTicker quizId={activeQuiz.id} quizTitle={activeQuiz.title} />
             </>
           ) : (
             <p className="text-sm text-gray-400">

@@ -6,6 +6,7 @@ import DesktopSideDecoration from "./DesktopSideDecoration";
 import WeeklyQuizPopup from "./WeeklyQuizPopup";
 import LogoIcon from "@/components/LogoIcon";
 import TodayActivityBadge, { TodayStats } from "./TodayActivityBadge";
+import LiveActivityTicker from "./LiveActivityTicker";
 import HomeTopBar from "./HomeTopBar";
 
 interface Props {
@@ -106,6 +107,7 @@ export default function HomeStepsTemplate({
                   Commencer le quiz
                 </Link>
                 <TodayActivityBadge todayStats={todayStats} accentColor={accentDark} />
+                <LiveActivityTicker quizId={activeQuiz.id} quizTitle={activeQuiz.title} />
               </div>
             ) : (
               <div className="card">
