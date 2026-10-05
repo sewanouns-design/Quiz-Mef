@@ -37,7 +37,7 @@ export default function HomeTopBar({
           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/15 text-sm">
             <LogoIcon value={settings.logo_icon} className="h-4 w-4" />
           </div>
-          <span>Quiz Biblique</span>
+          <span>{settings.site_name}</span>
           {todayStats && todayStats.count > 0 && (
             <span className="hidden text-xs font-normal text-white/70 sm:inline">
               · 🔥 {todayStats.count} aujourd&apos;hui
@@ -50,7 +50,7 @@ export default function HomeTopBar({
             className="animate-greeting-pop inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white shadow-md transition-opacity hover:opacity-90"
             style={{ backgroundColor: settings.color_accent }}
           >
-            👋 Content de te revoir, {firstName}
+            👋 {settings.returning_greeting}, {firstName}
           </Link>
         )}
       </div>

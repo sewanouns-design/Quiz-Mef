@@ -28,9 +28,11 @@ function formatRelativeTime(iso: string): string {
 export default function LiveActivityTicker({
   quizId,
   quizTitle,
+  activityPhrase,
 }: {
   quizId: string;
   quizTitle: string;
+  activityPhrase: string;
 }) {
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [index, setIndex] = useState(0);
@@ -76,7 +78,7 @@ export default function LiveActivityTicker({
         key={`${current.displayName}-${current.submittedAt}`}
         className="animate-ticker-in text-sm font-medium text-navy sm:text-base"
       >
-        🎉 <strong>{current.displayName}</strong> vient de passer le quiz « {quizTitle} » ·{" "}
+        🎉 <strong>{current.displayName}</strong> {activityPhrase} « {quizTitle} » ·{" "}
         <span className="text-gray-500">{formatRelativeTime(current.submittedAt)}</span>
       </p>
     </div>

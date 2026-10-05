@@ -72,7 +72,7 @@ export default function HomeCardTemplate({
                   className="mt-5 inline-flex w-full items-center justify-center rounded-xl px-6 py-3 font-semibold text-white shadow-md transition-opacity hover:opacity-90"
                   style={{ backgroundColor: accent }}
                 >
-                  Commencer le quiz
+                  {settings.start_button_text}
                 </Link>
               </>
             ) : (
@@ -84,7 +84,11 @@ export default function HomeCardTemplate({
 
           {activeQuiz && (
             <div className="mt-6">
-              <LiveActivityTicker quizId={activeQuiz.id} quizTitle={activeQuiz.title} />
+              <LiveActivityTicker
+                quizId={activeQuiz.id}
+                quizTitle={activeQuiz.title}
+                activityPhrase={settings.activity_ticker_phrase}
+              />
             </div>
           )}
 
@@ -94,19 +98,25 @@ export default function HomeCardTemplate({
                 <p className="text-lg font-extrabold" style={{ color: secondary }}>
                   {stats.participants}
                 </p>
-                <p className="text-[10px] uppercase tracking-wide text-gray-400">Participants</p>
+                <p className="text-[10px] uppercase tracking-wide text-gray-400">
+                  {settings.stat_label_participants}
+                </p>
               </div>
               <div>
                 <p className="text-lg font-extrabold" style={{ color: secondary }}>
                   {stats.quizzes}
                 </p>
-                <p className="text-[10px] uppercase tracking-wide text-gray-400">Quiz créés</p>
+                <p className="text-[10px] uppercase tracking-wide text-gray-400">
+                  {settings.stat_label_quizzes}
+                </p>
               </div>
               <div>
                 <p className="text-lg font-extrabold" style={{ color: secondary }}>
                   {stats.submissions}
                 </p>
-                <p className="text-[10px] uppercase tracking-wide text-gray-400">Quiz faits</p>
+                <p className="text-[10px] uppercase tracking-wide text-gray-400">
+                  {settings.stat_label_submissions}
+                </p>
               </div>
             </div>
           )}

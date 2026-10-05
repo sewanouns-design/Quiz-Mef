@@ -63,10 +63,14 @@ export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz, 
                 className="inline-flex w-full items-center justify-center rounded-full px-8 py-4 font-semibold text-white shadow-md transition-opacity hover:opacity-90"
                 style={{ backgroundColor: settings.color_accent }}
               >
-                Commencer le quiz
+                {settings.start_button_text}
               </Link>
               <div className="mt-4">
-                <LiveActivityTicker quizId={activeQuiz.id} quizTitle={activeQuiz.title} />
+                <LiveActivityTicker
+                  quizId={activeQuiz.id}
+                  quizTitle={activeQuiz.title}
+                  activityPhrase={settings.activity_ticker_phrase}
+                />
               </div>
             </>
           ) : (

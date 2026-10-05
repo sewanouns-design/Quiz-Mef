@@ -40,6 +40,13 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   verse_reference: "Jean 5:39",
   footer_text: "Quiz Biblique — Mission Évangélique de la Foi",
   show_stats: true,
+  site_name: "Quiz Biblique",
+  start_button_text: "Commencer le quiz",
+  stat_label_participants: "Participants",
+  stat_label_quizzes: "Quiz créés",
+  stat_label_submissions: "Quiz complétés",
+  activity_ticker_phrase: "vient de passer le quiz",
+  returning_greeting: "Content de te revoir",
   updated_at: "",
 };
 

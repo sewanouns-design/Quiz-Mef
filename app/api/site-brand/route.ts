@@ -15,5 +15,5 @@ const getCachedSettings = unstable_cache(getSiteSettings, ["site-brand-settings"
 
 export async function GET() {
   const settings = await getCachedSettings();
-  return NextResponse.json({ logoIcon: settings.logo_icon });
+  return NextResponse.json({ logoIcon: settings.logo_icon, siteName: settings.site_name });
 }

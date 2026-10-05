@@ -227,6 +227,17 @@ create table if not exists site_settings (
   verse_reference text not null default 'Jean 5:39',
   footer_text text not null default 'Quiz Biblique MEF — Mission Évangélique de la Foi',
   show_stats boolean not null default true,
+  -- Nom affiché dans la barre d'entête sticky de la page d'accueil (et sur
+  -- les autres pages via SiteHeader).
+  site_name text not null default 'Quiz Biblique',
+  start_button_text text not null default 'Commencer le quiz',
+  stat_label_participants text not null default 'Participants',
+  stat_label_quizzes text not null default 'Quiz créés',
+  stat_label_submissions text not null default 'Quiz complétés',
+  -- Bandeau défilant : "{prénom} {activity_ticker_phrase} « {titre du quiz} »".
+  activity_ticker_phrase text not null default 'vient de passer le quiz',
+  -- Accueil personnalisé pour un appareil reconnu : "{returning_greeting}, {prénom}".
+  returning_greeting text not null default 'Content de te revoir',
   updated_at timestamptz default now()
 );
 

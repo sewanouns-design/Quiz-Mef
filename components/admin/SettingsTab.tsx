@@ -216,6 +216,19 @@ export default function SettingsTab() {
           </select>
         </div>
 
+        {/* Nom du site */}
+        <div className="mb-6">
+          <label className="label-field" htmlFor="site_name">
+            Nom du site (affiché dans l&apos;entête de chaque page)
+          </label>
+          <input
+            id="site_name"
+            className="input-field"
+            value={settings.site_name}
+            onChange={(e) => updateField("site_name", e.target.value)}
+          />
+        </div>
+
         {/* Logo */}
         <div className="mb-6">
           <label className="label-field">Logo / icône du site</label>
@@ -293,6 +306,46 @@ export default function SettingsTab() {
               onChange={(e) => updateField("footer_text", e.target.value)}
             />
           </div>
+          <div>
+            <label className="label-field" htmlFor="start_button_text">
+              Texte du bouton pour commencer le quiz
+            </label>
+            <input
+              id="start_button_text"
+              className="input-field"
+              value={settings.start_button_text}
+              onChange={(e) => updateField("start_button_text", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="label-field" htmlFor="activity_ticker_phrase">
+              Phrase du bandeau d&apos;activité
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-400">« Prénom »</span>
+              <input
+                id="activity_ticker_phrase"
+                className="input-field"
+                value={settings.activity_ticker_phrase}
+                onChange={(e) => updateField("activity_ticker_phrase", e.target.value)}
+              />
+              <span className="text-sm text-gray-400">« titre du quiz »</span>
+            </div>
+          </div>
+          <div>
+            <label className="label-field" htmlFor="returning_greeting">
+              Accueil personnalisé (appareil déjà reconnu)
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                id="returning_greeting"
+                className="input-field"
+                value={settings.returning_greeting}
+                onChange={(e) => updateField("returning_greeting", e.target.value)}
+              />
+              <span className="text-sm text-gray-400">, « Prénom »</span>
+            </div>
+          </div>
         </div>
 
         {/* Étapes (template "Complet" uniquement) */}
@@ -327,15 +380,54 @@ export default function SettingsTab() {
         )}
 
         {/* Statistiques */}
-        <label className="mb-6 flex items-center gap-2 text-sm font-medium text-navy">
-          <input
-            type="checkbox"
-            checked={settings.show_stats}
-            onChange={(e) => updateField("show_stats", e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300"
-          />
-          Afficher les statistiques (participants, quiz complétés...)
-        </label>
+        <div className="mb-6">
+          <label className="mb-3 flex items-center gap-2 text-sm font-medium text-navy">
+            <input
+              type="checkbox"
+              checked={settings.show_stats}
+              onChange={(e) => updateField("show_stats", e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            Afficher les statistiques (participants, quiz complétés...)
+          </label>
+          {settings.show_stats && (
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div>
+                <label className="label-field" htmlFor="stat_label_participants">
+                  Libellé « participants »
+                </label>
+                <input
+                  id="stat_label_participants"
+                  className="input-field text-sm"
+                  value={settings.stat_label_participants}
+                  onChange={(e) => updateField("stat_label_participants", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="label-field" htmlFor="stat_label_quizzes">
+                  Libellé « quiz créés »
+                </label>
+                <input
+                  id="stat_label_quizzes"
+                  className="input-field text-sm"
+                  value={settings.stat_label_quizzes}
+                  onChange={(e) => updateField("stat_label_quizzes", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="label-field" htmlFor="stat_label_submissions">
+                  Libellé « quiz complétés »
+                </label>
+                <input
+                  id="stat_label_submissions"
+                  className="input-field text-sm"
+                  value={settings.stat_label_submissions}
+                  onChange={(e) => updateField("stat_label_submissions", e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
         {error && <p className="mb-4 text-sm font-medium text-red-600">{error}</p>}
         {success && <p className="mb-4 text-sm font-medium text-green-600">{success}</p>}

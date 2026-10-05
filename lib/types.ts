@@ -133,6 +133,13 @@ export interface SiteSettings {
   verse_reference: string;
   footer_text: string;
   show_stats: boolean;
+  site_name: string;
+  start_button_text: string;
+  stat_label_participants: string;
+  stat_label_quizzes: string;
+  stat_label_submissions: string;
+  activity_ticker_phrase: string;
+  returning_greeting: string;
   updated_at: string;
 }
 

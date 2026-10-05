@@ -51,6 +51,13 @@ export async function PUT(request: NextRequest) {
     verse_reference,
     footer_text,
     show_stats,
+    site_name,
+    start_button_text,
+    stat_label_participants,
+    stat_label_quizzes,
+    stat_label_submissions,
+    activity_ticker_phrase,
+    returning_greeting,
   } = body ?? {};
 
   if (template && !VALID_TEMPLATES.includes(template)) {
@@ -93,6 +100,13 @@ export async function PUT(request: NextRequest) {
   if (verse_reference !== undefined) updates.verse_reference = verse_reference;
   if (footer_text !== undefined) updates.footer_text = footer_text;
   if (show_stats !== undefined) updates.show_stats = Boolean(show_stats);
+  if (site_name !== undefined) updates.site_name = site_name;
+  if (start_button_text !== undefined) updates.start_button_text = start_button_text;
+  if (stat_label_participants !== undefined) updates.stat_label_participants = stat_label_participants;
+  if (stat_label_quizzes !== undefined) updates.stat_label_quizzes = stat_label_quizzes;
+  if (stat_label_submissions !== undefined) updates.stat_label_submissions = stat_label_submissions;
+  if (activity_ticker_phrase !== undefined) updates.activity_ticker_phrase = activity_ticker_phrase;
+  if (returning_greeting !== undefined) updates.returning_greeting = returning_greeting;
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase

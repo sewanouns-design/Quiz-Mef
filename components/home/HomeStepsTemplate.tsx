@@ -104,7 +104,7 @@ export default function HomeStepsTemplate({
                   className="mt-6 inline-flex w-full items-center justify-center rounded-xl px-6 py-3 font-semibold text-white transition-opacity hover:opacity-90"
                   style={{ backgroundColor: settings.color_accent }}
                 >
-                  Commencer le quiz
+                  {settings.start_button_text}
                 </Link>
               </div>
             ) : (
@@ -119,15 +119,31 @@ export default function HomeStepsTemplate({
 
         {activeQuiz && (
           <div className="mx-auto mt-10 max-w-xl">
-            <LiveActivityTicker quizId={activeQuiz.id} quizTitle={activeQuiz.title} />
+            <LiveActivityTicker
+              quizId={activeQuiz.id}
+              quizTitle={activeQuiz.title}
+              activityPhrase={settings.activity_ticker_phrase}
+            />
           </div>
         )}
 
         {settings.show_stats && stats.submissions > 0 && (
           <div className="mt-10 grid grid-cols-3 gap-3 sm:gap-4">
-            <StatCard value={stats.participants} label="Participants" primaryColor={secondary} />
-            <StatCard value={stats.quizzes} label="Quiz créés" primaryColor={secondary} />
-            <StatCard value={stats.submissions} label="Quiz complétés" primaryColor={secondary} />
+            <StatCard
+              value={stats.participants}
+              label={settings.stat_label_participants}
+              primaryColor={secondary}
+            />
+            <StatCard
+              value={stats.quizzes}
+              label={settings.stat_label_quizzes}
+              primaryColor={secondary}
+            />
+            <StatCard
+              value={stats.submissions}
+              label={settings.stat_label_submissions}
+              primaryColor={secondary}
+            />
           </div>
         )}
 

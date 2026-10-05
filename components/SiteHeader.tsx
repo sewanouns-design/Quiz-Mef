@@ -16,12 +16,14 @@ import { DEFAULT_SITE_SETTINGS } from "@/lib/site-settings";
  */
 export default function SiteHeader() {
   const [logoIcon, setLogoIcon] = useState(DEFAULT_SITE_SETTINGS.logo_icon);
+  const [siteName, setSiteName] = useState(DEFAULT_SITE_SETTINGS.site_name);
 
   useEffect(() => {
     fetch("/api/site-brand", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data?.logoIcon) setLogoIcon(data.logoIcon);
+        if (data?.siteName) setSiteName(data.siteName);
       })
       .catch(() => {});
   }, []);
@@ -33,7 +35,7 @@ export default function SiteHeader() {
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-navy text-base">
             <LogoIcon value={logoIcon} className="h-5 w-5" />
           </div>
-          <span className="truncate text-sm font-semibold text-navy">Quiz Biblique</span>
+          <span className="truncate text-sm font-semibold text-navy">{siteName}</span>
         </div>
         <Link
           href="/"
