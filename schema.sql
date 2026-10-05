@@ -238,6 +238,8 @@ create table if not exists site_settings (
   activity_ticker_phrase text not null default 'vient de passer le quiz',
   -- Accueil personnalisé pour un appareil reconnu : "{returning_greeting}, {prénom}".
   returning_greeting text not null default 'Content de te revoir',
+  -- Taille du titre/sous-titre de la page d'accueil.
+  text_size text not null default 'normal' check (text_size in ('normal', 'large', 'xlarge')),
   updated_at timestamptz default now()
 );
 

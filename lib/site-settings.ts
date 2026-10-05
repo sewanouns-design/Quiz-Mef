@@ -47,8 +47,15 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   stat_label_submissions: "Quiz complétés",
   activity_ticker_phrase: "vient de passer le quiz",
   returning_greeting: "Content de te revoir",
+  text_size: "normal",
   updated_at: "",
 };
+
+export const TEXT_SIZE_OPTIONS: { value: SiteSettings["text_size"]; label: string }[] = [
+  { value: "normal", label: "Normal" },
+  { value: "large", label: "Grand" },
+  { value: "xlarge", label: "Très grand" },
+];
 
 export const FONT_OPTIONS = [
   { value: "Inter", label: "Inter (moderne, sobre)" },

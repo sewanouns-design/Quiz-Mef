@@ -140,6 +140,7 @@ export interface SiteSettings {
   stat_label_submissions: string;
   activity_ticker_phrase: string;
   returning_greeting: string;
+  text_size: "normal" | "large" | "xlarge";
   updated_at: string;
 }
 

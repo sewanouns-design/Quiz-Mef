@@ -9,6 +9,7 @@ import type { HomeStep, HomeTemplate } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 const VALID_TEMPLATES: HomeTemplate[] = ["steps", "minimal", "card"];
+const VALID_TEXT_SIZES = ["normal", "large", "xlarge"];
 
 export async function GET(request: NextRequest) {
   if (!isAdminRequestAuthenticated(request)) {
@@ -58,10 +59,15 @@ export async function PUT(request: NextRequest) {
     stat_label_submissions,
     activity_ticker_phrase,
     returning_greeting,
+    text_size,
   } = body ?? {};
 
   if (template && !VALID_TEMPLATES.includes(template)) {
     return NextResponse.json({ error: "Template invalide" }, { status: 400 });
+  }
+
+  if (text_size && !VALID_TEXT_SIZES.includes(text_size)) {
+    return NextResponse.json({ error: "Taille de texte invalide" }, { status: 400 });
   }
 
   if (steps !== undefined) {
@@ -107,6 +113,7 @@ export async function PUT(request: NextRequest) {
   if (stat_label_submissions !== undefined) updates.stat_label_submissions = stat_label_submissions;
   if (activity_ticker_phrase !== undefined) updates.activity_ticker_phrase = activity_ticker_phrase;
   if (returning_greeting !== undefined) updates.returning_greeting = returning_greeting;
+  if (text_size !== undefined) updates.text_size = text_size;
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase

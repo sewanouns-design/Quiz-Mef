@@ -29,6 +29,17 @@ export default function HomeCardTemplate({
   const secondary = settings.color_secondary;
   const verse = getRandomVerse();
 
+  const titleClass = {
+    normal: "text-2xl",
+    large: "text-3xl",
+    xlarge: "text-4xl",
+  }[settings.text_size];
+  const subtitleClass = {
+    normal: "text-base",
+    large: "text-lg",
+    xlarge: "text-xl",
+  }[settings.text_size];
+
   return (
     <>
       <HomeTopBar settings={settings} todayStats={todayStats} />
@@ -48,10 +59,10 @@ export default function HomeCardTemplate({
             <LogoIcon value={settings.logo_icon} className="h-12 w-12" />
           </div>
 
-          <h1 className="text-2xl font-extrabold" style={{ color: primary }}>
+          <h1 className={`font-extrabold ${titleClass}`} style={{ color: primary }}>
             {settings.hero_title}
           </h1>
-          <p className="mt-2" style={{ color: settings.color_text }}>
+          <p className={`mt-2 ${subtitleClass}`} style={{ color: settings.color_text }}>
             {settings.hero_subtitle}
           </p>
 
@@ -86,7 +97,6 @@ export default function HomeCardTemplate({
             <div className="mt-6">
               <LiveActivityTicker
                 quizId={activeQuiz.id}
-                quizTitle={activeQuiz.title}
                 activityPhrase={settings.activity_ticker_phrase}
               />
             </div>
@@ -132,12 +142,6 @@ export default function HomeCardTemplate({
         </div>
       </div>
 
-      <Link
-        href="/admin"
-        className="fixed bottom-4 right-4 text-xs text-white/40 hover:text-white/70"
-      >
-        Espace admin
-      </Link>
       <WeeklyQuizPopup weeklyQuiz={weeklyQuiz} />
       </main>
     </>

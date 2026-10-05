@@ -22,6 +22,17 @@ export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz, 
   const accentDark = settings.color_accent_dark;
   const verse = getRandomVerse();
 
+  const titleClass = {
+    normal: "text-2xl sm:text-3xl",
+    large: "text-3xl sm:text-4xl",
+    xlarge: "text-4xl sm:text-5xl",
+  }[settings.text_size];
+  const subtitleClass = {
+    normal: "text-base",
+    large: "text-lg",
+    xlarge: "text-xl",
+  }[settings.text_size];
+
   return (
     <>
       <HomeTopBar settings={settings} todayStats={todayStats} />
@@ -48,10 +59,10 @@ export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz, 
           </div>
         </div>
 
-        <h1 className="text-2xl font-extrabold sm:text-3xl" style={{ color: primary }}>
+        <h1 className={`font-extrabold ${titleClass}`} style={{ color: primary }}>
           {settings.hero_title}
         </h1>
-        <p className="mt-2" style={{ color: settings.color_text }}>
+        <p className={`mt-2 ${subtitleClass}`} style={{ color: settings.color_text }}>
           {settings.hero_subtitle}
         </p>
 
@@ -68,7 +79,6 @@ export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz, 
               <div className="mt-4">
                 <LiveActivityTicker
                   quizId={activeQuiz.id}
-                  quizTitle={activeQuiz.title}
                   activityPhrase={settings.activity_ticker_phrase}
                 />
               </div>
@@ -87,12 +97,6 @@ export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz, 
 
         <div className="mt-16">
           <p className="text-xs text-gray-300">{settings.footer_text}</p>
-          <Link
-            href="/admin"
-            className="mt-2 inline-block text-xs text-gray-200 hover:text-gray-400"
-          >
-            Espace admin
-          </Link>
         </div>
       </div>
         <DesktopSideDecoration

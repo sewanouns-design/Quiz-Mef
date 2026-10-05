@@ -50,6 +50,17 @@ export default function HomeStepsTemplate({
   const secondary = settings.color_secondary;
   const verse = getRandomVerse();
 
+  const titleClass = {
+    normal: "text-3xl sm:text-4xl",
+    large: "text-4xl sm:text-5xl",
+    xlarge: "text-5xl sm:text-6xl",
+  }[settings.text_size];
+  const subtitleClass = {
+    normal: "text-lg",
+    large: "text-xl",
+    xlarge: "text-2xl",
+  }[settings.text_size];
+
   return (
     <>
       <HomeTopBar settings={settings} todayStats={todayStats} />
@@ -77,10 +88,10 @@ export default function HomeStepsTemplate({
             </div>
           </div>
 
-          <h1 className="text-3xl font-extrabold sm:text-4xl" style={{ color: primary }}>
+          <h1 className={`font-extrabold ${titleClass}`} style={{ color: primary }}>
             {settings.hero_title}
           </h1>
-          <p className="mt-3 text-lg" style={{ color: settings.color_text }}>
+          <p className={`mt-3 ${subtitleClass}`} style={{ color: settings.color_text }}>
             {settings.hero_subtitle}
           </p>
 
@@ -121,7 +132,6 @@ export default function HomeStepsTemplate({
           <div className="mx-auto mt-10 max-w-xl">
             <LiveActivityTicker
               quizId={activeQuiz.id}
-              quizTitle={activeQuiz.title}
               activityPhrase={settings.activity_ticker_phrase}
             />
           </div>
@@ -194,12 +204,6 @@ export default function HomeStepsTemplate({
 
         <div className="mt-16 text-center">
           <p className="text-xs text-gray-400">{settings.footer_text}</p>
-          <Link
-            href="/admin"
-            className="mt-2 inline-block text-xs text-gray-300 hover:text-gray-500"
-          >
-            Espace admin
-          </Link>
         </div>
         </div>
         <DesktopSideDecoration

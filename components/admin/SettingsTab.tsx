@@ -8,6 +8,7 @@ import {
   DEFAULT_SITE_SETTINGS,
   FONT_OPTIONS,
   TEMPLATE_OPTIONS,
+  TEXT_SIZE_OPTIONS,
   shadeHexColor,
 } from "@/lib/site-settings";
 import type { HomeStep, SiteSettings } from "@/lib/types";
@@ -194,6 +195,32 @@ export default function SettingsTab() {
               value={settings.color_text}
               onChange={(hex) => updateField("color_text", hex)}
             />
+          </div>
+        </div>
+
+        {/* Taille du texte */}
+        <div className="mb-6">
+          <label className="label-field">Taille du titre et du sous-titre</label>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {TEXT_SIZE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => updateField("text_size", option.value)}
+                className={`rounded-xl border-2 px-4 py-2 text-sm font-semibold transition-colors ${
+                  settings.text_size === option.value
+                    ? "border-current"
+                    : "border-gray-200 text-gray-600 hover:border-gray-300"
+                }`}
+                style={
+                  settings.text_size === option.value
+                    ? { borderColor: settings.color_accent, color: settings.color_primary }
+                    : undefined
+                }
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </div>
 
