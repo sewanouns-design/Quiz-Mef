@@ -7,7 +7,22 @@ import { generateResultsImage } from "@/lib/generate-results-image";
 import { isPassingScore } from "@/lib/scoring";
 import { clearQuizProgress, getStoredParticipant } from "@/lib/participant-storage";
 import PushOptIn from "@/components/PushOptIn";
+import SiteHeader from "@/components/SiteHeader";
 import type { CorrectedAnswer } from "@/lib/types";
+
+interface LessonQuestionReply {
+  id: string;
+  sender: "admin" | "participant";
+  message: string;
+  createdAt: string;
+}
+
+interface LessonQuestionThread {
+  id: string;
+  questionText: string;
+  createdAt: string;
+  replies: LessonQuestionReply[];
+}
 
 interface ResultsData {
   quiz: { id: string; title: string };
@@ -21,6 +36,7 @@ interface ResultsData {
   attemptsRemaining: number;
   streakDays: number;
   answers: CorrectedAnswer[];
+  lessonQuestions: LessonQuestionThread[];
 }
 
 function formatParticipantAnswer(answer: CorrectedAnswer): string {
@@ -52,6 +68,14 @@ export default function ResultsPage() {
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState("");
   const [linkCopied, setLinkCopied] = useState(false);
+  const [lessonQuestions, setLessonQuestions] = useState<LessonQuestionThread[]>([]);
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  const [replySending, setReplySending] = useState<string | null>(null);
+  const [replyError, setReplyError] = useState("");
+  const [suggestionText, setSuggestionText] = useState("");
+  const [suggestionSending, setSuggestionSending] = useState(false);
+  const [suggestionSent, setSuggestionSent] = useState(false);
+  const [suggestionError, setSuggestionError] = useState("");
 
   useEffect(() => {
     try {
@@ -84,7 +108,10 @@ export default function ResultsPage() {
         return res.json();
       })
       .then((resultsData: ResultsData | null) => {
-        if (resultsData) setData(resultsData);
+        if (resultsData) {
+          setData(resultsData);
+          setLessonQuestions(resultsData.lessonQuestions ?? []);
+        }
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -138,6 +165,66 @@ export default function ResultsPage() {
     }
   }
 
+  async function handleSendReply(questionId: string) {
+    const message = (replyDrafts[questionId] || "").trim();
+    if (!message) return;
+    const deviceKey = getStoredParticipant()?.deviceKey;
+    if (!deviceKey) return;
+
+    setReplySending(questionId);
+    setReplyError("");
+    try {
+      const res = await fetch(`/api/quiz/${quizId}/lesson-question/${questionId}/reply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ deviceKey, message }),
+      });
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(resData.error || "Erreur lors de l'envoi.");
+      }
+      setLessonQuestions((prev) =>
+        prev.map((q) =>
+          q.id === questionId ? { ...q, replies: [...q.replies, resData.reply] } : q
+        )
+      );
+      setReplyDrafts((prev) => ({ ...prev, [questionId]: "" }));
+    } catch (err) {
+      setReplyError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setReplySending(null);
+    }
+  }
+
+  async function handleSendSuggestion() {
+    const message = suggestionText.trim();
+    if (!message) return;
+    const deviceKey = getStoredParticipant()?.deviceKey;
+    if (!deviceKey) return;
+
+    setSuggestionSending(true);
+    setSuggestionError("");
+    try {
+      const res = await fetch("/api/suggestion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ deviceKey, message }),
+      });
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(resData.error || "Erreur lors de l'envoi.");
+      }
+      setSuggestionSent(true);
+      setSuggestionText("");
+    } catch (err) {
+      setSuggestionError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setSuggestionSending(false);
+    }
+  }
+
   async function handleCopyLink() {
     const url = `${window.location.origin}/quiz/${quizId}/resultats/${token}`;
     try {
@@ -156,40 +243,51 @@ export default function ResultsPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center px-6">
-        <p className="text-gray-500">Chargement des résultats...</p>
-      </main>
+      <>
+        <SiteHeader />
+        <main className="flex min-h-screen items-center justify-center px-6">
+          <p className="text-gray-500">Chargement des résultats...</p>
+        </main>
+      </>
     );
   }
 
   if (wasReset) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-        <p className="text-gray-600">
-          Ce résultat a été réinitialisé. Tu peux reprendre le quiz depuis le début.
-        </p>
-        <Link href={`/quiz/${quizId}`} className="btn-primary mt-6">
-          🔁 Reprendre le quiz
-        </Link>
-      </main>
+      <>
+        <SiteHeader />
+        <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+          <p className="text-gray-600">
+            Ce résultat a été réinitialisé. Tu peux reprendre le quiz depuis le début.
+          </p>
+          <Link href={`/quiz/${quizId}`} className="btn-primary mt-6">
+            🔁 Reprendre le quiz
+          </Link>
+        </main>
+      </>
     );
   }
 
   if (error || !data) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-        <p className="text-gray-600">{error || "Résultats introuvables."}</p>
-        <Link href="/" className="btn-secondary mt-6">
-          Retour à l&apos;accueil
-        </Link>
-      </main>
+      <>
+        <SiteHeader />
+        <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+          <p className="text-gray-600">{error || "Résultats introuvables."}</p>
+          <Link href="/" className="btn-secondary mt-6">
+            Retour à l&apos;accueil
+          </Link>
+        </main>
+      </>
     );
   }
 
   const passed = !data.cancelled && isPassingScore(data.score, data.maxScore);
 
   return (
-    <main className="min-h-screen px-4 py-10 sm:px-6">
+    <>
+      <SiteHeader />
+      <main className="min-h-screen px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-2xl">
         {data.cancelled && (
           <div className="mb-6 rounded-xl border-2 border-accent bg-accent/10 px-4 py-3 text-center text-sm font-medium text-accent-dark">
@@ -366,12 +464,105 @@ export default function ResultsPage() {
           ))}
         </div>
 
+        {lessonQuestions.length > 0 && (
+          <div className="mt-8">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+              💬 Tes questions sur la leçon
+            </h2>
+            <div className="space-y-4">
+              {lessonQuestions.map((q) => (
+                <div key={q.id} className="card">
+                  <p className="mb-1 text-xs text-gray-400">
+                    {new Date(q.createdAt).toLocaleString("fr-FR")}
+                  </p>
+                  <p className="text-sm font-medium text-navy">{q.questionText}</p>
+
+                  {q.replies.length > 0 && (
+                    <ul className="mt-3 space-y-2 border-t border-gray-100 pt-3">
+                      {q.replies.map((r) => (
+                        <li
+                          key={r.id}
+                          className={`rounded-lg p-2.5 text-sm ${
+                            r.sender === "admin" ? "bg-navy/5 text-navy" : "bg-gray-50 text-gray-700"
+                          }`}
+                        >
+                          <p className="mb-0.5 text-xs font-semibold text-gray-500">
+                            {r.sender === "admin" ? "Un admin" : "Toi"} ·{" "}
+                            {new Date(r.createdAt).toLocaleString("fr-FR")}
+                          </p>
+                          {r.message}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <div className="mt-3 flex items-center gap-2">
+                    <input
+                      className="input-field flex-1 text-sm"
+                      placeholder="Répondre..."
+                      value={replyDrafts[q.id] || ""}
+                      onChange={(e) =>
+                        setReplyDrafts((prev) => ({ ...prev, [q.id]: e.target.value }))
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSendReply(q.id);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleSendReply(q.id)}
+                      disabled={replySending === q.id || !(replyDrafts[q.id] || "").trim()}
+                      className="btn-secondary shrink-0 px-3 py-2 text-sm"
+                    >
+                      {replySending === q.id ? "..." : "Envoyer"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {replyError && <p className="mt-2 text-sm font-medium text-red-600">{replyError}</p>}
+          </div>
+        )}
+
+        <div className="mt-8 card">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            💡 Une idée pour améliorer le site ?
+          </h2>
+          {suggestionSent ? (
+            <p className="mt-2 text-sm text-green-700">
+              Merci, ta suggestion a bien été envoyée !
+            </p>
+          ) : (
+            <>
+              <textarea
+                className="input-field mt-3 w-full"
+                rows={3}
+                placeholder="Dis-nous ce qu'on pourrait améliorer..."
+                value={suggestionText}
+                onChange={(e) => setSuggestionText(e.target.value)}
+              />
+              {suggestionError && (
+                <p className="mt-1 text-sm font-medium text-red-600">{suggestionError}</p>
+              )}
+              <button
+                type="button"
+                onClick={handleSendSuggestion}
+                disabled={suggestionSending || !suggestionText.trim()}
+                className="btn-secondary mt-2"
+              >
+                {suggestionSending ? "Envoi..." : "Envoyer ma suggestion"}
+              </button>
+            </>
+          )}
+        </div>
+
         <div className="mt-10 flex justify-center">
           <Link href="/" className="btn-secondary">
             Retour à l&apos;accueil
           </Link>
         </div>
       </div>
-    </main>
+      </main>
+    </>
   );
 }

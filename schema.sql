@@ -166,6 +166,37 @@ create index if not exists idx_lesson_questions_quiz_id on lesson_questions (qui
 create index if not exists idx_lesson_questions_participant_id on lesson_questions (participant_id);
 
 -- ------------------------------------------------------------
+-- Fil de discussion sur une question de leçon : réponse de l'admin,
+-- puis éventuels échanges ("sender" = 'admin' ou 'participant').
+-- Le message initial du participant reste dans lesson_questions.question_text ;
+-- tout ce qui suit (réponse admin, relance du participant...) vit ici,
+-- affiché côté participant sur la page de résultats du quiz concerné.
+-- ------------------------------------------------------------
+create table if not exists lesson_question_replies (
+  id uuid primary key default gen_random_uuid(),
+  lesson_question_id uuid references lesson_questions(id) on delete cascade,
+  sender text not null check (sender in ('admin', 'participant')),
+  message text not null,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_lesson_question_replies_question_id
+  on lesson_question_replies (lesson_question_id);
+
+-- ------------------------------------------------------------
+-- Suggestions d'amélioration du site envoyées par les participants
+-- (onglet admin "Suggestions").
+-- ------------------------------------------------------------
+create table if not exists suggestions (
+  id uuid primary key default gen_random_uuid(),
+  participant_id uuid references participants(id) on delete set null,
+  message text not null,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_suggestions_created_at on suggestions (created_at desc);
+
+-- ------------------------------------------------------------
 -- Paramètres du site (page d'accueil personnalisable)
 -- Ligne unique ("default") mise à jour depuis l'admin.
 -- ------------------------------------------------------------

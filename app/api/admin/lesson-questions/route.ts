@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("lesson_questions")
     .select(
-      "id, question_text, created_at, participant:participants(id, name, address, email, whatsapp), quiz:daily_quizzes(id, title)"
+      "id, question_text, created_at, participant:participants(id, name, address, email, whatsapp), quiz:daily_quizzes(id, title), replies:lesson_question_replies(id, sender, message, created_at)"
     )
     .order("created_at", { ascending: false });
 
@@ -29,5 +29,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ questions: data ?? [] });
+  const questions = (data ?? []).map((q) => {
+    const replies = (q as unknown as { replies: { id: string; sender: string; message: string; created_at: string }[] }).replies ?? [];
+    return {
+      ...q,
+      replies: [...replies].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      ),
+    };
+  });
+
+  return NextResponse.json({ questions });
 }

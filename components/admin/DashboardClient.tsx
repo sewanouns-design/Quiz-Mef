@@ -2,20 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import OverviewTab from "./OverviewTab";
 import QuizTab from "./QuizTab";
 import ParticipantsTab from "./ParticipantsTab";
 import ResultsTab from "./ResultsTab";
 import LeaderboardTab from "./LeaderboardTab";
 import SettingsTab from "./SettingsTab";
+import LessonQuestionsTab from "./LessonQuestionsTab";
+import SuggestionsTab from "./SuggestionsTab";
+import BackupTab from "./BackupTab";
 
 const TABS = [
   { id: "overview", label: "Vue d'ensemble", icon: "📊" },
   { id: "quiz", label: "Quiz du jour", icon: "📝" },
+  { id: "questions", label: "Questions", icon: "💬" },
+  { id: "suggestions", label: "Suggestions", icon: "💡" },
   { id: "participants", label: "Participants", icon: "👥" },
   { id: "results", label: "Résultats", icon: "🏆" },
   { id: "leaderboard", label: "Classement", icon: "🥇" },
   { id: "settings", label: "Personnalisation", icon: "🎨" },
+  { id: "backup", label: "Sauvegarde", icon: "💾" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -34,10 +41,10 @@ export default function DashboardClient() {
     <main className="min-h-screen bg-gray-50 pb-16">
       <header className="border-b border-gray-200 bg-navy">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-2 text-white">
+          <Link href="/" className="flex items-center gap-2 text-white transition-opacity hover:opacity-80">
             <span className="text-2xl">⁉️</span>
             <span className="font-bold">Quiz Biblique — Admin</span>
-          </div>
+          </Link>
           <button
             onClick={handleLogout}
             className="rounded-lg border border-white/30 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
@@ -70,10 +77,13 @@ export default function DashboardClient() {
         <div>
           {activeTab === "overview" && <OverviewTab />}
           {activeTab === "quiz" && <QuizTab />}
+          {activeTab === "questions" && <LessonQuestionsTab />}
+          {activeTab === "suggestions" && <SuggestionsTab />}
           {activeTab === "participants" && <ParticipantsTab />}
           {activeTab === "results" && <ResultsTab />}
           {activeTab === "leaderboard" && <LeaderboardTab />}
           {activeTab === "settings" && <SettingsTab />}
+          {activeTab === "backup" && <BackupTab />}
         </div>
       </div>
     </main>

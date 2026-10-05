@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import SiteHeader from "@/components/SiteHeader";
 
 interface LeaderboardEntry {
   displayName: string;
@@ -33,7 +34,9 @@ export default function ClassementPage() {
   }, [quizId]);
 
   return (
-    <main className="min-h-screen px-4 py-10 sm:px-6">
+    <>
+      <SiteHeader />
+      <main className="min-h-screen px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-md">
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold text-navy">🏆 Classement</h1>
@@ -83,6 +86,7 @@ export default function ClassementPage() {
           </Link>
         </div>
       </div>
-    </main>
+      </main>
+    </>
   );
 }

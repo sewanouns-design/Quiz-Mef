@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -39,9 +40,12 @@ export default function AdminLoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-navy text-3xl shadow-lg">
+          <Link
+            href="/"
+            className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-navy text-3xl shadow-lg transition-opacity hover:opacity-80"
+          >
             ⁉️
-          </div>
+          </Link>
           <h1 className="text-2xl font-bold text-navy">Espace Admin</h1>
           <p className="mt-1 text-gray-600">Quiz Biblique</p>
         </div>

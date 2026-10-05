@@ -10,6 +10,7 @@ import {
 import { isValidEmail } from "@/lib/validation";
 import { isValidWhatsappValue } from "@/lib/phone-countries";
 import PhoneInput from "@/components/PhoneInput";
+import SiteHeader from "@/components/SiteHeader";
 
 interface ActiveQuizOption {
   id: string;
@@ -183,15 +184,20 @@ function QuizIdentificationForm() {
 
   if (checkingQuiz) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
-        <p className="text-gray-400">Chargement...</p>
-      </main>
+      <>
+        <SiteHeader />
+        <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
+          <p className="text-gray-400">Chargement...</p>
+        </main>
+      </>
     );
   }
 
   if (quizChoices) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
+      <>
+        <SiteHeader />
+        <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
             <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-navy text-3xl shadow-lg">
@@ -223,12 +229,15 @@ function QuizIdentificationForm() {
             ))}
           </div>
         </div>
-      </main>
+        </main>
+      </>
     );
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
+    <>
+      <SiteHeader />
+      <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-navy text-3xl shadow-lg">
@@ -352,7 +361,8 @@ function QuizIdentificationForm() {
           )}
         </div>
       </div>
-    </main>
+      </main>
+    </>
   );
 }
 

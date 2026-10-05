@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getOrCreateDeviceKey } from "@/lib/participant-storage";
+import SiteHeader from "@/components/SiteHeader";
 
 interface HistoryEntry {
   quizId: string;
@@ -52,7 +53,9 @@ export default function MesStatsPage() {
   }, []);
 
   return (
-    <main className="min-h-screen px-4 py-10 sm:px-6">
+    <>
+      <SiteHeader />
+      <main className="min-h-screen px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-md">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-navy">📊 Mes stats</h1>
@@ -143,6 +146,7 @@ export default function MesStatsPage() {
           </Link>
         </div>
       </div>
-    </main>
+      </main>
+    </>
   );
 }

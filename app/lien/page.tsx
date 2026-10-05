@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { saveStoredParticipant } from "@/lib/participant-storage";
+import SiteHeader from "@/components/SiteHeader";
 
 type Status = "loading" | "success" | "error";
 
@@ -46,7 +47,9 @@ function MagicLinkConsumer() {
   }, [token, router]);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
+    <>
+      <SiteHeader />
+      <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-md text-center">
         <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-navy text-3xl shadow-lg">
           ⁉️
@@ -80,7 +83,8 @@ function MagicLinkConsumer() {
           </div>
         )}
       </div>
-    </main>
+      </main>
+    </>
   );
 }
 

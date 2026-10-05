@@ -2,13 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ParticipantDetailModal from "./ParticipantDetailModal";
-
-interface LessonQuestionEntry {
-  id: string;
-  question_text: string;
-  created_at: string;
-  participant: { id: string; name: string; address: string | null } | null;
-}
+import LessonQuestionCard, { LessonQuestionEntry, LessonQuestionReply } from "./LessonQuestionCard";
 
 export default function LessonQuestionsModal({
   quizId,
@@ -43,6 +37,12 @@ export default function LessonQuestionsModal({
       .catch((err) => setError(err instanceof Error ? err.message : "Une erreur est survenue."))
       .finally(() => setLoading(false));
   }, [quizId]);
+
+  function handleReplied(questionId: string, reply: LessonQuestionReply) {
+    setQuestions((prev) =>
+      prev.map((q) => (q.id === questionId ? { ...q, replies: [...q.replies, reply] } : q))
+    );
+  }
 
   return (
     <div
@@ -85,25 +85,12 @@ export default function LessonQuestionsModal({
         ) : (
           <ul className="space-y-3">
             {questions.map((q) => (
-              <li key={q.id} className="rounded-xl border border-gray-200 p-4">
-                <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-                  {q.participant ? (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedParticipantId(q.participant!.id)}
-                      className="font-semibold text-navy hover:underline"
-                    >
-                      {q.participant.name}
-                    </button>
-                  ) : (
-                    <span className="font-semibold text-navy">Participant inconnu</span>
-                  )}
-                  <span className="text-xs text-gray-400">
-                    {new Date(q.created_at).toLocaleString("fr-FR")}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-700">{q.question_text}</p>
-              </li>
+              <LessonQuestionCard
+                key={q.id}
+                question={q}
+                onParticipantClick={setSelectedParticipantId}
+                onReplied={handleReplied}
+              />
             ))}
           </ul>
         )}

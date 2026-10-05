@@ -10,7 +10,8 @@ export type AdminActivityAction =
   | "quiz_activated"
   | "quiz_deactivated"
   | "quiz_regraded"
-  | "settings_updated";
+  | "settings_updated"
+  | "data_restored";
 
 /**
  * Journalise une action du super-admin dans admin_activity_log, affichée

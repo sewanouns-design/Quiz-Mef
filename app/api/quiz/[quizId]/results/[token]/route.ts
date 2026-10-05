@@ -116,6 +116,26 @@ export async function GET(
   const reveal =
     submission.cancelled || shouldRevealAnswers(submission.score, submission.max_score, submission.attempt_number);
 
+  const { data: lessonQuestions } = await supabase
+    .from("lesson_questions")
+    .select("id, question_text, created_at, replies:lesson_question_replies(id, sender, message, created_at)")
+    .eq("quiz_id", params.quizId)
+    .eq("participant_id", submission.participant_id)
+    .order("created_at", { ascending: true });
+
+  const lessonQuestionThreads = (lessonQuestions ?? []).map((q) => {
+    const replies = (q as unknown as { replies: { id: string; sender: string; message: string; created_at: string }[] })
+      .replies ?? [];
+    return {
+      id: q.id,
+      questionText: q.question_text,
+      createdAt: q.created_at,
+      replies: [...replies].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      ),
+    };
+  });
+
   return NextResponse.json({
     quiz: { id: quiz.id, title: quiz.title },
     participantName: participant?.name ?? "",
@@ -129,5 +149,6 @@ export async function GET(
     attemptsRemaining: remaining,
     streakDays,
     answers: redactAnswersIfHidden(corrected, reveal),
+    lessonQuestions: lessonQuestionThreads,
   });
 }
