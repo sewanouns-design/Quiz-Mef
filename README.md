@@ -2,9 +2,9 @@
 
 Site de quiz biblique quotidien pour la Mission Évangélique de la Foi (MEF).
 Chaque jour, un quiz basé sur la leçon du jour est publié. Les participants
-répondent, voient leurs résultats détaillés avec corrections, et les reçoivent
-par email. Un espace admin permet de publier les quiz et de suivre les
-statistiques de participation.
+répondent et voient immédiatement leurs résultats détaillés avec corrections.
+Un espace admin permet de publier les quiz et de suivre les statistiques de
+participation.
 
 Accessible sur **quiz.mefzogbadje.org**.
 

@@ -278,8 +278,8 @@ export default function QuestionBuilder({
                 placeholder="Expliquer la bonne réponse — affichée automatiquement au participant s'il se trompe."
               />
               <p className="mt-1 text-xs text-gray-400">
-                Montrée avec la bonne réponse dans les résultats et l&apos;email, pour que
-                l&apos;apprenant comprenne son erreur.
+                Montrée avec la bonne réponse dans les résultats, pour que l&apos;apprenant
+                comprenne son erreur.
               </p>
             </div>
           )}

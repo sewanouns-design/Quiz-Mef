@@ -281,7 +281,7 @@ function QuizIdentificationForm() {
               required
             />
             <p className="mt-1 text-xs text-gray-400">
-              Nécessaire pour recevoir tes résultats par email.
+              Nécessaire pour les rappels et pour retrouver ton profil sur un autre appareil.
             </p>
           </div>
 

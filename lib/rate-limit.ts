@@ -34,10 +34,9 @@ export const LOGIN_RATE_LIMIT_WINDOW_MINUTES = WINDOW_MINUTES;
 
 /**
  * Limitation de débit générique par IP + route, pour les endpoints publics
- * d'écriture (inscription, soumission de quiz, question sur la leçon).
- * Empêche le spam et l'utilisation du site comme relais d'envoi d'emails
- * non sollicités (le formulaire d'inscription accepte n'importe quel email,
- * et la soumission d'un quiz déclenche l'envoi d'un email de résultats).
+ * d'écriture (inscription, soumission de quiz, question sur la leçon,
+ * demande de lien magique). Empêche le spam et l'utilisation du site
+ * comme relais d'envoi d'emails non sollicités.
  */
 export async function isRateLimited(
   ip: string,

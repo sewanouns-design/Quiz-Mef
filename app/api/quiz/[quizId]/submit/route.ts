@@ -2,8 +2,6 @@ import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isSameOriginRequest } from "@/lib/auth";
-import { sendResultsEmail } from "@/lib/email";
-import { createMagicLinkToken, magicLinkUrl } from "@/lib/magic-link";
 import { attemptsRemaining, isPassingScore, MAX_ATTEMPTS, shouldRevealAnswers } from "@/lib/scoring";
 import { gradeAnswer, isAutoGraded, normalizeName, redactAnswersIfHidden } from "@/lib/grading";
 import { getClientIp, isRateLimited, recordRateLimitEvent } from "@/lib/rate-limit";
@@ -216,28 +214,6 @@ export async function POST(
   const reveal = isCancelled || shouldRevealAnswers(score, maxScore, attemptNumber);
   const visibleAnswers = redactAnswersIfHidden(corrected, reveal);
   const remaining = isCancelled ? MAX_ATTEMPTS - realAttempts.length : attemptsRemaining(attemptNumber, passed);
-
-  if (participant.email) {
-    try {
-      // Lien magique glissé passivement dans l'email (7 jours) : permet de
-      // retrouver son profil depuis un autre appareil sans démarche active.
-      const token = await createMagicLinkToken(participant.id, 7 * 24 * 60);
-      await sendResultsEmail({
-        to: participant.email,
-        participantName: participant.name,
-        quizTitle: quiz.title,
-        score,
-        maxScore,
-        answers: visibleAnswers,
-        cancelled: isCancelled,
-        attemptNumber,
-        attemptsRemaining: remaining,
-        magicLinkUrl: magicLinkUrl(token),
-      });
-    } catch (err) {
-      console.error("Erreur envoi email de résultats :", err);
-    }
-  }
 
   return NextResponse.json({
     submissionId: submission.id,

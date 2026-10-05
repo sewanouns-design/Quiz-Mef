@@ -33,7 +33,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
     {
       icon: "📊",
       title: "Reçois tes résultats",
-      description: "Score détaillé, corrections, et un email récapitulatif.",
+      description: "Score détaillé et corrections affichés immédiatement.",
     },
   ],
   verse_text: "Sonde les écritures, car ce sont elles qui rendent témoignage de moi.",

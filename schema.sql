@@ -27,10 +27,9 @@ create index if not exists idx_participants_address on participants (address);
 -- ------------------------------------------------------------
 -- Jetons de connexion ("lien magique") : reconnaître un participant sur un
 -- nouvel appareil/navigateur sans compte ni mot de passe. Jeton à usage
--- unique, expirant, envoyé par email (demande explicite sur /quiz, ou
--- glissé automatiquement dans l'email de résultats avec une échéance plus
--- longue). Consommer le jeton réécrit le device_key d'origine du
--- participant dans le localStorage du nouvel appareil.
+-- unique, expirant, envoyé par email sur demande explicite (/quiz).
+-- Consommer le jeton réécrit le device_key d'origine du participant dans
+-- le localStorage du nouvel appareil.
 -- ------------------------------------------------------------
 create table if not exists participant_login_tokens (
   id uuid primary key default gen_random_uuid(),
@@ -191,7 +190,7 @@ create table if not exists site_settings (
   steps jsonb not null default '[
     {"icon": "📝", "title": "Identifie-toi", "description": "Ton nom et ton adresse suffisent pour commencer."},
     {"icon": "⁉️", "title": "Réponds au quiz", "description": "Des questions sur la leçon du jour, à ton rythme."},
-    {"icon": "📊", "title": "Reçois tes résultats", "description": "Score détaillé, corrections, et un email récapitulatif."}
+    {"icon": "📊", "title": "Reçois tes résultats", "description": "Score détaillé et corrections affichés immédiatement."}
   ]'::jsonb,
   verse_text text not null default 'Sonde les écritures, car ce sont elles qui rendent témoignage de moi.',
   verse_reference text not null default 'Jean 5:39',
