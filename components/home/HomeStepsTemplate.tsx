@@ -6,6 +6,7 @@ import DesktopSideDecoration from "./DesktopSideDecoration";
 import WeeklyQuizPopup from "./WeeklyQuizPopup";
 import LogoIcon from "@/components/LogoIcon";
 import TodayActivityBadge, { TodayStats } from "./TodayActivityBadge";
+import HomeTopBar from "./HomeTopBar";
 
 interface Props {
   settings: SiteSettings;
@@ -49,7 +50,9 @@ export default function HomeStepsTemplate({
   const verse = getRandomVerse();
 
   return (
-    <main
+    <>
+      <HomeTopBar settings={settings} todayStats={todayStats} />
+      <main
       className={`min-h-screen px-6 py-16 ${ALL_HOME_FONT_VARIABLES}`}
       style={{
         fontFamily: resolveFontFamily(settings.font_family),
@@ -185,6 +188,7 @@ export default function HomeStepsTemplate({
         />
       </div>
       <WeeklyQuizPopup weeklyQuiz={weeklyQuiz} />
-    </main>
+      </main>
+    </>
   );
 }

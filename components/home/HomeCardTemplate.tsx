@@ -5,6 +5,7 @@ import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import LogoIcon from "@/components/LogoIcon";
 import WeeklyQuizPopup from "./WeeklyQuizPopup";
 import TodayActivityBadge, { TodayStats } from "./TodayActivityBadge";
+import HomeTopBar from "./HomeTopBar";
 
 interface Props {
   settings: SiteSettings;
@@ -28,7 +29,9 @@ export default function HomeCardTemplate({
   const verse = getRandomVerse();
 
   return (
-    <main
+    <>
+      <HomeTopBar settings={settings} todayStats={todayStats} />
+      <main
       className={`flex min-h-screen items-center justify-center px-6 py-16 ${ALL_HOME_FONT_VARIABLES}`}
       style={{
         fontFamily: resolveFontFamily(settings.font_family),
@@ -120,6 +123,7 @@ export default function HomeCardTemplate({
         Espace admin
       </Link>
       <WeeklyQuizPopup weeklyQuiz={weeklyQuiz} />
-    </main>
+      </main>
+    </>
   );
 }
