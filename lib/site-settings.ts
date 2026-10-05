@@ -43,7 +43,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   site_name: "Quiz Biblique",
   start_button_text: "Commencer le quiz",
   stat_label_participants: "Participants",
-  stat_label_quizzes: "Quiz créés",
+  stat_label_quizzes: "Quiz disponibles",
   stat_label_submissions: "Quiz complétés",
   activity_ticker_phrase: "vient de passer le quiz",
   returning_greeting: "Content de te revoir",

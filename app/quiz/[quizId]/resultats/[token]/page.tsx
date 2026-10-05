@@ -24,6 +24,14 @@ interface LessonQuestionThread {
   replies: LessonQuestionReply[];
 }
 
+interface SuggestionEntry {
+  id: string;
+  message: string;
+  acknowledged: boolean;
+  adminResponse: string | null;
+  createdAt: string;
+}
+
 interface ResultsData {
   quiz: { id: string; title: string };
   participantName: string;
@@ -76,6 +84,39 @@ export default function ResultsPage() {
   const [suggestionSending, setSuggestionSending] = useState(false);
   const [suggestionSent, setSuggestionSent] = useState(false);
   const [suggestionError, setSuggestionError] = useState("");
+  const [pastSuggestions, setPastSuggestions] = useState<SuggestionEntry[]>([]);
+
+  function loadSuggestions() {
+    const deviceKey = getStoredParticipant()?.deviceKey;
+    if (!deviceKey) return;
+    fetch(`/api/participant/suggestions?deviceKey=${encodeURIComponent(deviceKey)}`, {
+      cache: "no-store",
+    })
+      .then((res) => res.json())
+      .then((resData) => {
+        const entries = (resData.suggestions ?? []).map(
+          (s: {
+            id: string;
+            message: string;
+            acknowledged: boolean;
+            admin_response: string | null;
+            created_at: string;
+          }) => ({
+            id: s.id,
+            message: s.message,
+            acknowledged: s.acknowledged,
+            adminResponse: s.admin_response,
+            createdAt: s.created_at,
+          })
+        );
+        setPastSuggestions(entries);
+      })
+      .catch(() => {});
+  }
+
+  useEffect(() => {
+    loadSuggestions();
+  }, []);
 
   useEffect(() => {
     try {
@@ -218,6 +259,7 @@ export default function ResultsPage() {
       }
       setSuggestionSent(true);
       setSuggestionText("");
+      loadSuggestions();
     } catch (err) {
       setSuggestionError(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
@@ -524,18 +566,46 @@ export default function ResultsPage() {
           </div>
         )}
 
-        <div className="mt-8 card">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <div className="mt-8 rounded-2xl border-2 border-accent/25 bg-accent/5 p-5 sm:p-6">
+          <h2 className="text-lg font-bold text-navy sm:text-xl">
             💡 Une idée pour améliorer le site ?
           </h2>
+
+          {pastSuggestions.length > 0 && (
+            <ul className="mt-4 space-y-3">
+              {pastSuggestions.map((s) => (
+                <li key={s.id} className="rounded-xl bg-white p-3 shadow-sm">
+                  <p className="text-sm text-gray-700">{s.message}</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    {s.acknowledged ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
+                        ✅ Prise en compte
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500">
+                        ⏳ En attente
+                      </span>
+                    )}
+                  </div>
+                  {s.adminResponse && (
+                    <div className="mt-2 rounded-lg bg-navy/5 p-2.5 text-sm text-navy">
+                      <p className="mb-0.5 text-xs font-semibold text-gray-500">Réponse de l&apos;équipe</p>
+                      {s.adminResponse}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+
           {suggestionSent ? (
-            <p className="mt-2 text-sm text-green-700">
+            <p className="mt-4 text-sm font-medium text-green-700">
               Merci, ta suggestion a bien été envoyée !
             </p>
           ) : (
             <>
               <textarea
-                className="input-field mt-3 w-full"
+                className="input-field mt-4 w-full text-base"
                 rows={3}
                 placeholder="Dis-nous ce qu'on pourrait améliorer..."
                 value={suggestionText}
@@ -548,7 +618,7 @@ export default function ResultsPage() {
                 type="button"
                 onClick={handleSendSuggestion}
                 disabled={suggestionSending || !suggestionText.trim()}
-                className="btn-secondary mt-2"
+                className="btn-accent mt-3"
               >
                 {suggestionSending ? "Envoi..." : "Envoyer ma suggestion"}
               </button>

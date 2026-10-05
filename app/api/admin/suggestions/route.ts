@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from("suggestions")
     .select(
-      "id, message, created_at, participant:participants(id, name, email, whatsapp, address)"
+      "id, message, acknowledged, admin_response, responded_at, created_at, participant:participants(id, name, email, whatsapp, address)"
     )
     .order("created_at", { ascending: false });
 
