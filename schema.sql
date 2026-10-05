@@ -238,7 +238,7 @@ create table if not exists site_settings (
   site_name text not null default 'Quiz Biblique',
   start_button_text text not null default 'Commencer le quiz',
   stat_label_participants text not null default 'Participants',
-  stat_label_quizzes text not null default 'Quiz disponibles',
+  stat_label_quizzes text not null default 'Quiz créés',
   stat_label_submissions text not null default 'Quiz complétés',
   -- Bandeau défilant : "{prénom} {activity_ticker_phrase} « {titre du quiz} »".
   activity_ticker_phrase text not null default 'vient de passer le quiz',

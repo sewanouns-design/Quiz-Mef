@@ -71,7 +71,7 @@ export default function LiveActivityTicker({
   const current = entries[index % entries.length];
 
   return (
-    <div className="overflow-hidden rounded-xl border-2 border-accent/20 bg-accent/5 px-4 py-4 text-center sm:px-6 sm:py-5">
+    <div className="overflow-hidden px-4 py-4 text-center sm:px-6 sm:py-5">
       <p
         key={`${current.displayName}-${current.submittedAt}`}
         className="animate-ticker-in text-base font-medium text-navy sm:text-xl"
