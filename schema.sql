@@ -12,6 +12,10 @@ create table if not exists participants (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   address text,
+  -- Identifiant principal d'une personne (normalisé en minuscules à
+  -- l'écriture). Si un email déjà connu est soumis depuis un nouvel
+  -- appareil, l'API rattache cet appareil à la fiche existante (fusion)
+  -- au lieu de créer un doublon, ce qui uniformise le nom affiché.
   email text,
   whatsapp text,
   device_key text unique not null,
@@ -23,6 +27,9 @@ create table if not exists participants (
 
 create index if not exists idx_participants_device_key on participants (device_key);
 create index if not exists idx_participants_address on participants (address);
+create unique index if not exists idx_participants_email_unique
+  on participants (email)
+  where email is not null;
 
 -- ------------------------------------------------------------
 -- Jetons de connexion ("lien magique") : reconnaître un participant sur un

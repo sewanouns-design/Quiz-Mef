@@ -7,7 +7,7 @@ import {
   getStoredParticipant,
   saveStoredParticipant,
 } from "@/lib/participant-storage";
-import { isValidEmail } from "@/lib/validation";
+import { isValidEmail, isValidName } from "@/lib/validation";
 import { isValidWhatsappValue } from "@/lib/phone-countries";
 import PhoneInput from "@/components/PhoneInput";
 import SiteHeader from "@/components/SiteHeader";
@@ -149,6 +149,11 @@ function QuizIdentificationForm() {
       return;
     }
 
+    if (!isValidName(name)) {
+      setError("Merci d'indiquer ton vrai nom (lettres uniquement, pas de chiffres ni de symboles).");
+      return;
+    }
+
     if (!isValidEmail(email)) {
       setError("Le format de l'email n'est pas valide (ex : nom@exemple.com).");
       return;
@@ -173,7 +178,18 @@ function QuizIdentificationForm() {
         throw new Error(data.error || "Erreur lors de l'enregistrement");
       }
 
-      saveStoredParticipant({ deviceKey, name, address, email, whatsapp, showInLeaderboard });
+      // Le serveur peut avoir rattaché cet appareil à une fiche existante
+      // (même email déjà connu) et normalisé l'email : on repart de la
+      // version canonique renvoyée plutôt que de la saisie brute.
+      const { participant } = await participantRes.json().catch(() => ({ participant: null }));
+      saveStoredParticipant({
+        deviceKey,
+        name: participant?.name ?? name,
+        address: participant?.address ?? address,
+        email: participant?.email ?? email,
+        whatsapp: participant?.whatsapp ?? whatsapp,
+        showInLeaderboard: participant?.show_in_leaderboard ?? showInLeaderboard,
+      });
 
       router.push(`/quiz/${selectedQuizId}`);
     } catch (err) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
 import { logAdminActivity } from "@/lib/admin-activity";
+import { mergeParticipants } from "@/lib/participant-merge";
 
 export const dynamic = "force-dynamic";
 
@@ -38,62 +39,17 @@ export async function POST(request: NextRequest) {
   const targetName = namesData?.find((p) => p.id === targetId)?.name ?? "?";
   const sourceNames = (namesData ?? []).filter((p) => p.id !== targetId).map((p) => p.name);
 
-  const { data: sourceSubmissions, error: fetchError } = await supabase
-    .from("daily_submissions")
-    .select("id")
-    .in("participant_id", sourceIds);
-
-  if (fetchError) {
-    return NextResponse.json({ error: fetchError.message }, { status: 500 });
-  }
-
   let reassigned = 0;
   let deletedDuplicates = 0;
-
-  // Réattribue chaque soumission des fiches fusionnées vers la fiche
-  // principale, une par une. Si la fiche principale a déjà une soumission
-  // pour le même quiz + tentative (contrainte d'unicité), on ne peut pas
-  // avoir les deux : on supprime le doublon plutôt que de faire échouer
-  // toute la fusion.
-  for (const sub of sourceSubmissions ?? []) {
-    const { error: updateError } = await supabase
-      .from("daily_submissions")
-      .update({ participant_id: targetId })
-      .eq("id", sub.id);
-
-    if (updateError) {
-      if (updateError.code === "23505") {
-        const { error: deleteError } = await supabase
-          .from("daily_submissions")
-          .delete()
-          .eq("id", sub.id);
-        if (deleteError) {
-          return NextResponse.json({ error: deleteError.message }, { status: 500 });
-        }
-        deletedDuplicates += 1;
-        continue;
-      }
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
-    }
-    reassigned += 1;
-  }
-
-  const { error: lessonQuestionsError } = await supabase
-    .from("lesson_questions")
-    .update({ participant_id: targetId })
-    .in("participant_id", sourceIds);
-
-  if (lessonQuestionsError) {
-    return NextResponse.json({ error: lessonQuestionsError.message }, { status: 500 });
-  }
-
-  const { error: deleteParticipantsError } = await supabase
-    .from("participants")
-    .delete()
-    .in("id", sourceIds);
-
-  if (deleteParticipantsError) {
-    return NextResponse.json({ error: deleteParticipantsError.message }, { status: 500 });
+  try {
+    const result = await mergeParticipants(supabase, targetId, sourceIds);
+    reassigned = result.reassigned;
+    deletedDuplicates = result.deletedDuplicates;
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Erreur lors de la fusion." },
+      { status: 500 }
+    );
   }
 
   const updates: Record<string, unknown> = {};
