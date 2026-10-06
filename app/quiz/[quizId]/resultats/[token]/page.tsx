@@ -77,6 +77,7 @@ export default function ResultsPage() {
   const [shareError, setShareError] = useState("");
   const [linkCopied, setLinkCopied] = useState(false);
   const [lessonQuestions, setLessonQuestions] = useState<LessonQuestionThread[]>([]);
+  const [showLessonQuestionPanel, setShowLessonQuestionPanel] = useState(false);
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [replySending, setReplySending] = useState<string | null>(null);
   const [replyError, setReplyError] = useState("");
@@ -502,7 +503,97 @@ export default function ResultsPage() {
           >
             {linkCopied ? "✅ Lien copié" : "🔗 Copier le lien"}
           </button>
+          <button
+            type="button"
+            onClick={() => setShowLessonQuestionPanel((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-full border-2 border-navy/15 bg-white px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition-colors hover:border-navy/30"
+          >
+            ❓ Question sur la leçon{lessonQuestions.length > 0 ? ` (${lessonQuestions.length})` : ""}
+          </button>
         </div>
+
+        {showLessonQuestionPanel && (
+          <div className="mb-8">
+            {lessonQuestions.length > 0 && (
+              <div className="space-y-4">
+                {lessonQuestions.map((q) => (
+                  <div key={q.id} className="card">
+                    <p className="mb-1 text-xs text-gray-400">
+                      {new Date(q.createdAt).toLocaleString("fr-FR")}
+                    </p>
+                    <p className="text-sm font-medium text-navy">{q.questionText}</p>
+
+                    {q.replies.length > 0 && (
+                      <ul className="mt-3 space-y-2 border-t border-gray-100 pt-3">
+                        {q.replies.map((r) => (
+                          <li
+                            key={r.id}
+                            className={`rounded-lg p-2.5 text-sm ${
+                              r.sender === "admin" ? "bg-navy/5 text-navy" : "bg-gray-50 text-gray-700"
+                            }`}
+                          >
+                            <p className="mb-0.5 text-xs font-semibold text-gray-500">
+                              {r.sender === "admin" ? "Un admin" : "Toi"} ·{" "}
+                              {new Date(r.createdAt).toLocaleString("fr-FR")}
+                            </p>
+                            {r.message}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    <div className="mt-3 flex items-center gap-2">
+                      <input
+                        className="input-field flex-1 text-sm"
+                        placeholder="Répondre..."
+                        value={replyDrafts[q.id] || ""}
+                        onChange={(e) =>
+                          setReplyDrafts((prev) => ({ ...prev, [q.id]: e.target.value }))
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleSendReply(q.id);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSendReply(q.id)}
+                        disabled={replySending === q.id || !(replyDrafts[q.id] || "").trim()}
+                        className="btn-secondary shrink-0 px-3 py-2 text-sm"
+                      >
+                        {replySending === q.id ? "..." : "Envoyer"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {replyError && <p className="mt-2 text-sm font-medium text-red-600">{replyError}</p>}
+
+            <div className="card mt-4">
+              <h3 className="mb-1 text-sm font-bold text-navy">Une question sur la leçon du jour ?</h3>
+              <p className="mb-3 text-xs text-gray-500">
+                Pose-la ici, elle sera transmise à l&apos;équipe et la réponse apparaîtra sur cette page.
+              </p>
+              <textarea
+                className="input-field min-h-[80px]"
+                placeholder="Écris ta question ici..."
+                value={askQuestionText}
+                onChange={(e) => setAskQuestionText(e.target.value)}
+              />
+              {askQuestionError && (
+                <p className="mt-2 text-sm font-medium text-red-600">{askQuestionError}</p>
+              )}
+              <button
+                type="button"
+                onClick={handleAskQuestion}
+                disabled={askQuestionSubmitting || !askQuestionText.trim()}
+                className="btn-secondary mt-3"
+              >
+                {askQuestionSubmitting ? "Envoi..." : "Envoyer ma question"}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="mb-8 flex justify-center">
           <PushOptIn />
@@ -544,91 +635,6 @@ export default function ResultsPage() {
               )}
             </div>
           ))}
-        </div>
-
-        <div className="mt-8">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-            💬 Questions sur la leçon
-          </h2>
-
-          {lessonQuestions.length > 0 && (
-            <div className="space-y-4">
-              {lessonQuestions.map((q) => (
-                <div key={q.id} className="card">
-                  <p className="mb-1 text-xs text-gray-400">
-                    {new Date(q.createdAt).toLocaleString("fr-FR")}
-                  </p>
-                  <p className="text-sm font-medium text-navy">{q.questionText}</p>
-
-                  {q.replies.length > 0 && (
-                    <ul className="mt-3 space-y-2 border-t border-gray-100 pt-3">
-                      {q.replies.map((r) => (
-                        <li
-                          key={r.id}
-                          className={`rounded-lg p-2.5 text-sm ${
-                            r.sender === "admin" ? "bg-navy/5 text-navy" : "bg-gray-50 text-gray-700"
-                          }`}
-                        >
-                          <p className="mb-0.5 text-xs font-semibold text-gray-500">
-                            {r.sender === "admin" ? "Un admin" : "Toi"} ·{" "}
-                            {new Date(r.createdAt).toLocaleString("fr-FR")}
-                          </p>
-                          {r.message}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  <div className="mt-3 flex items-center gap-2">
-                    <input
-                      className="input-field flex-1 text-sm"
-                      placeholder="Répondre..."
-                      value={replyDrafts[q.id] || ""}
-                      onChange={(e) =>
-                        setReplyDrafts((prev) => ({ ...prev, [q.id]: e.target.value }))
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleSendReply(q.id);
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleSendReply(q.id)}
-                      disabled={replySending === q.id || !(replyDrafts[q.id] || "").trim()}
-                      className="btn-secondary shrink-0 px-3 py-2 text-sm"
-                    >
-                      {replySending === q.id ? "..." : "Envoyer"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {replyError && <p className="mt-2 text-sm font-medium text-red-600">{replyError}</p>}
-
-          <div className="card mt-4">
-            <h3 className="mb-1 text-sm font-bold text-navy">Une question sur la leçon du jour ?</h3>
-            <p className="mb-3 text-xs text-gray-500">
-              Pose-la ici, elle sera transmise à l&apos;équipe et la réponse apparaîtra sur cette page.
-            </p>
-            <textarea
-              className="input-field min-h-[80px]"
-              placeholder="Écris ta question ici..."
-              value={askQuestionText}
-              onChange={(e) => setAskQuestionText(e.target.value)}
-            />
-            {askQuestionError && (
-              <p className="mt-2 text-sm font-medium text-red-600">{askQuestionError}</p>
-            )}
-            <button
-              type="button"
-              onClick={handleAskQuestion}
-              disabled={askQuestionSubmitting || !askQuestionText.trim()}
-              className="btn-secondary mt-3"
-            >
-              {askQuestionSubmitting ? "Envoi..." : "Envoyer ma question"}
-            </button>
-          </div>
         </div>
 
         <div className="mt-8 rounded-2xl border-2 border-accent/25 bg-accent/5 p-5 sm:p-6">
