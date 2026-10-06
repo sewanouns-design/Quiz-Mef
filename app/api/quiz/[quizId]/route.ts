@@ -46,35 +46,31 @@ export async function GET(
   let resultToken: string | null = null;
   let remaining: number | null = null;
   if (deviceKey) {
-    const { data: participant } = await supabase
-      .from("participants")
-      .select("id")
-      .eq("device_key", deviceKey)
-      .maybeSingle();
+    // Une seule requête (jointure sur participants) au lieu de deux
+    // allers-retours séquentiels (chercher le participant, puis ses
+    // soumissions) : le filtre sur device_key s'applique directement via
+    // la ressource imbriquée.
+    const { data: submissions } = await supabase
+      .from("daily_submissions")
+      .select("score, max_score, cancelled, attempt_number, result_token, participant:participants!inner(device_key)")
+      .eq("quiz_id", params.quizId)
+      .eq("participant.device_key", deviceKey)
+      .order("attempt_number", { ascending: true });
 
-    if (participant) {
-      const { data: submissions } = await supabase
-        .from("daily_submissions")
-        .select("score, max_score, cancelled, attempt_number, result_token")
-        .eq("quiz_id", params.quizId)
-        .eq("participant_id", participant.id)
-        .order("attempt_number", { ascending: true });
+    // Une tentative annulée (sortie de page répétée, appel entrant...) ne
+    // compte jamais comme une vraie tentative : elle ne doit ni bloquer un
+    // nouvel essai, ni le faire passer pour une tentative supplémentaire.
+    const realAttempts = (submissions ?? []).filter((s) => !s.cancelled);
+    if (realAttempts.length > 0) {
+      const passedAny = realAttempts.some((s) => isPassingScore(s.score, s.max_score));
 
-      // Une tentative annulée (sortie de page répétée, appel entrant...) ne
-      // compte jamais comme une vraie tentative : elle ne doit ni bloquer un
-      // nouvel essai, ni le faire passer pour une tentative supplémentaire.
-      const realAttempts = (submissions ?? []).filter((s) => !s.cancelled);
-      if (realAttempts.length > 0) {
-        const passedAny = realAttempts.some((s) => isPassingScore(s.score, s.max_score));
-
-        if (passedAny || realAttempts.length >= MAX_ATTEMPTS) {
-          alreadySubmitted = true;
-          // La tentative réelle la plus récente est la définitive.
-          resultToken = realAttempts[realAttempts.length - 1].result_token;
-        } else {
-          isRetry = true;
-          remaining = attemptsRemaining(realAttempts.length, passedAny);
-        }
+      if (passedAny || realAttempts.length >= MAX_ATTEMPTS) {
+        alreadySubmitted = true;
+        // La tentative réelle la plus récente est la définitive.
+        resultToken = realAttempts[realAttempts.length - 1].result_token;
+      } else {
+        isRetry = true;
+        remaining = attemptsRemaining(realAttempts.length, passedAny);
       }
     }
   }

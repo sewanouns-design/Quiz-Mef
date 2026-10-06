@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isSameOriginRequest } from "@/lib/auth";
-import { getClientIp, isRateLimited, recordRateLimitEvent } from "@/lib/rate-limit";
+import { checkAndRecordRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -16,13 +16,12 @@ export async function POST(request: NextRequest) {
   }
 
   const ip = getClientIp(request);
-  if (await isRateLimited(ip, RATE_LIMIT_ROUTE, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MINUTES)) {
+  if (await checkAndRecordRateLimit(ip, RATE_LIMIT_ROUTE, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MINUTES)) {
     return NextResponse.json(
       { error: "Trop de tentatives. Réessaie dans quelques minutes." },
       { status: 429 }
     );
   }
-  await recordRateLimitEvent(ip, RATE_LIMIT_ROUTE);
 
   const body = await request.json().catch(() => ({}));
   const { deviceKey, message } = body ?? {};

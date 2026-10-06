@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { isSameOriginRequest } from "@/lib/auth";
 import { attemptsRemaining, isPassingScore, MAX_ATTEMPTS, shouldRevealAnswers } from "@/lib/scoring";
 import { gradeAnswer, isAutoGraded, normalizeName, redactAnswersIfHidden } from "@/lib/grading";
-import { getClientIp, isRateLimited, recordRateLimitEvent } from "@/lib/rate-limit";
+import { checkAndRecordRateLimit, getClientIp } from "@/lib/rate-limit";
 import type { AnswerInput, CorrectedAnswer, DailyQuestion } from "@/lib/types";
 
 const RATE_LIMIT_ROUTE = "quiz-submit";
@@ -22,13 +22,12 @@ export async function POST(
   }
 
   const ip = getClientIp(request);
-  if (await isRateLimited(ip, RATE_LIMIT_ROUTE, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MINUTES)) {
+  if (await checkAndRecordRateLimit(ip, RATE_LIMIT_ROUTE, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MINUTES)) {
     return NextResponse.json(
       { error: "Trop de tentatives. Réessaie dans quelques minutes." },
       { status: 429 }
     );
   }
-  await recordRateLimitEvent(ip, RATE_LIMIT_ROUTE);
 
   const body = await request.json();
   const { deviceKey, answers, cancelled, cancelReason } = body ?? {};

@@ -61,3 +61,23 @@ export async function recordRateLimitEvent(ip: string, route: string): Promise<v
   const supabase = getSupabaseAdmin();
   await supabase.from("rate_limit_events").insert({ ip, route });
 }
+
+/**
+ * Vérifie la limite ET journalise cette tentative en une seule fois : les
+ * deux requêtes sont indépendantes (l'une lit un compteur, l'autre insère
+ * une ligne), donc les lancer en parallèle plutôt que l'une après l'autre
+ * économise un aller-retour réseau complet sur chaque route publique
+ * d'écriture, sans changer le comportement de la limitation.
+ */
+export async function checkAndRecordRateLimit(
+  ip: string,
+  route: string,
+  maxEvents: number,
+  windowMinutes: number
+): Promise<boolean> {
+  const [limited] = await Promise.all([
+    isRateLimited(ip, route, maxEvents, windowMinutes),
+    recordRateLimitEvent(ip, route),
+  ]);
+  return limited;
+}

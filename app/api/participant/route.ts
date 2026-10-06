@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { isSameOriginRequest } from "@/lib/auth";
 import { isValidEmail, isValidName, normalizeEmail } from "@/lib/validation";
 import { isValidWhatsappValue } from "@/lib/phone-countries";
-import { getClientIp, isRateLimited, recordRateLimitEvent } from "@/lib/rate-limit";
+import { checkAndRecordRateLimit, getClientIp } from "@/lib/rate-limit";
 import { mergeParticipants } from "@/lib/participant-merge";
 
 const RATE_LIMIT_ROUTE = "participant";
@@ -38,13 +38,12 @@ export async function POST(request: NextRequest) {
   }
 
   const ip = getClientIp(request);
-  if (await isRateLimited(ip, RATE_LIMIT_ROUTE, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MINUTES)) {
+  if (await checkAndRecordRateLimit(ip, RATE_LIMIT_ROUTE, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MINUTES)) {
     return NextResponse.json(
       { error: "Trop de tentatives. Réessaie dans quelques minutes." },
       { status: 429 }
     );
   }
-  await recordRateLimitEvent(ip, RATE_LIMIT_ROUTE);
 
   const body = await request.json();
   const { deviceKey, name, address, email, whatsapp, showInLeaderboard } = body ?? {};
