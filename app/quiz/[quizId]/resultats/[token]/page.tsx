@@ -121,14 +121,18 @@ export default function ResultsPage() {
   const [shareError, setShareError] = useState("");
   const [linkCopied, setLinkCopied] = useState(false);
   const [lessonQuestions, setLessonQuestions] = useState<LessonQuestionThread[]>([]);
-  const [showLessonQuestionPanel, setShowLessonQuestionPanel] = useState(false);
+  // Un seul panneau ouvert à la fois (question OU suggestion) : les deux
+  // boutons partagent cet état au lieu d'avoir chacun leur propre booléen,
+  // pour ne jamais se retrouver avec les deux ouverts en même temps.
+  const [activePanel, setActivePanel] = useState<"question" | "suggestion" | null>(null);
+  const showLessonQuestionPanel = activePanel === "question";
+  const showSuggestionPanel = activePanel === "suggestion";
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [replySending, setReplySending] = useState<string | null>(null);
   const [replyError, setReplyError] = useState("");
   const [askQuestionText, setAskQuestionText] = useState("");
   const [askQuestionSubmitting, setAskQuestionSubmitting] = useState(false);
   const [askQuestionError, setAskQuestionError] = useState("");
-  const [showSuggestionPanel, setShowSuggestionPanel] = useState(false);
   const [suggestionText, setSuggestionText] = useState("");
   const [suggestionSending, setSuggestionSending] = useState(false);
   const [suggestionSent, setSuggestionSent] = useState(false);
@@ -540,13 +544,13 @@ export default function ResultsPage() {
             icon="❓"
             label={lessonQuestions.length > 0 ? `Question (${lessonQuestions.length})` : "Question sur la leçon"}
             active={showLessonQuestionPanel}
-            onClick={() => setShowLessonQuestionPanel((v) => !v)}
+            onClick={() => setActivePanel((p) => (p === "question" ? null : "question"))}
           />
           <ActionCard
             icon="💡"
             label="Suggestion"
             active={showSuggestionPanel}
-            onClick={() => setShowSuggestionPanel((v) => !v)}
+            onClick={() => setActivePanel((p) => (p === "suggestion" ? null : "suggestion"))}
           />
         </div>
 
