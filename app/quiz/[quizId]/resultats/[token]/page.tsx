@@ -63,6 +63,50 @@ function formatCorrectAnswer(answer: CorrectedAnswer): string {
   return answer.correctText || "—";
 }
 
+/**
+ * Carte compacte pour la rangée d'actions du haut (Classement, Mes stats,
+ * Copier le lien, Question sur la leçon, Suggestion) : soit un lien, soit un
+ * bouton qui bascule un panneau (état "actif" mis en évidence), selon que
+ * `href` ou `onClick` est fourni.
+ */
+function ActionCard({
+  icon,
+  label,
+  href,
+  onClick,
+  active,
+}: {
+  icon: string;
+  label: string;
+  href?: string;
+  onClick?: () => void;
+  active?: boolean;
+}) {
+  const className = `flex w-[86px] flex-col items-center justify-center gap-1 rounded-2xl border-2 px-2 py-3 text-center shadow-sm transition-colors ${
+    active ? "border-accent bg-accent/5" : "border-navy/15 bg-white hover:border-accent/40"
+  }`;
+  const content = (
+    <>
+      <span className="text-2xl">{icon}</span>
+      <span className="text-[11px] font-semibold leading-tight text-navy">{label}</span>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button type="button" onClick={onClick} className={className}>
+      {content}
+    </button>
+  );
+}
+
 export default function ResultsPage() {
   const params = useParams<{ quizId: string; token: string }>();
   const quizId = params.quizId;
@@ -84,6 +128,7 @@ export default function ResultsPage() {
   const [askQuestionText, setAskQuestionText] = useState("");
   const [askQuestionSubmitting, setAskQuestionSubmitting] = useState(false);
   const [askQuestionError, setAskQuestionError] = useState("");
+  const [showSuggestionPanel, setShowSuggestionPanel] = useState(false);
   const [suggestionText, setSuggestionText] = useState("");
   const [suggestionSending, setSuggestionSending] = useState(false);
   const [suggestionSent, setSuggestionSent] = useState(false);
@@ -483,33 +528,26 @@ export default function ResultsPage() {
           </div>
         )}
 
-        <div className="mb-8 flex flex-wrap items-center justify-center gap-3">
-          <Link
-            href={`/quiz/${quizId}/classement`}
-            className="inline-flex items-center gap-1.5 rounded-full border-2 border-navy/15 bg-white px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition-colors hover:border-navy/30"
-          >
-            🏆 Classement
-          </Link>
-          <Link
-            href="/mes-stats"
-            className="inline-flex items-center gap-1.5 rounded-full border-2 border-navy/15 bg-white px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition-colors hover:border-navy/30"
-          >
-            📊 Mes stats
-          </Link>
-          <button
-            type="button"
+        <div className="mb-8 flex flex-wrap justify-center gap-3">
+          <ActionCard icon="🏆" label="Classement" href={`/quiz/${quizId}/classement`} />
+          <ActionCard icon="📊" label="Mes stats" href="/mes-stats" />
+          <ActionCard
+            icon={linkCopied ? "✅" : "🔗"}
+            label={linkCopied ? "Lien copié" : "Copier le lien"}
             onClick={handleCopyLink}
-            className="inline-flex items-center gap-1.5 rounded-full border-2 border-navy/15 bg-white px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition-colors hover:border-navy/30"
-          >
-            {linkCopied ? "✅ Lien copié" : "🔗 Copier le lien"}
-          </button>
-          <button
-            type="button"
+          />
+          <ActionCard
+            icon="❓"
+            label={lessonQuestions.length > 0 ? `Question (${lessonQuestions.length})` : "Question sur la leçon"}
+            active={showLessonQuestionPanel}
             onClick={() => setShowLessonQuestionPanel((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-full border-2 border-navy/15 bg-white px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition-colors hover:border-navy/30"
-          >
-            ❓ Question sur la leçon{lessonQuestions.length > 0 ? ` (${lessonQuestions.length})` : ""}
-          </button>
+          />
+          <ActionCard
+            icon="💡"
+            label="Suggestion"
+            active={showSuggestionPanel}
+            onClick={() => setShowSuggestionPanel((v) => !v)}
+          />
         </div>
 
         {showLessonQuestionPanel && (
@@ -595,6 +633,68 @@ export default function ResultsPage() {
           </div>
         )}
 
+        {showSuggestionPanel && (
+          <div className="mb-8 rounded-2xl border-2 border-accent/25 bg-accent/5 p-5 sm:p-6">
+            <h2 className="text-lg font-bold text-navy sm:text-xl">
+              💡 Une idée pour améliorer le site ?
+            </h2>
+
+            {pastSuggestions.length > 0 && (
+              <ul className="mt-4 space-y-3">
+                {pastSuggestions.map((s) => (
+                  <li key={s.id} className="rounded-xl bg-white p-3 shadow-sm">
+                    <p className="text-sm text-gray-700">{s.message}</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      {s.acknowledged ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
+                          ✅ Prise en compte
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500">
+                          ⏳ En attente
+                        </span>
+                      )}
+                    </div>
+                    {s.adminResponse && (
+                      <div className="mt-2 rounded-lg bg-navy/5 p-2.5 text-sm text-navy">
+                        <p className="mb-0.5 text-xs font-semibold text-gray-500">Réponse de l&apos;équipe</p>
+                        {s.adminResponse}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {suggestionSent ? (
+              <p className="mt-4 text-sm font-medium text-green-700">
+                Merci, ta suggestion a bien été envoyée !
+              </p>
+            ) : (
+              <>
+                <textarea
+                  className="input-field mt-4 w-full text-base"
+                  rows={3}
+                  placeholder="Dis-nous ce qu'on pourrait améliorer..."
+                  value={suggestionText}
+                  onChange={(e) => setSuggestionText(e.target.value)}
+                />
+                {suggestionError && (
+                  <p className="mt-1 text-sm font-medium text-red-600">{suggestionError}</p>
+                )}
+                <button
+                  type="button"
+                  onClick={handleSendSuggestion}
+                  disabled={suggestionSending || !suggestionText.trim()}
+                  className="btn-accent mt-3"
+                >
+                  {suggestionSending ? "Envoi..." : "Envoyer ma suggestion"}
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
         <div className="mb-8 flex justify-center">
           <PushOptIn />
         </div>
@@ -635,66 +735,6 @@ export default function ResultsPage() {
               )}
             </div>
           ))}
-        </div>
-
-        <div className="mt-8 rounded-2xl border-2 border-accent/25 bg-accent/5 p-5 sm:p-6">
-          <h2 className="text-lg font-bold text-navy sm:text-xl">
-            💡 Une idée pour améliorer le site ?
-          </h2>
-
-          {pastSuggestions.length > 0 && (
-            <ul className="mt-4 space-y-3">
-              {pastSuggestions.map((s) => (
-                <li key={s.id} className="rounded-xl bg-white p-3 shadow-sm">
-                  <p className="text-sm text-gray-700">{s.message}</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    {s.acknowledged ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
-                        ✅ Prise en compte
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500">
-                        ⏳ En attente
-                      </span>
-                    )}
-                  </div>
-                  {s.adminResponse && (
-                    <div className="mt-2 rounded-lg bg-navy/5 p-2.5 text-sm text-navy">
-                      <p className="mb-0.5 text-xs font-semibold text-gray-500">Réponse de l&apos;équipe</p>
-                      {s.adminResponse}
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {suggestionSent ? (
-            <p className="mt-4 text-sm font-medium text-green-700">
-              Merci, ta suggestion a bien été envoyée !
-            </p>
-          ) : (
-            <>
-              <textarea
-                className="input-field mt-4 w-full text-base"
-                rows={3}
-                placeholder="Dis-nous ce qu'on pourrait améliorer..."
-                value={suggestionText}
-                onChange={(e) => setSuggestionText(e.target.value)}
-              />
-              {suggestionError && (
-                <p className="mt-1 text-sm font-medium text-red-600">{suggestionError}</p>
-              )}
-              <button
-                type="button"
-                onClick={handleSendSuggestion}
-                disabled={suggestionSending || !suggestionText.trim()}
-                className="btn-accent mt-3"
-              >
-                {suggestionSending ? "Envoi..." : "Envoyer ma suggestion"}
-              </button>
-            </>
-          )}
         </div>
 
         <div className="mt-10 flex justify-center">
