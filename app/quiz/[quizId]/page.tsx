@@ -107,11 +107,6 @@ export default function QuizPage() {
   const [totalDurationSeconds, setTotalDurationSeconds] = useState<number | null>(null);
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
 
-  const [lessonQuestionText, setLessonQuestionText] = useState("");
-  const [lessonQuestionSubmitting, setLessonQuestionSubmitting] = useState(false);
-  const [lessonQuestionSent, setLessonQuestionSent] = useState(false);
-  const [lessonQuestionError, setLessonQuestionError] = useState("");
-
   const hiddenAtRef = useRef<number | null>(null);
   const leaveCountRef = useRef(0);
   const dataRef = useRef<QuizData | null>(null);
@@ -453,29 +448,6 @@ export default function QuizPage() {
     }
   }
 
-  async function handleSendLessonQuestion() {
-    if (!lessonQuestionText.trim()) return;
-    setLessonQuestionSubmitting(true);
-    setLessonQuestionError("");
-    try {
-      const res = await fetch(`/api/quiz/${quizId}/lesson-question`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        body: JSON.stringify({ deviceKey, questionText: lessonQuestionText }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Erreur lors de l'envoi de la question.");
-      }
-      setLessonQuestionSent(true);
-    } catch (err) {
-      setLessonQuestionError(err instanceof Error ? err.message : "Une erreur est survenue.");
-    } finally {
-      setLessonQuestionSubmitting(false);
-    }
-  }
-
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center px-6">
@@ -680,42 +652,6 @@ export default function QuizPage() {
               <button type="button" onClick={() => goToQuestion(currentIndex + 1)} className="btn-primary">
                 Suivant →
               </button>
-            )}
-          </div>
-        )}
-
-        {(!isSequential || isLastQuestion) && answeredCount >= 1 && (
-          <div className="card mt-6">
-            {lessonQuestionSent ? (
-              <p className="text-sm font-medium text-green-600">
-                ✅ Ta question a bien été envoyée. Merci !
-              </p>
-            ) : (
-              <>
-                <h3 className="mb-1 text-sm font-bold text-navy">
-                  Une question sur la leçon du jour ?
-                </h3>
-                <p className="mb-3 text-xs text-gray-500">
-                  Profites-en pour la poser ici, elle sera transmise à l&apos;équipe.
-                </p>
-                <textarea
-                  className="input-field min-h-[80px]"
-                  placeholder="Écris ta question ici..."
-                  value={lessonQuestionText}
-                  onChange={(e) => setLessonQuestionText(e.target.value)}
-                />
-                {lessonQuestionError && (
-                  <p className="mt-2 text-sm font-medium text-red-600">{lessonQuestionError}</p>
-                )}
-                <button
-                  type="button"
-                  onClick={handleSendLessonQuestion}
-                  disabled={lessonQuestionSubmitting || !lessonQuestionText.trim()}
-                  className="btn-secondary mt-3"
-                >
-                  {lessonQuestionSubmitting ? "Envoi..." : "Envoyer ma question"}
-                </button>
-              </>
             )}
           </div>
         )}

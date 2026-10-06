@@ -80,6 +80,9 @@ export default function ResultsPage() {
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [replySending, setReplySending] = useState<string | null>(null);
   const [replyError, setReplyError] = useState("");
+  const [askQuestionText, setAskQuestionText] = useState("");
+  const [askQuestionSubmitting, setAskQuestionSubmitting] = useState(false);
+  const [askQuestionError, setAskQuestionError] = useState("");
   const [suggestionText, setSuggestionText] = useState("");
   const [suggestionSending, setSuggestionSending] = useState(false);
   const [suggestionSent, setSuggestionSent] = useState(false);
@@ -235,6 +238,43 @@ export default function ResultsPage() {
       setReplyError(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
       setReplySending(null);
+    }
+  }
+
+  function loadLessonQuestions() {
+    fetch(`/api/quiz/${quizId}/results/${token}`, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((resultsData: ResultsData | null) => {
+        if (resultsData) setLessonQuestions(resultsData.lessonQuestions ?? []);
+      })
+      .catch(() => {});
+  }
+
+  async function handleAskQuestion() {
+    const questionText = askQuestionText.trim();
+    if (!questionText) return;
+    const deviceKey = getStoredParticipant()?.deviceKey;
+    if (!deviceKey) return;
+
+    setAskQuestionSubmitting(true);
+    setAskQuestionError("");
+    try {
+      const res = await fetch(`/api/quiz/${quizId}/lesson-question`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ deviceKey, questionText }),
+      });
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(resData.error || "Erreur lors de l'envoi.");
+      }
+      setAskQuestionText("");
+      loadLessonQuestions();
+    } catch (err) {
+      setAskQuestionError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setAskQuestionSubmitting(false);
     }
   }
 
@@ -506,11 +546,12 @@ export default function ResultsPage() {
           ))}
         </div>
 
-        {lessonQuestions.length > 0 && (
-          <div className="mt-8">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-              💬 Tes questions sur la leçon
-            </h2>
+        <div className="mt-8">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+            💬 Questions sur la leçon
+          </h2>
+
+          {lessonQuestions.length > 0 && (
             <div className="space-y-4">
               {lessonQuestions.map((q) => (
                 <div key={q.id} className="card">
@@ -562,9 +603,33 @@ export default function ResultsPage() {
                 </div>
               ))}
             </div>
-            {replyError && <p className="mt-2 text-sm font-medium text-red-600">{replyError}</p>}
+          )}
+          {replyError && <p className="mt-2 text-sm font-medium text-red-600">{replyError}</p>}
+
+          <div className="card mt-4">
+            <h3 className="mb-1 text-sm font-bold text-navy">Une question sur la leçon du jour ?</h3>
+            <p className="mb-3 text-xs text-gray-500">
+              Pose-la ici, elle sera transmise à l&apos;équipe et la réponse apparaîtra sur cette page.
+            </p>
+            <textarea
+              className="input-field min-h-[80px]"
+              placeholder="Écris ta question ici..."
+              value={askQuestionText}
+              onChange={(e) => setAskQuestionText(e.target.value)}
+            />
+            {askQuestionError && (
+              <p className="mt-2 text-sm font-medium text-red-600">{askQuestionError}</p>
+            )}
+            <button
+              type="button"
+              onClick={handleAskQuestion}
+              disabled={askQuestionSubmitting || !askQuestionText.trim()}
+              className="btn-secondary mt-3"
+            >
+              {askQuestionSubmitting ? "Envoi..." : "Envoyer ma question"}
+            </button>
           </div>
-        )}
+        </div>
 
         <div className="mt-8 rounded-2xl border-2 border-accent/25 bg-accent/5 p-5 sm:p-6">
           <h2 className="text-lg font-bold text-navy sm:text-xl">
