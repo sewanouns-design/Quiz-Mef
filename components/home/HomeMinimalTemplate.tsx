@@ -90,27 +90,10 @@ export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz, 
           )}
           <Link
             href="/trouve-le-verset"
-            className="mt-5 flex items-center gap-3 rounded-2xl border-2 px-4 py-3.5 text-left shadow-sm transition-transform hover:scale-[1.02]"
-            style={{
-              borderColor: `${settings.color_accent}50`,
-              background: `linear-gradient(135deg, ${settings.color_accent}1f, ${settings.color_secondary}1f)`,
-            }}
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border-2 px-8 py-4 text-base font-semibold transition-colors hover:bg-white"
+            style={{ borderColor: settings.color_secondary, color: settings.color_secondary }}
           >
-            <span
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl text-white shadow-sm"
-              style={{ backgroundColor: settings.color_accent }}
-            >
-              📖
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-bold" style={{ color: primary }}>
-                Trouve le verset
-              </span>
-              <span className="block text-xs text-gray-500">Jeu biblique · classement en direct</span>
-            </span>
-            <span className="shrink-0 text-lg" style={{ color: accentDark }}>
-              →
-            </span>
+            📖 Jeu : Trouve le verset
           </Link>
         </div>
 

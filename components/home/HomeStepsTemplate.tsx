@@ -129,29 +129,10 @@ export default function HomeStepsTemplate({
 
           <Link
             href="/trouve-le-verset"
-            className="mx-auto mt-5 flex max-w-md items-center gap-3 rounded-2xl border-2 px-5 py-4 text-left shadow-sm transition-transform hover:scale-[1.02]"
-            style={{
-              borderColor: `${settings.color_accent}50`,
-              background: `linear-gradient(135deg, ${settings.color_accent}1f, ${secondary}1f)`,
-            }}
+            className="mx-auto mt-4 flex max-w-md items-center justify-center gap-2 rounded-xl border-2 px-6 py-3 text-base font-semibold transition-colors hover:bg-white"
+            style={{ borderColor: secondary, color: secondary }}
           >
-            <span
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl text-white shadow-sm"
-              style={{ backgroundColor: settings.color_accent }}
-            >
-              📖
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-base font-bold" style={{ color: primary }}>
-                Trouve le verset
-              </span>
-              <span className="block text-xs text-gray-500">
-                Petit jeu biblique à tout moment · classement en direct
-              </span>
-            </span>
-            <span className="shrink-0 text-xl" style={{ color: accentDark }}>
-              →
-            </span>
+            📖 Jeu : Trouve le verset
           </Link>
         </div>
 
