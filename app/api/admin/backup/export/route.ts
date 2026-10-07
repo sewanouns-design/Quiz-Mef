@@ -145,6 +145,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: bibleVersesError.message }, { status: 500 });
   }
 
+  const { data: verseGameScores, error: verseGameScoresError } = await supabase
+    .from("verse_game_scores")
+    .select("*")
+    .order("best_score", { ascending: false });
+  if (verseGameScoresError) {
+    return NextResponse.json({ error: verseGameScoresError.message }, { status: 500 });
+  }
+
   let activityLogQuery = supabase.from("admin_activity_log").select("*");
   activityLogQuery = applyRange(activityLogQuery, "created_at");
   const { data: adminActivityLog, error: adminActivityLogError } = await activityLogQuery.order(
@@ -166,6 +174,7 @@ export async function GET(request: NextRequest) {
     lesson_question_replies: lessonQuestionReplies,
     suggestions: suggestions ?? [],
     bible_verses: bibleVerses ?? [],
+    verse_game_scores: verseGameScores ?? [],
     admin_activity_log: adminActivityLog ?? [],
   };
 

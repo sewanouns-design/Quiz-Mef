@@ -356,6 +356,25 @@ create table if not exists bible_verses (
 create index if not exists idx_bible_verses_created_at on bible_verses (created_at);
 
 -- ------------------------------------------------------------
+-- Meilleur score de "Trouve le verset", par appareil. Volontairement sans
+-- clé étrangère vers participants : jouer ne nécessite aucune
+-- identification, donc device_key peut ne correspondre à aucune fiche
+-- participant. Le classement public (voir la route leaderboard) ne montre
+-- un nom que pour les device_key qui correspondent à un participant ayant
+-- activé "Afficher mon prénom dans le classement".
+-- ------------------------------------------------------------
+create table if not exists verse_game_scores (
+  id uuid primary key default gen_random_uuid(),
+  device_key text not null unique,
+  best_score int not null,
+  total_questions int not null,
+  games_played int not null default 1,
+  updated_at timestamptz default now()
+);
+
+create index if not exists idx_verse_game_scores_best_score on verse_game_scores (best_score desc);
+
+-- ------------------------------------------------------------
 -- Row Level Security
 -- L'application n'accède à Supabase que via la clé service_role
 -- côté serveur (routes API Next.js). On active RLS sans policy
@@ -375,3 +394,4 @@ alter table reengagement_reminders enable row level security;
 alter table admin_activity_log enable row level security;
 alter table push_subscriptions enable row level security;
 alter table bible_verses enable row level security;
+alter table verse_game_scores enable row level security;

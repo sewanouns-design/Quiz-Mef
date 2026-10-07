@@ -45,6 +45,15 @@ export interface BibleVerse {
   created_at: string;
 }
 
+export interface VerseGameScore {
+  id: string;
+  device_key: string;
+  best_score: number;
+  total_questions: number;
+  games_played: number;
+  updated_at: string;
+}
+
 export interface Participant {
   id: string;
   name: string;

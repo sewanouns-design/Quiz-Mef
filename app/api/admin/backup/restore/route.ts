@@ -12,6 +12,7 @@ const CHUNK_SIZE = 500;
 const RESTORE_ORDER = [
   "site_settings",
   "bible_verses",
+  "verse_game_scores",
   "daily_quizzes",
   "daily_questions",
   "participants",
