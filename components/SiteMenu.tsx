@@ -68,18 +68,20 @@ export default function SiteMenu({ variant = "light" }: { variant?: "light" | "d
         <div className="animate-menu-pop absolute left-0 top-full z-40 mt-2 w-64 space-y-1.5 rounded-2xl border border-gray-100 bg-white p-1.5 shadow-xl">
           {MENU_GROUPS.map((group, i) => (
             <div key={i} className="rounded-xl bg-gray-50/80 p-1">
-              {group.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className="group flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-white hover:shadow-sm"
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-base shadow-sm transition-transform duration-150 group-hover:scale-110">
-                    {item.icon}
-                  </span>
-                  {item.label}
-                </Link>
+              {group.map((item, j) => (
+                <div key={item.href}>
+                  {j > 0 && <div className="mx-2 border-t border-gray-200/80" />}
+                  <Link
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className="group flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-white hover:shadow-sm"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-base shadow-sm transition-transform duration-150 group-hover:scale-110">
+                      {item.icon}
+                    </span>
+                    {item.label}
+                  </Link>
+                </div>
               ))}
             </div>
           ))}

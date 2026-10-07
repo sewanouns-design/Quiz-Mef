@@ -30,14 +30,17 @@ export default function SiteHeader() {
 
   return (
     <div className="sticky top-0 z-30 border-b border-gray-100 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-2.5 sm:px-6">
-        <SiteMenu />
-        <div className="flex min-w-0 items-center gap-2">
+      <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-2.5 sm:px-6">
+        <div className="flex shrink-0 items-center">
+          <SiteMenu />
+        </div>
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-2 text-center">
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-navy text-base">
             <LogoIcon value={logoIcon} className="h-5 w-5" />
           </div>
-          <span className="truncate text-sm font-semibold text-navy">{siteName}</span>
+          <span className="truncate text-base font-bold text-navy">{siteName}</span>
         </div>
+        <div className="w-9 shrink-0" aria-hidden="true" />
       </div>
     </div>
   );
