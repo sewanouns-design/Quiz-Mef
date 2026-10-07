@@ -14,6 +14,11 @@ export default function VersesTab() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
+  const [bulkText, setBulkText] = useState("");
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+  const [bulkError, setBulkError] = useState("");
+  const [bulkResult, setBulkResult] = useState("");
+
   useEffect(() => {
     load();
   }, []);
@@ -61,6 +66,61 @@ export default function VersesTab() {
       setFormError(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function parseBulkText(raw: string) {
+    return raw
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const parts = line.split("|").map((p) => p.trim());
+        return {
+          reference: parts[0] ?? "",
+          text: parts[1] ?? "",
+          blankWord: parts[2] ?? "",
+        };
+      });
+  }
+
+  async function handleBulkImport(e: React.FormEvent) {
+    e.preventDefault();
+    const items = parseBulkText(bulkText);
+    if (items.length === 0) return;
+
+    setBulkSubmitting(true);
+    setBulkError("");
+    setBulkResult("");
+    try {
+      const res = await fetch("/api/admin/verses/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ verses: items }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Erreur lors de l'import.");
+      }
+      const rejectedCount = data.rejected?.length ?? 0;
+      setBulkResult(
+        `${data.imported ?? 0} verset(s) importé(s).` +
+          (rejectedCount > 0 ? ` ${rejectedCount} ligne(s) ignorée(s) (voir ci-dessous).` : "")
+      );
+      if (rejectedCount > 0) {
+        setBulkError(
+          data.rejected
+            .map((r: { line: number; reason: string }) => `Ligne ${r.line} : ${r.reason}`)
+            .join(" · ")
+        );
+      }
+      setBulkText("");
+      load();
+    } catch (err) {
+      setBulkError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setBulkSubmitting(false);
     }
   }
 
@@ -133,6 +193,33 @@ export default function VersesTab() {
           className="btn-accent"
         >
           {submitting ? "Ajout..." : "Ajouter"}
+        </button>
+      </form>
+
+      <form onSubmit={handleBulkImport} className="card mb-6 space-y-3">
+        <h3 className="text-sm font-bold text-navy">Importer plusieurs versets en une fois</h3>
+        <p className="text-xs text-gray-500">
+          Un verset par ligne, champs séparés par <code className="rounded bg-gray-100 px-1">|</code> :{" "}
+          <code className="rounded bg-gray-100 px-1">Référence | Texte complet | Mot à deviner (facultatif)</code>
+          <br />
+          Exemple : <code className="rounded bg-gray-100 px-1">
+            Jean 3:16 | Car Dieu a tant aimé le monde... | aimé
+          </code>
+        </p>
+        <textarea
+          className="input-field min-h-[140px] font-mono text-xs"
+          placeholder={"Jean 3:16 | Car Dieu a tant aimé le monde qu'il a donné son Fils unique... | aimé\nPsaume 23:1 | L'Éternel est mon berger : je ne manquerai de rien."}
+          value={bulkText}
+          onChange={(e) => setBulkText(e.target.value)}
+        />
+        {bulkResult && <p className="text-sm font-medium text-green-700">{bulkResult}</p>}
+        {bulkError && <p className="text-sm font-medium text-red-600">{bulkError}</p>}
+        <button
+          type="submit"
+          disabled={bulkSubmitting || !bulkText.trim()}
+          className="btn-accent"
+        >
+          {bulkSubmitting ? "Import..." : "Importer tout"}
         </button>
       </form>
 
