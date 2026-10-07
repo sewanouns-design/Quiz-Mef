@@ -4,6 +4,7 @@ import { getRandomVerse } from "@/lib/verses";
 import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import LogoIcon from "@/components/LogoIcon";
 import WeeklyQuizPopup from "./WeeklyQuizPopup";
+import NewsPopup from "./NewsPopup";
 import type { TodayStats } from "./todayStats";
 import LiveActivityTicker from "./LiveActivityTicker";
 import HomeTopBar from "./HomeTopBar";
@@ -143,6 +144,7 @@ export default function HomeCardTemplate({
       </div>
 
       <WeeklyQuizPopup weeklyQuiz={weeklyQuiz} />
+      <NewsPopup />
       </main>
     </>
   );

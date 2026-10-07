@@ -4,6 +4,7 @@ import { getRandomVerse } from "@/lib/verses";
 import { ALL_HOME_FONT_VARIABLES, resolveFontFamily } from "@/lib/fonts";
 import DesktopSideDecoration from "./DesktopSideDecoration";
 import WeeklyQuizPopup from "./WeeklyQuizPopup";
+import NewsPopup from "./NewsPopup";
 import LogoIcon from "@/components/LogoIcon";
 import type { TodayStats } from "./todayStats";
 import LiveActivityTicker from "./LiveActivityTicker";
@@ -107,6 +108,7 @@ export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz, 
         />
       </div>
       <WeeklyQuizPopup weeklyQuiz={weeklyQuiz} />
+      <NewsPopup />
       </main>
     </>
   );

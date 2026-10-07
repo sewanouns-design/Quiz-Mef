@@ -377,6 +377,24 @@ create table if not exists verse_game_scores (
 create index if not exists idx_verse_game_scores_best_score on verse_game_scores (best_score desc);
 
 -- ------------------------------------------------------------
+-- Nouveautés du site, affichées brièvement (pop-up fermable) aux visiteurs
+-- lors de leur première connexion après publication. Pas de ciblage par
+-- appareil côté serveur : chaque navigateur retient localement l'id de la
+-- dernière nouveauté vue (localStorage) pour savoir lesquelles sont
+-- nouvelles pour lui.
+-- ------------------------------------------------------------
+create table if not exists site_updates (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  description text not null,
+  link_href text,
+  link_label text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_site_updates_created_at on site_updates (created_at desc);
+
+-- ------------------------------------------------------------
 -- Row Level Security
 -- L'application n'accède à Supabase que via la clé service_role
 -- côté serveur (routes API Next.js). On active RLS sans policy
@@ -397,3 +415,4 @@ alter table admin_activity_log enable row level security;
 alter table push_subscriptions enable row level security;
 alter table bible_verses enable row level security;
 alter table verse_game_scores enable row level security;
+alter table site_updates enable row level security;

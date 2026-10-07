@@ -153,6 +153,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: verseGameScoresError.message }, { status: 500 });
   }
 
+  const { data: siteUpdates, error: siteUpdatesError } = await supabase
+    .from("site_updates")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (siteUpdatesError) {
+    return NextResponse.json({ error: siteUpdatesError.message }, { status: 500 });
+  }
+
   let activityLogQuery = supabase.from("admin_activity_log").select("*");
   activityLogQuery = applyRange(activityLogQuery, "created_at");
   const { data: adminActivityLog, error: adminActivityLogError } = await activityLogQuery.order(
@@ -175,6 +183,7 @@ export async function GET(request: NextRequest) {
     suggestions: suggestions ?? [],
     bible_verses: bibleVerses ?? [],
     verse_game_scores: verseGameScores ?? [],
+    site_updates: siteUpdates ?? [],
     admin_activity_log: adminActivityLog ?? [],
   };
 

@@ -54,6 +54,15 @@ export interface VerseGameScore {
   updated_at: string;
 }
 
+export interface SiteUpdate {
+  id: string;
+  title: string;
+  description: string;
+  link_href: string | null;
+  link_label: string | null;
+  created_at: string;
+}
+
 export interface Participant {
   id: string;
   name: string;
