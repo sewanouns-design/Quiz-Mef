@@ -12,6 +12,7 @@ import SettingsTab from "./SettingsTab";
 import LessonQuestionsTab from "./LessonQuestionsTab";
 import SuggestionsTab from "./SuggestionsTab";
 import BackupTab from "./BackupTab";
+import VersesTab from "./VersesTab";
 
 const TABS = [
   { id: "overview", label: "Vue d'ensemble", icon: "📊" },
@@ -21,6 +22,7 @@ const TABS = [
   { id: "participants", label: "Participants", icon: "👥" },
   { id: "results", label: "Résultats", icon: "🏆" },
   { id: "leaderboard", label: "Classement", icon: "🥇" },
+  { id: "verses", label: "Trouve le verset", icon: "📖" },
   { id: "settings", label: "Personnalisation", icon: "🎨" },
   { id: "backup", label: "Sauvegarde", icon: "💾" },
 ] as const;
@@ -82,6 +84,7 @@ export default function DashboardClient() {
           {activeTab === "participants" && <ParticipantsTab />}
           {activeTab === "results" && <ResultsTab />}
           {activeTab === "leaderboard" && <LeaderboardTab />}
+          {activeTab === "verses" && <VersesTab />}
           {activeTab === "settings" && <SettingsTab />}
           {activeTab === "backup" && <BackupTab />}
         </div>

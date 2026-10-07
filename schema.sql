@@ -338,6 +338,24 @@ create table if not exists admin_activity_log (
 create index if not exists idx_admin_activity_log_created_at on admin_activity_log (created_at desc);
 
 -- ------------------------------------------------------------
+-- Jeu "Trouve le verset" : banque de versets réutilisée pour deux types de
+-- questions (deviner la référence / compléter le texte), jouable à tout
+-- moment, indépendamment du quiz du jour.
+-- ------------------------------------------------------------
+create table if not exists bible_verses (
+  id uuid primary key default gen_random_uuid(),
+  reference text not null unique,
+  text text not null,
+  -- Mot ou expression exacte (sous-chaîne de `text`) à faire deviner pour la
+  -- variante "complète le texte". Facultatif : sans ça, le verset n'est
+  -- utilisé que pour la variante "devine la référence".
+  blank_word text,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_bible_verses_created_at on bible_verses (created_at);
+
+-- ------------------------------------------------------------
 -- Row Level Security
 -- L'application n'accède à Supabase que via la clé service_role
 -- côté serveur (routes API Next.js). On active RLS sans policy
@@ -356,3 +374,4 @@ alter table rate_limit_events enable row level security;
 alter table reengagement_reminders enable row level security;
 alter table admin_activity_log enable row level security;
 alter table push_subscriptions enable row level security;
+alter table bible_verses enable row level security;

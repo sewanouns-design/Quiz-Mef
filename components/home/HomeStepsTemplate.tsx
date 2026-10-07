@@ -126,6 +126,16 @@ export default function HomeStepsTemplate({
               </div>
             )}
           </div>
+
+          <p className="mt-4 text-center">
+            <Link
+              href="/trouve-le-verset"
+              className="text-sm font-semibold hover:underline"
+              style={{ color: accentDark }}
+            >
+              📖 Trouve le verset — un petit jeu à tout moment
+            </Link>
+          </p>
         </div>
 
         {activeQuiz && (

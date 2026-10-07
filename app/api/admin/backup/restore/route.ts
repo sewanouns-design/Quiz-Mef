@@ -11,6 +11,7 @@ const CHUNK_SIZE = 500;
 // table n'est restaurée qu'une fois celles qu'elle référence déjà en place.
 const RESTORE_ORDER = [
   "site_settings",
+  "bible_verses",
   "daily_quizzes",
   "daily_questions",
   "participants",

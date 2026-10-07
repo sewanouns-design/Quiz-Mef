@@ -37,6 +37,14 @@ export type PublicQuestion = Omit<
   "correct_option" | "correct_text" | "justification"
 >;
 
+export interface BibleVerse {
+  id: string;
+  reference: string;
+  text: string;
+  blank_word: string | null;
+  created_at: string;
+}
+
 export interface Participant {
   id: string;
   name: string;

@@ -88,6 +88,15 @@ export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz, 
               Aucun quiz disponible aujourd&apos;hui. Reviens bientôt.
             </p>
           )}
+          <p className="mt-4">
+            <Link
+              href="/trouve-le-verset"
+              className="text-sm font-semibold hover:underline"
+              style={{ color: accentDark }}
+            >
+              📖 Trouve le verset
+            </Link>
+          </p>
         </div>
 
         <p className="mt-14 text-xs italic text-gray-400">« {verse.text} »</p>

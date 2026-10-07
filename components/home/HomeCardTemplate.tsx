@@ -91,6 +91,15 @@ export default function HomeCardTemplate({
                 Aucun quiz disponible aujourd&apos;hui. Reviens bientôt.
               </p>
             )}
+            <p className="mt-3 text-center">
+              <Link
+                href="/trouve-le-verset"
+                className="text-sm font-semibold hover:underline"
+                style={{ color: settings.color_accent_dark }}
+              >
+                📖 Trouve le verset
+              </Link>
+            </p>
           </div>
 
           {activeQuiz && (
