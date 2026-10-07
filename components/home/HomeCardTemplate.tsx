@@ -91,13 +91,6 @@ export default function HomeCardTemplate({
                 Aucun quiz disponible aujourd&apos;hui. Reviens bientôt.
               </p>
             )}
-            <Link
-              href="/trouve-le-verset"
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 px-6 py-3 text-base font-semibold transition-colors hover:bg-gray-50"
-              style={{ borderColor: secondary, color: secondary }}
-            >
-              📖 Jeu : Trouve le verset
-            </Link>
           </div>
 
           {activeQuiz && (

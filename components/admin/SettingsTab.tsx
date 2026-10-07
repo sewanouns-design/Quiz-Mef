@@ -334,6 +334,17 @@ export default function SettingsTab() {
             />
           </div>
           <div>
+            <label className="label-field" htmlFor="about_text">
+              Texte de la page &quot;À propos&quot; (menu du site)
+            </label>
+            <textarea
+              id="about_text"
+              className="input-field min-h-[100px]"
+              value={settings.about_text}
+              onChange={(e) => updateField("about_text", e.target.value)}
+            />
+          </div>
+          <div>
             <label className="label-field" htmlFor="start_button_text">
               Texte du bouton pour commencer le quiz
             </label>

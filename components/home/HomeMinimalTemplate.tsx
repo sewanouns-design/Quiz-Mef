@@ -88,13 +88,6 @@ export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz, 
               Aucun quiz disponible aujourd&apos;hui. Reviens bientôt.
             </p>
           )}
-          <Link
-            href="/trouve-le-verset"
-            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border-2 px-8 py-4 text-base font-semibold transition-colors hover:bg-white"
-            style={{ borderColor: settings.color_secondary, color: settings.color_secondary }}
-          >
-            📖 Jeu : Trouve le verset
-          </Link>
         </div>
 
         <p className="mt-14 text-xs italic text-gray-400">« {verse.text} »</p>

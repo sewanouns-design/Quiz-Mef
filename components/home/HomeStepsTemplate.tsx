@@ -126,14 +126,6 @@ export default function HomeStepsTemplate({
               </div>
             )}
           </div>
-
-          <Link
-            href="/trouve-le-verset"
-            className="mx-auto mt-4 flex max-w-md items-center justify-center gap-2 rounded-xl border-2 px-6 py-3 text-base font-semibold transition-colors hover:bg-white"
-            style={{ borderColor: secondary, color: secondary }}
-          >
-            📖 Jeu : Trouve le verset
-          </Link>
         </div>
 
         {activeQuiz && (

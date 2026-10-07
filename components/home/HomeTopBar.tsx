@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import LogoIcon from "@/components/LogoIcon";
+import SiteMenu from "@/components/SiteMenu";
 import { getStoredParticipant } from "@/lib/participant-storage";
 import type { SiteSettings } from "@/lib/types";
 import type { TodayStats } from "./todayStats";
@@ -34,6 +35,7 @@ export default function HomeTopBar({
     >
       <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-2 px-4 py-2 sm:px-6">
         <div className="flex items-center gap-2 text-sm font-semibold text-white">
+          <SiteMenu variant="dark" />
           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/15 text-sm">
             <LogoIcon value={settings.logo_icon} className="h-4 w-4" />
           </div>

@@ -158,6 +158,7 @@ export interface SiteSettings {
   activity_ticker_phrase: string;
   returning_greeting: string;
   text_size: "normal" | "large" | "xlarge";
+  about_text: string;
   updated_at: string;
 }
 

@@ -60,6 +60,7 @@ export async function PUT(request: NextRequest) {
     activity_ticker_phrase,
     returning_greeting,
     text_size,
+    about_text,
   } = body ?? {};
 
   if (template && !VALID_TEMPLATES.includes(template)) {
@@ -114,6 +115,7 @@ export async function PUT(request: NextRequest) {
   if (activity_ticker_phrase !== undefined) updates.activity_ticker_phrase = activity_ticker_phrase;
   if (returning_greeting !== undefined) updates.returning_greeting = returning_greeting;
   if (text_size !== undefined) updates.text_size = text_size;
+  if (about_text !== undefined) updates.about_text = about_text;
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase

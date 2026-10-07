@@ -48,6 +48,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   activity_ticker_phrase: "vient de passer le quiz",
   returning_greeting: "Content de te revoir",
   text_size: "normal",
+  about_text:
+    "Quiz Biblique est un espace proposé par la Mission Évangélique de la Foi (MEF) pour permettre à chacun de tester et d'approfondir ses connaissances de la Parole de Dieu, de façon simple et conviviale. Un nouveau quiz est proposé chaque jour, avec des questions issues de la leçon du moment — seul ou en famille, à ton rythme.",
   updated_at: "",
 };
 
