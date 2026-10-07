@@ -3,18 +3,31 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-const GAMES = [{ href: "/trouve-le-verset", icon: "📖", label: "Trouve le verset" }];
+interface MenuLink {
+  href: string;
+  icon: string;
+  label: string;
+}
+
+// Chaque groupe est visuellement séparé (léger fond + bordure) pour bien
+// distinguer "où aller sur le site" de "vers quoi mène ce lien" — plus
+// besoin de sous-menu dépliable : "Jeux" mène directement à la liste des
+// jeux disponibles (/jeux), qui pourra en accueillir d'autres plus tard.
+const MENU_GROUPS: MenuLink[][] = [
+  [{ href: "/", icon: "🏠", label: "Accueil" }],
+  [
+    { href: "/jeux", icon: "🎮", label: "Jeux" },
+    { href: "/a-propos", icon: "ℹ️", label: "À propos" },
+    { href: "/contact", icon: "✉️", label: "Contact" },
+  ],
+];
 
 /**
  * Menu hamburger compact, en haut à gauche de chaque page (hors quiz en
- * cours, pour les mêmes raisons anti-triche que SiteHeader) : Accueil, Jeux
- * (sous-menu — un seul jeu pour l'instant, mais pensé pour en accueillir
- * d'autres sans changer la structure), À propos, Contact. Remplace les liens
- * épars qui encombraient la page d'accueil.
+ * cours, pour les mêmes raisons anti-triche que SiteHeader).
  */
 export default function SiteMenu({ variant = "light" }: { variant?: "light" | "dark" }) {
   const [open, setOpen] = useState(false);
-  const [gamesOpen, setGamesOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,11 +47,6 @@ export default function SiteMenu({ variant = "light" }: { variant?: "light" | "d
     };
   }, []);
 
-  function close() {
-    setOpen(false);
-    setGamesOpen(false);
-  }
-
   const buttonClass =
     variant === "dark"
       ? "flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-white transition-colors hover:bg-white/20"
@@ -57,60 +65,24 @@ export default function SiteMenu({ variant = "light" }: { variant?: "light" | "d
       </button>
 
       {open && (
-        <div className="animate-menu-pop absolute left-0 top-full z-40 mt-2 w-64 overflow-hidden rounded-2xl border border-gray-100 bg-white p-2 shadow-xl">
-          <Link
-            href="/"
-            onClick={close}
-            className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-navy/5"
-          >
-            🏠 Accueil
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => setGamesOpen((v) => !v)}
-            className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-navy/5"
-          >
-            <span className="flex items-center gap-2.5">🎮 Jeux</span>
-            <span
-              className={`text-xs text-gray-400 transition-transform duration-150 ${
-                gamesOpen ? "rotate-180" : ""
-              }`}
-            >
-              ▾
-            </span>
-          </button>
-          {gamesOpen && (
-            <div className="ml-3 space-y-0.5 border-l-2 border-gray-100 py-1 pl-2">
-              {GAMES.map((game) => (
+        <div className="animate-menu-pop absolute left-0 top-full z-40 mt-2 w-64 space-y-1.5 rounded-2xl border border-gray-100 bg-white p-1.5 shadow-xl">
+          {MENU_GROUPS.map((group, i) => (
+            <div key={i} className="rounded-xl bg-gray-50/80 p-1">
+              {group.map((item) => (
                 <Link
-                  key={game.href}
-                  href={game.href}
-                  onClick={close}
-                  className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-navy/5 hover:text-navy"
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className="group flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-white hover:shadow-sm"
                 >
-                  {game.icon} {game.label}
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-base shadow-sm transition-transform duration-150 group-hover:scale-110">
+                    {item.icon}
+                  </span>
+                  {item.label}
                 </Link>
               ))}
             </div>
-          )}
-
-          <div className="my-1.5 border-t border-gray-100" />
-
-          <Link
-            href="/a-propos"
-            onClick={close}
-            className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-navy/5"
-          >
-            ℹ️ À propos
-          </Link>
-          <Link
-            href="/contact"
-            onClick={close}
-            className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-navy/5"
-          >
-            ✉️ Contact
-          </Link>
+          ))}
         </div>
       )}
     </div>
