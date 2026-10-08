@@ -939,15 +939,23 @@ export default function VerseGamePage() {
 
                   <p className="mt-3 text-gray-600">{scoreMessage(score, resultTotal)}</p>
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-                    {justLeveledUp ? (
+                    {justLeveledUp && (
                       <button type="button" onClick={handleNextLevel} className="btn-accent">
                         ⬆️ Niveau suivant
                       </button>
-                    ) : (
-                      <button type="button" onClick={() => loadGame(selectedLevel)} className="btn-accent">
-                        🔁 Rejouer ce niveau
+                    )}
+                    {!justLeveledUp && selectedLevel < currentLevel && (
+                      // Niveau déjà réussi auparavant, rejoué pour s'entraîner : le
+                      // bouton "niveau suivant" ne peut pas apparaître ici (pas de
+                      // nouveau déblocage), mais il faut quand même un moyen direct
+                      // de continuer au véritable niveau en cours.
+                      <button type="button" onClick={handleNextLevel} className="btn-accent">
+                        ➡️ Continuer au niveau {currentLevel}
                       </button>
                     )}
+                    <button type="button" onClick={() => loadGame(selectedLevel)} className="btn-secondary">
+                      🔁 Rejouer ce niveau
+                    </button>
                     <Link href="/" className="btn-secondary">
                       🏠 Accueil
                     </Link>
