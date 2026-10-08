@@ -49,7 +49,10 @@ const QUESTIONS_PER_GAME = 10;
 // à garder synchronisé : uniquement pour savoir quel message afficher, la
 // vraie décision de débloquer le niveau suivant reste toujours côté serveur.
 const PASS_RATIO = 0.8;
-const ACTIVITY_POLL_MS = 4000;
+// Volontairement proche de la seconde, pour que les bulles "quelqu'un vient
+// de gagner des points" apparaissent en quasi-direct (façon live
+// TikTok/Facebook), sans jamais recharger la page.
+const ACTIVITY_POLL_MS = 1500;
 const TOAST_LIFETIME_MS = 3200;
 const AUTO_ADVANCE_DELAY_MS = 900;
 // Nombre de bulles que la colonne flottante peut tenir en même temps,
@@ -110,6 +113,30 @@ function clearLastResult(deviceKey: string) {
   }
 }
 
+// L'encart des règles du jeu se referme et reste fermé pendant 24h — il
+// réapparaît ensuite tout seul (plutôt qu'une seule fois pour toujours),
+// pour rester un rappel utile sans jamais gêner une partie en cours.
+const RULES_DISMISSED_KEY = "verse_game_rules_dismissed_at";
+const RULES_REAPPEAR_MS = 24 * 60 * 60 * 1000;
+
+function areRulesDismissed(): boolean {
+  try {
+    const raw = window.localStorage.getItem(RULES_DISMISSED_KEY);
+    if (!raw) return false;
+    return Date.now() - Number(raw) < RULES_REAPPEAR_MS;
+  } catch {
+    return false;
+  }
+}
+
+function dismissRules() {
+  try {
+    window.localStorage.setItem(RULES_DISMISSED_KEY, String(Date.now()));
+  } catch {
+    // Rien à faire.
+  }
+}
+
 function scoreMessage(score: number, total: number): string {
   const percent = (score / total) * 100;
   if (percent === 100) return "Parfait ! Tu connais vraiment bien tes versets. 🏆";
@@ -128,14 +155,14 @@ function scoreMessage(score: number, total: number): string {
 function LevelUpToasts({ toasts }: { toasts: LevelUpToast[] }) {
   if (toasts.length === 0) return null;
   return (
-    <div className="pointer-events-none fixed right-3 top-20 z-50 flex flex-col items-end gap-2 sm:right-[calc(50%-13rem)]">
+    <div className="pointer-events-none fixed right-2 top-24 z-50 flex max-w-[13rem] flex-col items-end gap-2 sm:right-[calc(50%-14rem)] sm:max-w-[15rem]">
       {toasts.map((t) => (
         <div
           key={t.id}
-          className="animate-verse-toast flex items-center gap-2 rounded-full bg-navy px-3 py-1.5 text-xs font-semibold text-white shadow-lg"
+          className="animate-verse-toast flex items-center gap-1.5 rounded-full bg-navy/80 px-3 py-1.5 text-xs font-semibold text-white shadow-lg backdrop-blur-md"
         >
-          <span>{t.leveledUp ? (t.rank && RANK_MEDALS[t.rank]) || "🎉" : "✨"}</span>
-          <span>
+          <span className="shrink-0">{t.leveledUp ? (t.rank && RANK_MEDALS[t.rank]) || "🎉" : "✨"}</span>
+          <span className="truncate">
             {t.rank && <>#{t.rank} · </>}
             {t.leveledUp ? (
               <>
@@ -281,6 +308,7 @@ function formatDateTime(iso: string): string {
 
 export default function VerseGamePage() {
   const [availability, setAvailability] = useState<VerseGameAvailability | null>(null);
+  const [showRules, setShowRules] = useState(false);
   const [identified, setIdentified] = useState<boolean | null>(null);
   const [deviceKey, setDeviceKey] = useState("");
 
@@ -445,6 +473,10 @@ export default function VerseGamePage() {
       loadGame(level);
     });
   }
+
+  useEffect(() => {
+    setShowRules(!areRulesDismissed());
+  }, []);
 
   useEffect(() => {
     fetch("/api/verse-game/status", { cache: "no-store" })
@@ -650,22 +682,37 @@ export default function VerseGamePage() {
             </p>
           </div>
 
-          <div className="mb-6 rounded-2xl border-2 border-navy/10 bg-white p-4 text-sm text-gray-600">
-            <p className="mb-2 font-semibold text-navy">📜 Règles du jeu</p>
-            <ul className="list-disc space-y-1 pl-5">
-              <li>100 niveaux, du plus facile au plus difficile.</li>
-              <li>
-                Chaque niveau compte {QUESTIONS_PER_GAME} questions : devine la référence du verset, ou le
-                mot manquant.
-              </li>
-              <li>
-                Au moins {Math.round(PASS_RATIO * 100)}% de bonnes réponses pour débloquer le niveau
-                suivant — sinon, il faut le rejouer.
-              </li>
-              <li>10 points par bonne réponse, même en rejouant un niveau déjà réussi.</li>
-              <li>Le classement se base sur le total de points cumulés sur tous les niveaux.</li>
-            </ul>
-          </div>
+          {showRules && (
+            <div className="mb-6 rounded-2xl border-2 border-navy/10 bg-white p-4 text-sm text-gray-600">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="font-semibold text-navy">📜 Règles du jeu</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    dismissRules();
+                    setShowRules(false);
+                  }}
+                  aria-label="Fermer les règles du jeu"
+                  className="shrink-0 rounded-full px-2 py-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+              <ul className="list-disc space-y-1 pl-5">
+                <li>100 niveaux, du plus facile au plus difficile.</li>
+                <li>
+                  Chaque niveau compte {QUESTIONS_PER_GAME} questions : devine la référence du verset, ou
+                  le mot manquant.
+                </li>
+                <li>
+                  Au moins {Math.round(PASS_RATIO * 100)}% de bonnes réponses pour débloquer le niveau
+                  suivant — sinon, il faut le rejouer.
+                </li>
+                <li>10 points par bonne réponse, même en rejouant un niveau déjà réussi.</li>
+                <li>Le classement se base sur le total de points cumulés sur tous les niveaux.</li>
+              </ul>
+            </div>
+          )}
 
           {availability === null && <p className="text-center text-gray-400">Chargement...</p>}
 
