@@ -412,6 +412,11 @@ export default function VerseGamePage() {
   // déjà répondue) ; sinon secondes restantes avant de compter la question
   // comme fausse automatiquement (voir handleTimeout).
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  // Faux tant que la personne n'a pas cliqué "Commencer" sur l'écran de
+  // départ du niveau : le chrono (et l'affichage des questions) n'est
+  // déclenché qu'à ce clic, jamais pendant le chargement ou la lecture des
+  // règles — même logique anti-triche que le chrono du quiz hebdo.
+  const [started, setStarted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [finished, setFinished] = useState(false);
@@ -548,6 +553,7 @@ export default function VerseGamePage() {
     setFinished(false);
     setJustLeveledUp(false);
     setPointsEarned(0);
+    setStarted(false);
     answersRef.current = [];
     fetch(`/api/verse-game/questions?count=${QUESTIONS_PER_GAME}&level=${level}`, { cache: "no-store" })
       .then(async (res) => {
@@ -689,13 +695,17 @@ export default function VerseGamePage() {
   // Chrono par question (optionnel, réglé depuis l'admin) : redémarre à
   // chaque nouvelle question, s'arrête dès qu'une réponse est donnée (le
   // changement de `selected` déclenche le nettoyage ci-dessous), et ne
-  // tourne jamais pendant le chargement ou l'écran de fin.
+  // tourne jamais pendant le chargement, l'écran de fin, ni avant que la
+  // personne ait cliqué "Commencer" sur l'écran de départ du niveau
+  // (`started`) — sinon le temps de chargement ou de lecture des règles
+  // serait injustement décompté.
   useEffect(() => {
     if (
       !availability?.timerEnabled ||
       !availability.timerSeconds ||
       loading ||
       finished ||
+      !started ||
       !current ||
       selected !== null
     ) {
@@ -718,7 +728,15 @@ export default function VerseGamePage() {
     }, 250);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current?.verseId, loading, finished, selected, availability?.timerEnabled, availability?.timerSeconds]);
+  }, [
+    current?.verseId,
+    loading,
+    finished,
+    started,
+    selected,
+    availability?.timerEnabled,
+    availability?.timerSeconds,
+  ]);
 
   // Envoie (ou renvoie, si échec réseau) le résultat du niveau au serveur.
   // Avant tout, on efface l'ancien résultat affiché (points/passage de
@@ -1076,7 +1094,22 @@ export default function VerseGamePage() {
                 </div>
               )}
 
-              {!loading && !error && !finished && current && (
+              {!loading && !error && !finished && current && availability?.timerEnabled && !started && (
+                <div className="card text-center">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Niveau {selectedLevel} · {questions.length} questions
+                  </p>
+                  <h2 className="mb-3 text-lg font-bold text-navy">Prêt·e ?</h2>
+                  <p className="mb-4 text-sm text-gray-500">
+                    ⏱️ {availability.timerSeconds} secondes par question dès que tu commences.
+                  </p>
+                  <button type="button" onClick={() => setStarted(true)} className="btn-accent">
+                    ▶️ Commencer
+                  </button>
+                </div>
+              )}
+
+              {!loading && !error && !finished && current && (!availability?.timerEnabled || started) && (
                 <div className="card">
                   <div className="mb-1 flex items-center justify-between gap-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
