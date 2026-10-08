@@ -40,7 +40,7 @@ interface LeaderboardEntry {
   level: number;
 }
 
-const QUESTIONS_PER_GAME = 8;
+const QUESTIONS_PER_GAME = 10;
 const LEADERBOARD_POLL_MS = 5000;
 const AUTO_ADVANCE_DELAY_MS = 900;
 const MAX_TICKER_ENTRIES = 10;

@@ -16,7 +16,7 @@ const PASS_RATIO = 1;
  * Enregistre la fin d'un niveau de "Trouve le verset" : ajoute les points
  * gagnés (10 par bonne réponse) au total cumulé, et débloque le niveau
  * suivant si le niveau joué est bien celui en cours (pas un niveau déjà
- * dépassé rejoué) et que toutes les réponses sont correctes (8/8).
+ * dépassé rejoué) et que toutes les réponses sont correctes.
  * Aucune identification requise.
  */
 export async function POST(request: NextRequest) {
