@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import { getOrCreateAnonymousDeviceKey } from "@/lib/participant-storage";
@@ -33,6 +33,7 @@ interface LeaderboardEntry {
 
 const QUESTIONS_PER_GAME = 8;
 const LEADERBOARD_POLL_MS = 5000;
+const AUTO_ADVANCE_DELAY_MS = 900;
 const MAX_TICKER_ENTRIES = 10;
 const TICKER_ROW_HEIGHT_PX = 40;
 const TICKER_VISIBLE_ROWS = 4;
@@ -115,6 +116,7 @@ export default function VerseGamePage() {
   const [justBeatBest, setJustBeatBest] = useState(false);
 
   const [showLeaderboard, setShowLeaderboard] = useState(true);
+  const autoAdvanceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
@@ -167,6 +169,9 @@ export default function VerseGamePage() {
     setDeviceKey(key);
     loadLeaderboard(key);
     loadGame();
+    return () => {
+      if (autoAdvanceTimeout.current) clearTimeout(autoAdvanceTimeout.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -181,11 +186,16 @@ export default function VerseGamePage() {
 
   const current = questions[index];
 
+  // Bonne réponse : avance automatiquement après un court délai (le temps de
+  // voir la case passer au vert), pas besoin de cliquer sur "Suivant".
+  // Mauvaise réponse : on reste sur la question, la bonne réponse s'affiche
+  // en vert, et c'est à la personne de cliquer sur "Suivant" pour continuer.
   function handleAnswer(option: string) {
     if (!current || selected) return;
     setSelected(option);
     if (option === current.correctAnswer) {
       setScore((s) => s + 1);
+      autoAdvanceTimeout.current = setTimeout(() => handleNext(), AUTO_ADVANCE_DELAY_MS);
     }
   }
 
@@ -375,7 +385,7 @@ export default function VerseGamePage() {
                 })}
               </div>
 
-              {selected !== null && (
+              {selected !== null && selected !== current.correctAnswer && (
                 <button type="button" onClick={handleNext} className="btn-primary mt-6 w-full">
                   {index + 1 >= questions.length ? "Voir mon score" : "Suivant →"}
                 </button>
