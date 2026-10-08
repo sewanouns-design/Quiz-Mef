@@ -1,9 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { BibleVerse } from "@/lib/types";
+import type { BibleVerse, VerseDifficulty } from "@/lib/types";
 
 const PAGE_SIZE = 50;
+
+const DIFFICULTY_LABELS: Record<VerseDifficulty, string> = {
+  easy: "Facile",
+  medium: "Moyen",
+  hard: "Difficile",
+};
 
 export default function VersesTab() {
   const [verses, setVerses] = useState<BibleVerse[]>([]);
@@ -17,8 +23,20 @@ export default function VersesTab() {
   const [reference, setReference] = useState("");
   const [text, setText] = useState("");
   const [blankWord, setBlankWord] = useState("");
+  const [difficulty, setDifficulty] = useState<"" | VerseDifficulty>("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editReference, setEditReference] = useState("");
+  const [editText, setEditText] = useState("");
+  const [editBlankWord, setEditBlankWord] = useState("");
+  const [editDifficulty, setEditDifficulty] = useState<"" | VerseDifficulty>("");
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState("");
 
   const [bulkText, setBulkText] = useState("");
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
@@ -34,6 +52,8 @@ export default function VersesTab() {
 
   useEffect(() => {
     load();
+    setSelectedIds(new Set());
+    setEditingId(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, search]);
 
@@ -79,7 +99,7 @@ export default function VersesTab() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ reference, text, blankWord }),
+        body: JSON.stringify({ reference, text, blankWord, difficulty: difficulty || null }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -92,6 +112,7 @@ export default function VersesTab() {
       setReference("");
       setText("");
       setBlankWord("");
+      setDifficulty("");
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
@@ -110,11 +131,14 @@ export default function VersesTab() {
           reference: parts[0] ?? "",
           text: parts[1] ?? "",
           blankWord: parts[2] ?? "",
+          difficulty: parts[3] ?? "",
         };
       });
   }
 
-  async function importItems(items: { reference: string; text: string; blankWord: string }[]) {
+  async function importItems(
+    items: { reference: string; text: string; blankWord: string; difficulty?: string }[]
+  ) {
     setBulkSubmitting(true);
     setBulkError("");
     setBulkResult("");
@@ -213,6 +237,92 @@ export default function VersesTab() {
     }
   }
 
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function toggleSelectAllOnPage() {
+    setSelectedIds((prev) => {
+      const allSelected = verses.every((v) => prev.has(v.id));
+      if (allSelected) return new Set();
+      return new Set(verses.map((v) => v.id));
+    });
+  }
+
+  async function handleDeleteSelected() {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    setBulkDeleting(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/verses", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ ids }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Erreur lors de la suppression.");
+      }
+      setSelectedIds(new Set());
+      setTotal((t) => Math.max(0, t - (data.deleted ?? ids.length)));
+      load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
+  function startEdit(v: BibleVerse) {
+    setEditingId(v.id);
+    setEditReference(v.reference);
+    setEditText(v.text);
+    setEditBlankWord(v.blank_word ?? "");
+    setEditDifficulty(v.difficulty ?? "");
+    setEditError("");
+  }
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingId || !editReference.trim() || !editText.trim()) return;
+
+    setEditSubmitting(true);
+    setEditError("");
+    try {
+      const res = await fetch(`/api/admin/verses/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          reference: editReference,
+          text: editText,
+          blankWord: editBlankWord,
+          difficulty: editDifficulty || null,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Erreur lors de la modification.");
+      }
+      setVerses((prev) => prev.map((v) => (v.id === editingId ? data.verse : v)));
+      setEditingId(null);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setEditSubmitting(false);
+    }
+  }
+
   return (
     <section>
       <h2 className="mb-1 text-lg font-bold text-navy">📖 Trouve le verset</h2>
@@ -261,6 +371,22 @@ export default function VersesTab() {
             onChange={(e) => setBlankWord(e.target.value)}
           />
         </div>
+        <div>
+          <label className="label-field" htmlFor="verse-difficulty">
+            Difficulté (facultatif)
+          </label>
+          <select
+            id="verse-difficulty"
+            className="input-field"
+            value={difficulty}
+            onChange={(e) => setDifficulty(e.target.value as "" | VerseDifficulty)}
+          >
+            <option value="">Automatique (selon la longueur du texte)</option>
+            <option value="easy">Facile</option>
+            <option value="medium">Moyen</option>
+            <option value="hard">Difficile</option>
+          </select>
+        </div>
         {formError && <p className="text-sm font-medium text-red-600">{formError}</p>}
         <button
           type="submit"
@@ -275,7 +401,9 @@ export default function VersesTab() {
         <h3 className="text-sm font-bold text-navy">Importer plusieurs versets en une fois</h3>
         <p className="text-xs text-gray-500">
           Un verset par ligne, champs séparés par <code className="rounded bg-gray-100 px-1">|</code> :{" "}
-          <code className="rounded bg-gray-100 px-1">Référence | Texte complet | Mot à deviner (facultatif)</code>
+          <code className="rounded bg-gray-100 px-1">
+            Référence | Texte complet | Mot à deviner (facultatif) | Difficulté easy/medium/hard (facultatif)
+          </code>
           <br />
           Exemple : <code className="rounded bg-gray-100 px-1">
             Jean 3:16 | Car Dieu a tant aimé le monde... | aimé
@@ -361,30 +489,125 @@ export default function VersesTab() {
       ) : (
         <>
           {error && <p className="mb-2 text-sm font-medium text-red-600">{error}</p>}
-          <ul className="space-y-2">
-            {verses.map((v) => (
-              <li
-                key={v.id}
-                className="flex items-start justify-between gap-3 rounded-xl border border-gray-200 p-3"
+
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <label className="flex items-center gap-2 text-xs font-semibold text-gray-500">
+              <input
+                type="checkbox"
+                checked={verses.length > 0 && verses.every((v) => selectedIds.has(v.id))}
+                onChange={toggleSelectAllOnPage}
+              />
+              Tout sélectionner (cette page)
+            </label>
+            {selectedIds.size > 0 && (
+              <button
+                type="button"
+                onClick={handleDeleteSelected}
+                disabled={bulkDeleting}
+                className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
               >
-                <div className="min-w-0">
-                  <p className="font-semibold text-navy">{v.reference}</p>
-                  <p className="text-sm text-gray-600">{v.text}</p>
-                  {v.blank_word && (
-                    <p className="mt-1 text-xs text-gray-400">
-                      Mot à deviner : <span className="font-semibold text-accent-dark">{v.blank_word}</span>
-                    </p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(v.id)}
-                  className="shrink-0 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50"
+                {bulkDeleting ? "Suppression..." : `Supprimer la sélection (${selectedIds.size})`}
+              </button>
+            )}
+          </div>
+
+          <ul className="space-y-2">
+            {verses.map((v) =>
+              editingId === v.id ? (
+                <li key={v.id} className="card space-y-2">
+                  <input
+                    className="input-field"
+                    value={editReference}
+                    onChange={(e) => setEditReference(e.target.value)}
+                    placeholder="Référence"
+                  />
+                  <textarea
+                    className="input-field min-h-[70px]"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    placeholder="Texte du verset"
+                  />
+                  <input
+                    className="input-field"
+                    value={editBlankWord}
+                    onChange={(e) => setEditBlankWord(e.target.value)}
+                    placeholder="Mot à deviner (facultatif)"
+                  />
+                  <select
+                    className="input-field"
+                    value={editDifficulty}
+                    onChange={(e) => setEditDifficulty(e.target.value as "" | VerseDifficulty)}
+                  >
+                    <option value="">Automatique (selon la longueur du texte)</option>
+                    <option value="easy">Facile</option>
+                    <option value="medium">Moyen</option>
+                    <option value="hard">Difficile</option>
+                  </select>
+                  {editError && <p className="text-sm font-medium text-red-600">{editError}</p>}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSaveEdit}
+                      disabled={editSubmitting || !editReference.trim() || !editText.trim()}
+                      className="btn-accent"
+                    >
+                      {editSubmitting ? "Enregistrement..." : "Enregistrer"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(null)}
+                      className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-50"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </li>
+              ) : (
+                <li
+                  key={v.id}
+                  className="flex items-start justify-between gap-3 rounded-xl border border-gray-200 p-3"
                 >
-                  Supprimer
-                </button>
-              </li>
-            ))}
+                  <input
+                    type="checkbox"
+                    className="mt-1 shrink-0"
+                    checked={selectedIds.has(v.id)}
+                    onChange={() => toggleSelected(v.id)}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-navy">{v.reference}</p>
+                      {v.difficulty && (
+                        <span className="shrink-0 rounded-full bg-navy/5 px-2 py-0.5 text-[11px] font-semibold text-navy/70">
+                          {DIFFICULTY_LABELS[v.difficulty]}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600">{v.text}</p>
+                    {v.blank_word && (
+                      <p className="mt-1 text-xs text-gray-400">
+                        Mot à deviner : <span className="font-semibold text-accent-dark">{v.blank_word}</span>
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => startEdit(v)}
+                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-navy transition-colors hover:bg-gray-50"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(v.id)}
+                      className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </li>
+              )
+            )}
           </ul>
 
           {totalPages > 1 && (

@@ -16,11 +16,13 @@ const MAX_ITEMS_PER_REQUEST = 1000;
 // upsert portant sur trop de lignes à la fois peut dépasser les limites de
 // la base, donc on le découpe aussi côté serveur.
 const DB_CHUNK_SIZE = 200;
+const VALID_DIFFICULTIES = ["easy", "medium", "hard"];
 
 interface RawVerseItem {
   reference?: unknown;
   text?: unknown;
   blankWord?: unknown;
+  difficulty?: unknown;
 }
 
 export async function POST(request: NextRequest) {
@@ -44,7 +46,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const rows: { reference: string; text: string; blank_word: string | null }[] = [];
+  const rows: {
+    reference: string;
+    text: string;
+    blank_word: string | null;
+    difficulty: string | null;
+  }[] = [];
   const rejected: { line: number; reason: string }[] = [];
   const seenReferences = new Set<string>();
 
@@ -52,6 +59,8 @@ export async function POST(request: NextRequest) {
     const reference = typeof item.reference === "string" ? item.reference.trim() : "";
     const text = typeof item.text === "string" ? item.text.trim() : "";
     const blankWord = typeof item.blankWord === "string" ? item.blankWord.trim() : "";
+    const difficultyRaw = typeof item.difficulty === "string" ? item.difficulty.trim().toLowerCase() : "";
+    const difficulty = VALID_DIFFICULTIES.includes(difficultyRaw) ? difficultyRaw : null;
 
     if (!reference || !text) {
       rejected.push({ line: index + 1, reason: "référence ou texte manquant" });
@@ -73,11 +82,12 @@ export async function POST(request: NextRequest) {
         reference,
         text,
         blank_word: blankWord || null,
+        difficulty,
       };
       return;
     }
     seenReferences.add(reference);
-    rows.push({ reference, text, blank_word: blankWord || null });
+    rows.push({ reference, text, blank_word: blankWord || null, difficulty });
   });
 
   if (rows.length === 0) {

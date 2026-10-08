@@ -352,8 +352,24 @@ create table if not exists bible_verses (
   -- variante "complète le texte". Facultatif : sans ça, le verset n'est
   -- utilisé que pour la variante "devine la référence".
   blank_word text,
+  -- Facultatif : si l'admin ne le renseigne pas, la difficulté est déduite
+  -- automatiquement à la volée (longueur du texte) côté jeu — voir
+  -- lib/verse-difficulty.ts.
+  difficulty text check (difficulty in ('easy', 'medium', 'hard')),
   created_at timestamptz default now()
 );
+
+-- Tirage aléatoire indépendant de la taille de la table (voir
+-- app/api/verse-game/questions/route.ts) : une requête Supabase classique
+-- plafonne à 1000 lignes, ce qui ne pioche pas vraiment dans l'ensemble
+-- d'une banque de plusieurs dizaines de milliers de versets.
+create or replace function get_random_bible_verses(limit_count int)
+returns setof bible_verses
+language sql
+stable
+as $$
+  select * from bible_verses order by random() limit limit_count;
+$$;
 
 create index if not exists idx_bible_verses_created_at on bible_verses (created_at);
 

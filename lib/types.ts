@@ -37,11 +37,14 @@ export type PublicQuestion = Omit<
   "correct_option" | "correct_text" | "justification"
 >;
 
+export type VerseDifficulty = "easy" | "medium" | "hard";
+
 export interface BibleVerse {
   id: string;
   reference: string;
   text: string;
   blank_word: string | null;
+  difficulty: VerseDifficulty | null;
   created_at: string;
 }
 

@@ -19,7 +19,7 @@ RÈGLES :
 - Réponds UNIQUEMENT avec la liste reformatée, une ligne par verset, sans
   texte avant/après, sans numérotation, sans balises markdown.
 - Chaque ligne respecte EXACTEMENT ce format, séparé par " | " (espace-pipe-espace) :
-  Référence | Texte complet du verset | Mot à deviner (facultatif)
+  Référence | Texte complet du verset | Mot à deviner (facultatif) | Difficulté (facultatif)
 - "Référence" : garde-la telle que fournie, ou remets-la au format court
   habituel si elle était donnée autrement (ex. "Jean 3.16" ou "Jean chapitre 3
   verset 16" → "Jean 3:16").
@@ -32,6 +32,9 @@ RÈGLES :
     EXACTEMENT comme sous-chaîne du texte du 2e champ (même orthographe,
     mêmes accents, même casse).
   - Si la source n'en propose pas, laisse ce champ vide (ne l'invente pas).
+- "Difficulté" (4e champ, facultatif) : uniquement "easy", "medium" ou
+  "hard". Si la source n'indique rien, laisse ce champ vide — le site la
+  déduira automatiquement de la longueur du texte.
 - Une ligne par verset, dans le même ordre que la source.
 - Si une ligne de la source est incomplète ou ambiguë (référence ou texte
   manquant), ignore-la silencieusement plutôt que d'inventer le manquant.

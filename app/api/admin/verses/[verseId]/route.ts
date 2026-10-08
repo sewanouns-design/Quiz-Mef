@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 const MAX_REFERENCE_LENGTH = 100;
 const MAX_TEXT_LENGTH = 2000;
+const VALID_DIFFICULTIES = ["easy", "medium", "hard"];
 
 export async function PATCH(
   request: NextRequest,
@@ -58,6 +59,9 @@ export async function PATCH(
       );
     }
     updates.blank_word = blankWord || null;
+  }
+  if (body?.difficulty !== undefined) {
+    updates.difficulty = VALID_DIFFICULTIES.includes(body.difficulty) ? body.difficulty : null;
   }
 
   if (Object.keys(updates).length === 0) {
