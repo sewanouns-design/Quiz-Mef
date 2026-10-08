@@ -10,10 +10,11 @@ const MAX_EVENTS = 20;
 const DEFAULT_LOOKBACK_MS = 15_000;
 
 /**
- * Fil des niveaux débloqués récemment, pour les notifications flottantes du
- * jeu (façon likes de live) — jamais pour les simples points gagnés, juste
- * les passages de niveau. Le prénom est toujours affiché, pour motiver les
- * autres joueurs à progresser à leur tour.
+ * Fil d'activité récente du jeu (façon likes de live), pour les notifications
+ * flottantes : chaque partie terminée avec des points gagnés, pas seulement
+ * les passages de niveau — pour que les autres joueurs voient l'activité en
+ * temps réel et soient motivés à jouer davantage. Le prénom est toujours
+ * affiché.
  */
 export async function GET(request: NextRequest) {
   const sinceParam = request.nextUrl.searchParams.get("since");
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
   const supabase = getSupabaseAdmin();
   const { data: events, error } = await supabase
     .from("verse_game_activity")
-    .select("id, device_key, level, rank, created_at")
+    .select("id, device_key, level, rank, points_earned, leveled_up, created_at")
     .gt("created_at", since)
     .order("created_at", { ascending: true })
     .limit(MAX_EVENTS);
@@ -54,6 +55,8 @@ export async function GET(request: NextRequest) {
       displayName: formatLeaderboardName(participantByDevice.get(e.device_key)!.name),
       level: e.level,
       rank: e.rank,
+      pointsEarned: e.points_earned,
+      leveledUp: e.leveled_up,
       createdAt: e.created_at,
     }));
 

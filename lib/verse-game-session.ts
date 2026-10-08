@@ -7,7 +7,13 @@ import { createHash, createHmac, timingSafeEqual } from "crypto";
 // sans jamais avoir chargé ses questions, valider un niveau différent de
 // celui réellement chargé, et valider en un temps trop court pour avoir pu
 // lire/répondre (script automatisé).
-const MIN_MS_PER_QUESTION = 1200;
+// Volontairement bas : pour les niveaux faciles (versets très connus,
+// très courts), un joueur qui les reconnaît au premier coup d'œil peut
+// légitimement répondre à une question toutes les 400-600ms. Le but n'est
+// que de bloquer une validation instantanée (script), pas de pénaliser une
+// personne rapide — un seuil trop strict provoquait des échecs silencieux
+// de progression bien réelle.
+const MIN_MS_PER_QUESTION = 350;
 const MAX_TOKEN_AGE_MS = 20 * 60 * 1000;
 
 function getSecret(): string {

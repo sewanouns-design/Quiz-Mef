@@ -161,9 +161,18 @@ export async function POST(request: NextRequest) {
   }
   const rank = (betterCount ?? 0) + 1;
 
-  if (leveledUp) {
-    // Best-effort : la notification flottante est un bonus, pas un enjeu.
-    await supabase.from("verse_game_activity").insert({ device_key: deviceKey, level: newLevel, rank });
+  // Best-effort : la notification flottante est un bonus, pas un enjeu.
+  // Toute partie terminée alimente le fil d'activité (pas seulement les
+  // passages de niveau), pour que les autres joueurs voient les points
+  // gagnés en temps réel et soient motivés à jouer davantage.
+  if (pointsEarned > 0) {
+    await supabase.from("verse_game_activity").insert({
+      device_key: deviceKey,
+      level: newLevel,
+      rank,
+      points_earned: pointsEarned,
+      leveled_up: leveledUp,
+    });
   }
 
   return NextResponse.json({

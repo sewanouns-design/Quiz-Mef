@@ -581,10 +581,16 @@ create table if not exists verse_game_activity (
   id uuid primary key default gen_random_uuid(),
   device_key text not null,
   level int not null,
-  -- Rang (classement par points cumulés) au moment du passage de niveau,
-  -- pour que la notification flottante affiche "1er/2e/3e..." plutôt
-  -- qu'un simple ordre d'arrivée.
+  -- Rang (classement par points cumulés) au moment de l'évènement, pour que
+  -- la notification flottante affiche "1er/2e/3e..." plutôt qu'un simple
+  -- ordre d'arrivée.
   rank int,
+  -- Points gagnés sur cette partie, et si elle a fait passer au niveau
+  -- suivant (false = gain de points sans passage de niveau, ex. en
+  -- rejouant un niveau déjà réussi) — distingue les deux types de
+  -- notification flottante affichés côté client.
+  points_earned int,
+  leveled_up boolean not null default true,
   created_at timestamptz not null default now()
 );
 

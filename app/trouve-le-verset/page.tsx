@@ -40,6 +40,8 @@ interface LevelUpToast {
   displayName: string;
   level: number;
   rank: number | null;
+  pointsEarned: number | null;
+  leveledUp: boolean;
 }
 
 const QUESTIONS_PER_GAME = 10;
@@ -62,13 +64,11 @@ function scoreMessage(score: number, total: number): string {
 }
 
 /**
- * Notifications flottantes "niveau débloqué" façon likes de live
- * (TikTok/Facebook) : empilées du même côté que la carte de jeu, chacune
- * monte en flottant puis s'efface — jamais un panneau à part qui prend de
- * la place en permanence. Seuls les passages de niveau déclenchent une
- * bulle (pas chaque point gagné), et seulement pour les joueurs ayant
- * accepté d'apparaître dans les classements (même règle de confidentialité
- * que partout ailleurs sur le site).
+ * Notifications flottantes façon likes de live (TikTok/Facebook) : empilées
+ * du même côté que la carte de jeu, chacune monte en flottant puis s'efface
+ * — jamais un panneau à part qui prend de la place en permanence. Toute
+ * partie terminée avec des points gagnés déclenche une bulle (texte +
+ * icône différents si elle fait aussi passer au niveau suivant).
  */
 function LevelUpToasts({ toasts }: { toasts: LevelUpToast[] }) {
   if (toasts.length === 0) return null;
@@ -79,10 +79,18 @@ function LevelUpToasts({ toasts }: { toasts: LevelUpToast[] }) {
           key={t.id}
           className="animate-verse-toast flex items-center gap-2 rounded-full bg-navy px-3 py-1.5 text-xs font-semibold text-white shadow-lg"
         >
-          <span>{(t.rank && RANK_MEDALS[t.rank]) || "🎉"}</span>
+          <span>{t.leveledUp ? (t.rank && RANK_MEDALS[t.rank]) || "🎉" : "✨"}</span>
           <span>
             {t.rank && <>#{t.rank} · </>}
-            {t.displayName} vient d&apos;atteindre le niveau {t.level} !
+            {t.leveledUp ? (
+              <>
+                {t.displayName} vient d&apos;atteindre le niveau {t.level} !
+              </>
+            ) : (
+              <>
+                {t.displayName} vient de gagner {t.pointsEarned} points !
+              </>
+            )}
           </span>
         </div>
       ))}
@@ -235,6 +243,8 @@ export default function VerseGamePage() {
   const [finished, setFinished] = useState(false);
   const [pointsEarned, setPointsEarned] = useState(0);
   const [justLeveledUp, setJustLeveledUp] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState("");
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState("");
   const autoAdvanceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -272,7 +282,14 @@ export default function VerseGamePage() {
       .then(
         (
           data: {
-            events: { id: string; displayName: string; level: number; rank: number | null }[];
+            events: {
+              id: string;
+              displayName: string;
+              level: number;
+              rank: number | null;
+              pointsEarned: number | null;
+              leveledUp: boolean;
+            }[];
             latest: string;
           } | null
         ) => {
@@ -287,6 +304,8 @@ export default function VerseGamePage() {
               displayName: e.displayName,
               level: e.level,
               rank: e.rank,
+              pointsEarned: e.pointsEarned,
+              leveledUp: e.leveledUp,
             })),
           ].slice(-MAX_STACKED_TOASTS)
         );
@@ -407,37 +426,53 @@ export default function VerseGamePage() {
     }
   }
 
+  // Envoie (ou renvoie, si échec réseau) le résultat du niveau au serveur.
+  // Avant tout, on efface l'ancien résultat affiché (points/passage de
+  // niveau d'une partie précédente) : sans ça, un échec d'enregistrement
+  // laissait les chiffres de la partie PRÉCÉDENTE affichés sur l'écran de
+  // fin de la partie ACTUELLE, donnant l'impression trompeuse que rien ne
+  // s'était passé ou que le niveau suivant n'était jamais débloqué.
+  async function submitLevelComplete() {
+    if (!deviceKey) return;
+    setPointsEarned(0);
+    setJustLeveledUp(false);
+    setSyncError("");
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/verse-game/level-complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          deviceKey,
+          level: selectedLevel,
+          score,
+          total: questions.length,
+          answers: answersRef.current,
+          sessionToken: sessionTokenRef.current,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Erreur lors de l'enregistrement de ta progression.");
+      }
+      setPointsEarned(data.pointsEarned ?? 0);
+      setJustLeveledUp(Boolean(data.leveledUp));
+      setTotalPoints(data.totalPoints ?? totalPoints);
+      setCurrentLevel(data.currentLevel ?? currentLevel);
+      setMyRank(data.rank ?? null);
+      loadLeaderboardStats(deviceKey);
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   async function handleNext() {
     if (index + 1 >= questions.length) {
       setFinished(true);
-      if (deviceKey) {
-        try {
-          const res = await fetch("/api/verse-game/level-complete", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            cache: "no-store",
-            body: JSON.stringify({
-              deviceKey,
-              level: selectedLevel,
-              score,
-              total: questions.length,
-              answers: answersRef.current,
-              sessionToken: sessionTokenRef.current,
-            }),
-          });
-          const data = await res.json().catch(() => ({}));
-          if (res.ok) {
-            setPointsEarned(data.pointsEarned ?? 0);
-            setJustLeveledUp(Boolean(data.leveledUp));
-            setTotalPoints(data.totalPoints ?? totalPoints);
-            setCurrentLevel(data.currentLevel ?? currentLevel);
-            setMyRank(data.rank ?? null);
-            loadLeaderboardStats(deviceKey);
-          }
-        } catch {
-          // Progression non enregistrée, tant pis — le jeu reste jouable.
-        }
-      }
+      await submitLevelComplete();
       return;
     }
     setIndex((i) => i + 1);
@@ -604,17 +639,49 @@ export default function VerseGamePage() {
                   <p className="mt-2 text-4xl font-extrabold text-navy">
                     {score} / {questions.length}
                   </p>
-                  <p className="mt-1 text-sm font-semibold text-accent-dark">+{pointsEarned} points</p>
-                  {justLeveledUp && (
-                    <p className="mt-1 text-sm font-semibold text-green-700">
-                      🎉 Niveau {currentLevel} débloqué !
-                    </p>
+
+                  {syncing && <p className="mt-2 text-sm text-gray-400">Enregistrement...</p>}
+
+                  {!syncing && syncError && (
+                    <div className="mt-2 rounded-xl bg-red-50 p-3">
+                      <p className="text-sm font-medium text-red-600">{syncError}</p>
+                      <button
+                        type="button"
+                        onClick={submitLevelComplete}
+                        className="mt-2 text-sm font-semibold text-red-700 underline"
+                      >
+                        Réessayer l&apos;enregistrement
+                      </button>
+                    </div>
                   )}
-                  {myRank && (
-                    <p className="mt-1 text-sm text-gray-500">
-                      Tu es #{myRank} sur {totalPlayers}
-                    </p>
+
+                  {!syncing && !syncError && (
+                    <>
+                      <p className="mt-1 text-sm font-semibold text-accent-dark">+{pointsEarned} points</p>
+                      {justLeveledUp && (
+                        <p className="mt-1 text-sm font-semibold text-green-700">
+                          🎉 Niveau {currentLevel} débloqué !
+                        </p>
+                      )}
+                      {!justLeveledUp && score < questions.length && (
+                        <p className="mt-1 text-sm font-semibold text-red-600">
+                          ❌ Échec — il faut 100% pour passer au niveau suivant. Reprends ce niveau !
+                        </p>
+                      )}
+                      {!justLeveledUp && score === questions.length && (
+                        <p className="mt-1 text-sm font-medium text-gray-500">
+                          Tu maîtrises déjà ce niveau — rejoue-le pour gagner encore des points, ou passe au
+                          niveau que tu n&apos;as pas encore débloqué.
+                        </p>
+                      )}
+                      {myRank && (
+                        <p className="mt-1 text-sm text-gray-500">
+                          Tu es #{myRank} sur {totalPlayers}
+                        </p>
+                      )}
+                    </>
                   )}
+
                   <p className="mt-3 text-gray-600">{scoreMessage(score, questions.length)}</p>
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
                     {justLeveledUp ? (
