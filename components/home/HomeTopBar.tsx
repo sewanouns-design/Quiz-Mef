@@ -58,7 +58,10 @@ export default function HomeTopBar({
           <div className="flex shrink-0 items-center">
             <SiteMenu variant="dark" />
           </div>
-          <div className="flex min-w-0 flex-1 items-center justify-center gap-2 text-center">
+          <Link
+            href="/"
+            className="flex min-w-0 flex-1 items-center justify-center gap-2 text-center transition-opacity hover:opacity-90"
+          >
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/15 text-base">
               <LogoIcon value={settings.logo_icon} className="h-5 w-5" />
             </div>
@@ -70,7 +73,7 @@ export default function HomeTopBar({
                 · 🔥 {todayStats.count} aujourd&apos;hui
               </span>
             )}
-          </div>
+          </Link>
           <div className="w-9 shrink-0" aria-hidden="true" />
         </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import LogoIcon from "./LogoIcon";
 import SiteMenu from "./SiteMenu";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/site-settings";
@@ -34,12 +35,15 @@ export default function SiteHeader() {
         <div className="flex shrink-0 items-center">
           <SiteMenu />
         </div>
-        <div className="flex min-w-0 flex-1 items-center justify-center gap-2 text-center">
+        <Link
+          href="/"
+          className="flex min-w-0 flex-1 items-center justify-center gap-2 text-center transition-opacity hover:opacity-80"
+        >
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-navy text-base">
             <LogoIcon value={logoIcon} className="h-5 w-5" />
           </div>
           <span className="truncate text-base font-bold text-navy">{siteName}</span>
-        </div>
+        </Link>
         <div className="w-9 shrink-0" aria-hidden="true" />
       </div>
     </div>
