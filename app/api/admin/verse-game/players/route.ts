@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     deviceKeys.length > 0
       ? await supabase
           .from("participants")
-          .select("device_key, name, email, show_in_leaderboard")
+          .select("device_key, name, email")
           .in("device_key", deviceKeys)
       : { data: [], error: null };
   if (participantsError) {
@@ -84,7 +84,6 @@ export async function GET(request: NextRequest) {
       updatedAt: r.updated_at,
       name: participant?.name ?? null,
       email: participant?.email ?? null,
-      showInLeaderboard: participant?.show_in_leaderboard ?? false,
     };
   });
 

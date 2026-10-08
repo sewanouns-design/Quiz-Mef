@@ -10,10 +10,8 @@ const MAX_ENTRIES = 20;
  * Classement PUBLIC de "Trouve le verset", basé sur les points cumulés sur
  * tous les niveaux (verse_game_progress.total_points), plus représentatif
  * de la progression réelle qu'un score sur une seule partie de 8 questions.
- * Comme pour le quiz, un nom n'est affiché que pour les appareils liés à un
- * participant ayant activé "Afficher mon prénom dans le classement" — les
- * scores anonymes comptent dans le classement (le rang renvoyé est réel)
- * mais n'apparaissent jamais nommément dans la liste publique.
+ * Le prénom est toujours affiché (initiale du nom seulement), pour motiver
+ * les joueurs à progresser — il n'y a plus d'option pour le masquer.
  */
 export async function GET(request: NextRequest) {
   const deviceKey = request.nextUrl.searchParams.get("deviceKey");
@@ -33,10 +31,7 @@ export async function GET(request: NextRequest) {
 
   const { data: participants, error: participantsError } =
     deviceKeys.length > 0
-      ? await supabase
-          .from("participants")
-          .select("device_key, name, show_in_leaderboard")
-          .in("device_key", deviceKeys)
+      ? await supabase.from("participants").select("device_key, name").in("device_key", deviceKeys)
       : { data: [], error: null };
   if (participantsError) {
     return NextResponse.json({ error: participantsError.message }, { status: 500 });
@@ -45,7 +40,7 @@ export async function GET(request: NextRequest) {
   const participantByDevice = new Map((participants ?? []).map((p) => [p.device_key, p]));
 
   const entries = ranked
-    .filter((s) => participantByDevice.get(s.device_key)?.show_in_leaderboard)
+    .filter((s) => participantByDevice.has(s.device_key))
     .slice(0, MAX_ENTRIES)
     .map((s) => ({
       displayName: formatLeaderboardName(participantByDevice.get(s.device_key)!.name),

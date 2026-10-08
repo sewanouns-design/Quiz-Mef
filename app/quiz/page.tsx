@@ -29,7 +29,6 @@ function QuizIdentificationForm() {
   const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [showInLeaderboard, setShowInLeaderboard] = useState(true);
   const [loading, setLoading] = useState(false);
   const [checkingQuiz, setCheckingQuiz] = useState(true);
   const [error, setError] = useState("");
@@ -56,7 +55,6 @@ function QuizIdentificationForm() {
       setAddress(stored.address || "");
       setEmail(stored.email || "");
       setWhatsapp(stored.whatsapp || "");
-      setShowInLeaderboard(Boolean(stored.showInLeaderboard));
       setPhoneInputKey(`stored-${stored.whatsapp || ""}`);
     }
 
@@ -68,7 +66,6 @@ function QuizIdentificationForm() {
           setAddress(data.participant.address || "");
           setEmail(data.participant.email || "");
           setWhatsapp(data.participant.whatsapp || "");
-          setShowInLeaderboard(Boolean(data.participant.show_in_leaderboard));
           setPhoneInputKey(`fetched-${data.participant.whatsapp || ""}`);
         }
       })
@@ -170,7 +167,7 @@ function QuizIdentificationForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ deviceKey, name, address, email, whatsapp, showInLeaderboard }),
+        body: JSON.stringify({ deviceKey, name, address, email, whatsapp, showInLeaderboard: true }),
       });
 
       if (!participantRes.ok) {
@@ -188,7 +185,7 @@ function QuizIdentificationForm() {
         address: participant?.address ?? address,
         email: participant?.email ?? email,
         whatsapp: participant?.whatsapp ?? whatsapp,
-        showInLeaderboard: participant?.show_in_leaderboard ?? showInLeaderboard,
+        showInLeaderboard: true,
       });
 
       router.push(`/quiz/${selectedQuizId}`);
@@ -320,19 +317,6 @@ function QuizIdentificationForm() {
               onChange={setWhatsapp}
             />
           </div>
-
-          <label className="flex items-start gap-2 text-sm text-gray-600">
-            <input
-              type="checkbox"
-              checked={showInLeaderboard}
-              onChange={(e) => setShowInLeaderboard(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300"
-            />
-            <span>
-              Afficher mon prénom dans le classement public du quiz (initiale du nom
-              seulement, visible par les autres participants).
-            </span>
-          </label>
 
           {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 

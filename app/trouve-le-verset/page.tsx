@@ -101,7 +101,6 @@ function IdentificationGate({ onIdentified }: { onIdentified: () => void }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [showInLeaderboard, setShowInLeaderboard] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -133,7 +132,7 @@ function IdentificationGate({ onIdentified }: { onIdentified: () => void }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ deviceKey, name, email, whatsapp, showInLeaderboard }),
+        body: JSON.stringify({ deviceKey, name, email, whatsapp, showInLeaderboard: true }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -145,7 +144,7 @@ function IdentificationGate({ onIdentified }: { onIdentified: () => void }) {
         address: data.participant?.address ?? "",
         email: data.participant?.email ?? email,
         whatsapp: data.participant?.whatsapp ?? whatsapp,
-        showInLeaderboard: data.participant?.show_in_leaderboard ?? showInLeaderboard,
+        showInLeaderboard: true,
       });
       onIdentified();
     } catch (err) {
@@ -191,14 +190,6 @@ function IdentificationGate({ onIdentified }: { onIdentified: () => void }) {
           </label>
           <PhoneInput id="verse-id-whatsapp" initialValue={whatsapp} onChange={setWhatsapp} />
         </div>
-        <label className="flex items-center gap-2 text-sm text-gray-600">
-          <input
-            type="checkbox"
-            checked={showInLeaderboard}
-            onChange={(e) => setShowInLeaderboard(e.target.checked)}
-          />
-          Afficher mon prénom dans les classements publics
-        </label>
         {error && <p className="text-sm font-medium text-red-600">{error}</p>}
         <button type="submit" disabled={loading} className="btn-accent w-full">
           {loading ? "Enregistrement..." : "Commencer à jouer"}

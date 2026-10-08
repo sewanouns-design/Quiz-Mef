@@ -5,10 +5,9 @@ import { formatLeaderboardName } from "@/lib/leaderboard";
 export const dynamic = "force-dynamic";
 
 /**
- * Classement PUBLIC d'un quiz : uniquement les participants ayant activé
- * l'option "Afficher mon prénom dans le classement" à l'identification
- * (opt-in explicite, jamais par défaut). Prénom + initiale seulement, jamais
- * le nom complet ni l'adresse/email/whatsapp — voir formatLeaderboardName.
+ * Classement PUBLIC d'un quiz : prénom + initiale seulement (jamais le nom
+ * complet ni l'adresse/email/whatsapp — voir formatLeaderboardName),
+ * toujours affiché pour motiver les participants à progresser.
  */
 export async function GET(
   request: NextRequest,
@@ -18,10 +17,9 @@ export async function GET(
 
   const { data: submissions, error } = await supabase
     .from("daily_submissions")
-    .select("score, max_score, participant:participants!inner(name, show_in_leaderboard)")
+    .select("score, max_score, participant:participants!inner(name)")
     .eq("quiz_id", params.quizId)
-    .eq("cancelled", false)
-    .eq("participant.show_in_leaderboard", true);
+    .eq("cancelled", false);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -31,7 +29,7 @@ export async function GET(
   // meilleur score pour ce quiz, pas une ligne par tentative.
   const bestByName = new Map<string, { name: string; score: number; maxScore: number }>();
   for (const s of submissions ?? []) {
-    const participant = s.participant as unknown as { name: string; show_in_leaderboard: boolean } | null;
+    const participant = s.participant as unknown as { name: string } | null;
     if (!participant) continue;
     const key = participant.name.trim().toLowerCase();
     const existing = bestByName.get(key);

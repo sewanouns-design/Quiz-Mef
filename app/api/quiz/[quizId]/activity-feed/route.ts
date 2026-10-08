@@ -8,10 +8,8 @@ const MAX_ENTRIES = 20;
 
 /**
  * Fil d'activité PUBLIC du jour pour un quiz (bandeau défilant de la page
- * d'accueil) : qui vient de le passer, et il y a combien de temps. Même
- * règle de confidentialité que le classement public : uniquement les
- * participants ayant activé "Afficher mon prénom dans le classement",
- * jamais le nom complet (prénom + initiale seulement).
+ * d'accueil) : qui vient de le passer, et il y a combien de temps. Prénom +
+ * initiale seulement (jamais le nom complet), toujours affiché.
  */
 export async function GET(
   request: NextRequest,
@@ -24,10 +22,9 @@ export async function GET(
 
   const { data, error } = await supabase
     .from("daily_submissions")
-    .select("submitted_at, participant:participants!inner(name, show_in_leaderboard)")
+    .select("submitted_at, participant:participants!inner(name)")
     .eq("quiz_id", params.quizId)
     .eq("cancelled", false)
-    .eq("participant.show_in_leaderboard", true)
     .gte("submitted_at", startOfTodayUTC.toISOString())
     .order("submitted_at", { ascending: false })
     .limit(MAX_ENTRIES);

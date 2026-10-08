@@ -10,7 +10,6 @@ interface Player {
   updatedAt: string;
   name: string | null;
   email: string | null;
-  showInLeaderboard: boolean;
 }
 
 const PAGE_SIZE = 50;
@@ -240,9 +239,6 @@ export default function VerseGamePlayersTab() {
                     <p className="mt-1 text-sm text-gray-600">
                       Niveau <span className="font-semibold text-navy">{p.currentLevel}</span> ·{" "}
                       <span className="font-semibold text-accent-dark">{p.totalPoints} points</span>
-                      {!p.showInLeaderboard && (
-                        <span className="ml-2 text-xs text-gray-400">(prénom masqué publiquement)</span>
-                      )}
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-2">
