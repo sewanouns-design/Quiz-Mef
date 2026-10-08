@@ -405,6 +405,14 @@ export default function VerseGamePage() {
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState("");
   const autoAdvanceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Miroir toujours à jour de `score`, lu par submitLevelComplete : quand la
+  // dernière question est répondue correctement, handleAnswer programme
+  // handleNext via setTimeout AVANT que le re-render qui reflète
+  // setScore(s => s + 1) n'ait eu lieu — submitLevelComplete, appelée depuis
+  // ce même closure, envoyait alors un score en retard d'une bonne réponse
+  // au serveur (ex. 7/9 envoyé alors que l'écran affichait déjà 8/9), ce qui
+  // faisait échouer à tort le passage de niveau côté serveur.
+  const scoreRef = useRef(0);
 
   const [myRank, setMyRank] = useState<number | null>(null);
   const [totalPlayers, setTotalPlayers] = useState(0);
@@ -512,6 +520,7 @@ export default function VerseGamePage() {
     setLoading(true);
     setError("");
     setIndex(0);
+    scoreRef.current = 0;
     setScore(0);
     setSelected(null);
     setFinished(false);
@@ -548,6 +557,7 @@ export default function VerseGamePage() {
       const stored = readLastResult(key);
       if (stored && stored.currentLevelAfter === level) {
         setSelectedLevel(stored.level);
+        scoreRef.current = stored.score;
         setScore(stored.score);
         setResultTotal(stored.total);
         setPointsEarned(stored.pointsEarned);
@@ -629,7 +639,8 @@ export default function VerseGamePage() {
     const correct = option === current.correctAnswer;
     answersRef.current.push({ verseId: current.verseId, correct });
     if (correct) {
-      setScore((s) => s + 1);
+      scoreRef.current += 1;
+      setScore(scoreRef.current);
       autoAdvanceTimeout.current = setTimeout(() => handleNext(), AUTO_ADVANCE_DELAY_MS);
     }
   }
@@ -644,6 +655,7 @@ export default function VerseGamePage() {
     if (!deviceKey || submitInFlightRef.current) return;
     submitInFlightRef.current = true;
     const total = questions.length;
+    const finalScore = scoreRef.current;
     setResultTotal(total);
     setPointsEarned(0);
     setJustLeveledUp(false);
@@ -657,7 +669,7 @@ export default function VerseGamePage() {
         body: JSON.stringify({
           deviceKey,
           level: selectedLevel,
-          score,
+          score: finalScore,
           total,
           answers: answersRef.current,
           sessionToken: sessionTokenRef.current,
@@ -678,7 +690,7 @@ export default function VerseGamePage() {
       // personne ait cliqué "Niveau suivant" — voir startAsIdentifiedPlayer.
       saveLastResult(deviceKey, {
         level: selectedLevel,
-        score,
+        score: finalScore,
         total,
         pointsEarned: data.pointsEarned ?? 0,
         leveledUp,
