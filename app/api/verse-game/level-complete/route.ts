@@ -16,14 +16,20 @@ const PASS_RATIO = 0.8;
 const MAX_ANSWERS_PER_REQUEST = 50;
 
 /**
- * Enregistre la fin d'un niveau de "Trouve le verset" : ajoute les points
- * gagnés (10 par bonne réponse) au total cumulé, débloque le niveau
+ * Enregistre la fin d'un niveau de "Trouve le verset" : débloque le niveau
  * suivant si le niveau joué est bien celui en cours (pas un niveau déjà
- * dépassé rejoué) et qu'au moins 80% des réponses sont correctes (PASS_RATIO),
- * et alimente
- * les statistiques réelles de réussite par verset (bible_verse_stats) —
- * c'est cette mesure, pas la longueur du texte, qui détermine la vraie
- * difficulté d'un verset (voir recalculate_verse_levels_by_difficulty).
+ * dépassé rejoué) et qu'au moins 80% des réponses sont correctes
+ * (PASS_RATIO), et alimente les statistiques réelles de réussite par
+ * verset (bible_verse_stats) — c'est cette mesure, pas la longueur du
+ * texte, qui détermine la vraie difficulté d'un verset (voir
+ * recalculate_verse_levels_by_difficulty).
+ *
+ * Les points (10 par bonne réponse) ne sont crédités QUE lors d'un vrai
+ * passage de niveau (leveledUp) : un échec (moins de 80%) ne rapporte
+ * rien, et rejouer un niveau déjà réussi non plus — sinon rejouer le même
+ * niveau en boucle permettrait d'accumuler des points indéfiniment sans
+ * jamais progresser.
+ *
  * Aucune identification requise.
  */
 export async function POST(request: NextRequest) {
@@ -104,13 +110,16 @@ export async function POST(request: NextRequest) {
 
   const currentLevel = existing?.current_level ?? 1;
   const totalPoints = existing?.total_points ?? 0;
-  const pointsEarned = score * POINTS_PER_CORRECT;
   const passed = score / total >= PASS_RATIO;
   // Ne débloque que si on joue bien le niveau en cours (pas un niveau déjà
-  // dépassé, rejoué pour s'entraîner) — rejouer un niveau déjà réussi
-  // rapporte quand même des points, mais ne fait pas avancer le niveau.
+  // dépassé, rejoué pour s'entraîner, ni un échec).
   const leveledUp = passed && level === currentLevel && currentLevel < MAX_LEVEL;
   const newLevel = leveledUp ? currentLevel + 1 : currentLevel;
+  // Les points ne comptent que pour un vrai passage de niveau — jamais pour
+  // un échec, ni pour rejouer (réussi ou non) un niveau déjà validé, sinon
+  // il suffirait de rejouer le même niveau en boucle pour accumuler des
+  // points sans jamais progresser.
+  const pointsEarned = leveledUp ? score * POINTS_PER_CORRECT : 0;
   const newTotalPoints = totalPoints + pointsEarned;
 
   if (existing) {

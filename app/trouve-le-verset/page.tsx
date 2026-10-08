@@ -60,6 +60,11 @@ const AUTO_ADVANCE_DELAY_MS = 900;
 // plus anciennes sont retirées pour laisser la place aux nouvelles plutôt
 // que de s'accumuler indéfiniment.
 const MAX_STACKED_TOASTS = 5;
+const TOP_ENTRIES_SHOWN = 5;
+// Le mini-classement permanent (liste verticale) se rafraîchit moins vite
+// que les bulles de notification : il n'a pas besoin d'être à la seconde
+// près, juste de rester à jour sans recharger la page.
+const LEADERBOARD_POLL_MS = 6000;
 const RANK_MEDALS: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
 
 // Dernier résultat de partie, persisté pour qu'une actualisation de page
@@ -174,6 +179,36 @@ function LevelUpToasts({ toasts }: { toasts: LevelUpToast[] }) {
               </>
             )}
           </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+interface TopEntry {
+  displayName: string;
+  score: number;
+  level: number;
+}
+
+/**
+ * Mini-classement PERMANENT, flottant à droite et empilé à la verticale
+ * (une ligne par joueur, du 1er au 5e) — pas une page séparée, pas une
+ * bulle transitoire : il reste affiché en continu à côté de la carte de
+ * jeu, sans jamais la recouvrir ni gêner la lecture des questions, et se
+ * met à jour tout seul en arrière-plan.
+ */
+function FloatingLeaderboard({ entries }: { entries: TopEntry[] }) {
+  if (entries.length === 0) return null;
+  return (
+    <div className="pointer-events-none fixed right-2 top-44 z-40 flex w-28 flex-col gap-1 rounded-2xl bg-navy/60 p-2 text-white shadow-lg backdrop-blur-md sm:right-[calc(50%-14rem)] sm:w-36 sm:bg-navy/75 sm:p-2.5">
+      <p className="mb-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-white/70">🏆 Classement</p>
+      {entries.map((e, index) => (
+        <div key={index} className="flex items-center justify-between gap-1 text-xs">
+          <span className="truncate">
+            {RANK_MEDALS[index + 1] ?? `${index + 1}.`} {e.displayName}
+          </span>
+          <span className="shrink-0 font-bold">{e.score}</span>
         </div>
       ))}
     </div>
@@ -339,6 +374,9 @@ export default function VerseGamePage() {
 
   const [myRank, setMyRank] = useState<number | null>(null);
   const [totalPlayers, setTotalPlayers] = useState(0);
+  const [topEntries, setTopEntries] = useState<{ displayName: string; score: number; level: number }[]>(
+    []
+  );
 
   const [toasts, setToasts] = useState<LevelUpToast[]>([]);
   const activitySinceRef = useRef<string>(new Date().toISOString());
@@ -354,11 +392,20 @@ export default function VerseGamePage() {
   function loadLeaderboardStats(key: string) {
     fetch(`/api/verse-game/leaderboard?deviceKey=${encodeURIComponent(key)}`, { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: { totalPlayers: number; myRank: number | null } | null) => {
-        if (!data) return;
-        setTotalPlayers(data.totalPlayers ?? 0);
-        setMyRank(data.myRank);
-      })
+      .then(
+        (
+          data: {
+            entries: { displayName: string; score: number; level: number }[];
+            totalPlayers: number;
+            myRank: number | null;
+          } | null
+        ) => {
+          if (!data) return;
+          setTotalPlayers(data.totalPlayers ?? 0);
+          setMyRank(data.myRank);
+          setTopEntries((data.entries ?? []).slice(0, TOP_ENTRIES_SHOWN));
+        }
+      )
       .catch(() => {});
   }
 
@@ -521,6 +568,15 @@ export default function VerseGamePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [identified]);
 
+  // Mini-classement permanent (panneau flottant vertical, pas une bulle
+  // transitoire) : se tient à jour en continu tant que la page est ouverte.
+  useEffect(() => {
+    if (!identified || !deviceKey) return;
+    const poll = setInterval(() => loadLeaderboardStats(deviceKey), LEADERBOARD_POLL_MS);
+    return () => clearInterval(poll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [identified, deviceKey]);
+
   const current = questions[index];
 
   // Bonne réponse : avance automatiquement après un court délai (le temps de
@@ -670,6 +726,7 @@ export default function VerseGamePage() {
     <>
       <SiteHeader />
       <LevelUpToasts toasts={toasts} />
+      <FloatingLeaderboard entries={topEntries} />
       <main className="flex min-h-screen flex-col items-center px-6 py-12">
         <div className="w-full max-w-md">
           <div className="mb-6 text-center">
@@ -708,7 +765,10 @@ export default function VerseGamePage() {
                   Au moins {Math.round(PASS_RATIO * 100)}% de bonnes réponses pour débloquer le niveau
                   suivant — sinon, il faut le rejouer.
                 </li>
-                <li>10 points par bonne réponse, même en rejouant un niveau déjà réussi.</li>
+                <li>
+                  10 points par bonne réponse, uniquement au moment où tu débloques un nouveau niveau — un
+                  échec ou un niveau déjà réussi rejoué ne rapporte aucun point supplémentaire.
+                </li>
                 <li>Le classement se base sur le total de points cumulés sur tous les niveaux.</li>
               </ul>
             </div>
@@ -831,8 +891,8 @@ export default function VerseGamePage() {
                       )}
                       {!justLeveledUp && resultTotal > 0 && score / resultTotal >= PASS_RATIO && (
                         <p className="mt-1 text-sm font-medium text-gray-500">
-                          Tu maîtrises déjà ce niveau — rejoue-le pour gagner encore des points, ou passe au
-                          niveau que tu n&apos;as pas encore débloqué.
+                          Tu maîtrises déjà ce niveau (rejouer ne rapporte plus de points) — passe au niveau
+                          que tu n&apos;as pas encore débloqué.
                         </p>
                       )}
                       {myRank && (
