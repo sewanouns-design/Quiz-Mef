@@ -65,6 +65,8 @@ export async function PUT(request: NextRequest) {
     verse_game_schedule_enabled,
     verse_game_schedule_start,
     verse_game_schedule_end,
+    verse_game_timer_enabled,
+    verse_game_timer_seconds,
   } = body ?? {};
 
   if (template && !VALID_TEMPLATES.includes(template)) {
@@ -120,6 +122,17 @@ export async function PUT(request: NextRequest) {
     );
   }
 
+  let parsedTimerSeconds: number | undefined;
+  if (verse_game_timer_seconds !== undefined) {
+    parsedTimerSeconds = Number(verse_game_timer_seconds);
+    if (!Number.isInteger(parsedTimerSeconds) || parsedTimerSeconds < 3 || parsedTimerSeconds > 300) {
+      return NextResponse.json(
+        { error: "La durée du chrono doit être un entier entre 3 et 300 secondes" },
+        { status: 400 }
+      );
+    }
+  }
+
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (template !== undefined) updates.template = template;
   if (color_primary !== undefined) updates.color_primary = color_primary;
@@ -156,6 +169,9 @@ export async function PUT(request: NextRequest) {
     updates.verse_game_schedule_enabled = Boolean(verse_game_schedule_enabled);
   if (parsedScheduleStart !== undefined) updates.verse_game_schedule_start = parsedScheduleStart;
   if (parsedScheduleEnd !== undefined) updates.verse_game_schedule_end = parsedScheduleEnd;
+  if (verse_game_timer_enabled !== undefined)
+    updates.verse_game_timer_enabled = Boolean(verse_game_timer_enabled);
+  if (parsedTimerSeconds !== undefined) updates.verse_game_timer_seconds = parsedTimerSeconds;
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase

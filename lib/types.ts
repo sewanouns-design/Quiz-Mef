@@ -186,6 +186,8 @@ export interface SiteSettings {
   verse_game_schedule_enabled: boolean;
   verse_game_schedule_start: string | null;
   verse_game_schedule_end: string | null;
+  verse_game_timer_enabled: boolean;
+  verse_game_timer_seconds: number;
   updated_at: string;
 }
 

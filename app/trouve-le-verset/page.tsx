@@ -364,7 +364,15 @@ interface VerseGameAvailability {
   scheduleEnabled: boolean;
   opensAt: string | null;
   closesAt: string | null;
+  timerEnabled: boolean;
+  timerSeconds: number;
 }
+
+// Sentinelle utilisée comme "réponse sélectionnée" quand le chrono expire
+// sans qu'aucune option n'ait été cliquée : ne correspond à aucune option
+// réelle, donc aucune ne s'affiche en rouge — seule la bonne réponse
+// ressort en vert, comme pour une non-réponse.
+const TIMEOUT_SENTINEL = "\u0000__timeout__";
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("fr-FR", {
@@ -390,6 +398,10 @@ export default function VerseGamePage() {
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
+  // null = pas de chrono actif pour la question en cours (désactivé, ou
+  // déjà répondue) ; sinon secondes restantes avant de compter la question
+  // comme fausse automatiquement (voir handleTimeout).
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [finished, setFinished] = useState(false);
@@ -593,7 +605,15 @@ export default function VerseGamePage() {
         }
       })
       .catch(() => {
-        setAvailability({ open: true, enabled: true, scheduleEnabled: false, opensAt: null, closesAt: null });
+        setAvailability({
+          open: true,
+          enabled: true,
+          scheduleEnabled: false,
+          opensAt: null,
+          closesAt: null,
+          timerEnabled: false,
+          timerSeconds: 20,
+        });
         const stored = getStoredParticipant();
         if (stored?.name && stored?.deviceKey) {
           startAsIdentifiedPlayer();
@@ -644,6 +664,50 @@ export default function VerseGamePage() {
       autoAdvanceTimeout.current = setTimeout(() => handleNext(), AUTO_ADVANCE_DELAY_MS);
     }
   }
+
+  // Temps écoulé sans réponse (chrono admin) : comptée comme fausse,
+  // exactement comme une mauvaise réponse manuelle — la bonne réponse
+  // s'affiche et la personne doit cliquer "Suivant" pour continuer (pas
+  // d'avancement automatique, pour laisser le temps de voir la correction).
+  function handleTimeout() {
+    if (!current || selected) return;
+    setSelected(TIMEOUT_SENTINEL);
+    answersRef.current.push({ verseId: current.verseId, correct: false });
+  }
+
+  // Chrono par question (optionnel, réglé depuis l'admin) : redémarre à
+  // chaque nouvelle question, s'arrête dès qu'une réponse est donnée (le
+  // changement de `selected` déclenche le nettoyage ci-dessous), et ne
+  // tourne jamais pendant le chargement ou l'écran de fin.
+  useEffect(() => {
+    if (
+      !availability?.timerEnabled ||
+      !availability.timerSeconds ||
+      loading ||
+      finished ||
+      !current ||
+      selected !== null
+    ) {
+      setTimeLeft(null);
+      return;
+    }
+    const durationMs = availability.timerSeconds * 1000;
+    const start = Date.now();
+    setTimeLeft(availability.timerSeconds);
+    const interval = setInterval(() => {
+      const remainingMs = durationMs - (Date.now() - start);
+      const remaining = Math.ceil(remainingMs / 1000);
+      if (remainingMs <= 0) {
+        clearInterval(interval);
+        setTimeLeft(0);
+        handleTimeout();
+      } else {
+        setTimeLeft(remaining);
+      }
+    }, 250);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.verseId, loading, finished, selected, availability?.timerEnabled, availability?.timerSeconds]);
 
   // Envoie (ou renvoie, si échec réseau) le résultat du niveau au serveur.
   // Avant tout, on efface l'ancien résultat affiché (points/passage de
@@ -825,6 +889,12 @@ export default function VerseGamePage() {
                   échec ou un niveau déjà réussi rejoué ne rapporte aucun point supplémentaire.
                 </li>
                 <li>Le classement se base sur le total de points cumulés sur tous les niveaux.</li>
+                {availability?.timerEnabled && (
+                  <li>
+                    ⏱️ Chrono : {availability.timerSeconds} secondes par question — passé ce délai, elle
+                    compte comme fausse.
+                  </li>
+                )}
               </ul>
             </div>
           )}
@@ -997,9 +1067,22 @@ export default function VerseGamePage() {
 
               {!loading && !error && !finished && current && (
                 <div className="card">
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Niveau {selectedLevel} · Question {index + 1} / {questions.length} · Score : {score}
-                  </p>
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                      Niveau {selectedLevel} · Question {index + 1} / {questions.length} · Score : {score}
+                    </p>
+                    {timeLeft !== null && (
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${
+                          timeLeft <= 5
+                            ? "animate-pulse bg-red-100 text-red-600"
+                            : "bg-navy/10 text-navy"
+                        }`}
+                      >
+                        ⏱️ {timeLeft}s
+                      </span>
+                    )}
+                  </div>
 
                   {current.type === "reference" ? (
                     <>

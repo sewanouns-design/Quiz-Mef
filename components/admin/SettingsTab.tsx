@@ -544,6 +544,40 @@ export default function SettingsTab() {
                   </p>
                 </div>
               )}
+
+              <div className="mt-4 border-t border-gray-100 pt-4">
+                <label className="mb-3 flex items-center gap-2 text-sm font-medium text-navy">
+                  <input
+                    type="checkbox"
+                    checked={settings.verse_game_timer_enabled}
+                    onChange={(e) => updateField("verse_game_timer_enabled", e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  Chrono par question
+                </label>
+                {settings.verse_game_timer_enabled && (
+                  <div>
+                    <label className="label-field" htmlFor="verse_game_timer_seconds">
+                      Durée par question (secondes)
+                    </label>
+                    <input
+                      id="verse_game_timer_seconds"
+                      type="number"
+                      min={3}
+                      max={300}
+                      className="input-field text-sm sm:w-32"
+                      value={settings.verse_game_timer_seconds}
+                      onChange={(e) =>
+                        updateField("verse_game_timer_seconds", Number(e.target.value) || 3)
+                      }
+                    />
+                    <p className="mt-1 text-xs text-gray-400">
+                      Passé ce délai, la question est comptée comme fausse et la bonne réponse
+                      s&apos;affiche automatiquement.
+                    </p>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>

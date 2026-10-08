@@ -54,6 +54,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   verse_game_schedule_enabled: false,
   verse_game_schedule_start: null,
   verse_game_schedule_end: null,
+  verse_game_timer_enabled: false,
+  verse_game_timer_seconds: 20,
   updated_at: "",
 };
 
@@ -63,34 +65,48 @@ export interface VerseGameAvailability {
   scheduleEnabled: boolean;
   opensAt: string | null;
   closesAt: string | null;
+  timerEnabled: boolean;
+  timerSeconds: number;
 }
 
 /**
  * Détermine si "Trouve le verset" est jouable en ce moment, selon les
  * réglages admin : désactivation complète, ou créneau horaire optionnel
- * (ignoré tant que verse_game_schedule_enabled est faux).
+ * (ignoré tant que verse_game_schedule_enabled est faux). Inclut aussi le
+ * chrono par question (verse_game_timer_enabled/_seconds), exposé ici car
+ * c'est le même point d'accès public lu par la page du jeu.
  */
 export function getVerseGameAvailability(settings: SiteSettings): VerseGameAvailability {
   const opensAt = settings.verse_game_schedule_start;
   const closesAt = settings.verse_game_schedule_end;
+  const timerEnabled = settings.verse_game_timer_enabled;
+  const timerSeconds = settings.verse_game_timer_seconds;
 
   if (!settings.verse_game_enabled) {
-    return { open: false, enabled: false, scheduleEnabled: settings.verse_game_schedule_enabled, opensAt, closesAt };
+    return {
+      open: false,
+      enabled: false,
+      scheduleEnabled: settings.verse_game_schedule_enabled,
+      opensAt,
+      closesAt,
+      timerEnabled,
+      timerSeconds,
+    };
   }
   if (!settings.verse_game_schedule_enabled) {
-    return { open: true, enabled: true, scheduleEnabled: false, opensAt, closesAt };
+    return { open: true, enabled: true, scheduleEnabled: false, opensAt, closesAt, timerEnabled, timerSeconds };
   }
 
   const now = Date.now();
   const start = opensAt ? new Date(opensAt).getTime() : null;
   const end = closesAt ? new Date(closesAt).getTime() : null;
   if (start !== null && Number.isFinite(start) && now < start) {
-    return { open: false, enabled: true, scheduleEnabled: true, opensAt, closesAt };
+    return { open: false, enabled: true, scheduleEnabled: true, opensAt, closesAt, timerEnabled, timerSeconds };
   }
   if (end !== null && Number.isFinite(end) && now > end) {
-    return { open: false, enabled: true, scheduleEnabled: true, opensAt, closesAt };
+    return { open: false, enabled: true, scheduleEnabled: true, opensAt, closesAt, timerEnabled, timerSeconds };
   }
-  return { open: true, enabled: true, scheduleEnabled: true, opensAt, closesAt };
+  return { open: true, enabled: true, scheduleEnabled: true, opensAt, closesAt, timerEnabled, timerSeconds };
 }
 
 export const TEXT_SIZE_OPTIONS: { value: SiteSettings["text_size"]; label: string }[] = [

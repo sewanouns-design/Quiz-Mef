@@ -263,6 +263,11 @@ create table if not exists site_settings (
   verse_game_schedule_enabled boolean not null default false,
   verse_game_schedule_start timestamptz,
   verse_game_schedule_end timestamptz,
+  -- Chrono par question (optionnel) : si activé, chaque question du jeu
+  -- doit être répondue dans verse_game_timer_seconds, sinon elle est
+  -- comptée comme fausse et la bonne réponse est révélée.
+  verse_game_timer_enabled boolean not null default false,
+  verse_game_timer_seconds integer not null default 20 check (verse_game_timer_seconds between 3 and 300),
   updated_at timestamptz default now()
 );
 
