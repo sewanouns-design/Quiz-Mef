@@ -199,10 +199,44 @@ interface TopEntry {
  * met à jour tout seul en arrière-plan.
  */
 function FloatingLeaderboard({ entries }: { entries: TopEntry[] }) {
+  const [open, setOpen] = useState(false);
   if (entries.length === 0) return null;
+
+  // Repliée par défaut : juste un badge rond "🔴 LIVE" qui flotte dans la
+  // zone vide au-dessus du titre, sans jamais recouvrir le moindre texte.
+  // Seul un tap l'ouvre en liste verticale, posée par-dessus en flou léger
+  // (comme un écran de live) — elle se referme d'un tap pour redonner tout
+  // l'espace de lecture.
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Voir le classement en direct"
+        className="fixed right-3 top-20 z-40 flex items-center gap-1.5 rounded-full bg-navy/55 px-2.5 py-1.5 text-xs font-bold text-white shadow-lg backdrop-blur-md sm:right-[calc(50%-13.5rem)]"
+      >
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+        LIVE 🏆
+      </button>
+    );
+  }
+
   return (
-    <div className="pointer-events-none fixed right-2 top-44 z-40 flex w-28 flex-col gap-1 rounded-2xl bg-navy/60 p-2 text-white shadow-lg backdrop-blur-md sm:right-[calc(50%-14rem)] sm:w-36 sm:bg-navy/75 sm:p-2.5">
-      <p className="mb-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-white/70">🏆 Classement</p>
+    <div className="fixed right-3 top-20 z-40 flex w-32 flex-col gap-1 rounded-2xl bg-navy/45 p-2.5 text-white shadow-xl backdrop-blur-lg sm:right-[calc(50%-13.5rem)]">
+      <div className="mb-0.5 flex items-center justify-between gap-2">
+        <span className="flex items-center gap-1 text-[0.65rem] font-bold uppercase tracking-wide">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+          Live
+        </span>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          aria-label="Fermer le classement"
+          className="text-white/70 hover:text-white"
+        >
+          ✕
+        </button>
+      </div>
       {entries.map((e, index) => (
         <div key={index} className="flex items-center justify-between gap-1 text-xs">
           <span className="truncate">
