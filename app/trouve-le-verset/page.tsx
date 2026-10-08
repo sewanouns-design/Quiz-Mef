@@ -422,6 +422,12 @@ export default function VerseGamePage() {
   // requis par /api/verse-game/level-complete pour prouver que ces
   // questions ont bien été chargées avant la validation du niveau.
   const sessionTokenRef = useRef<string>("");
+  // Empêche un double-clic (ou un clic manuel qui chevauche l'avancement
+  // automatique) de déclencher deux soumissions concurrentes pour la même
+  // partie : la 2e requête relisait l'ancien current_level avant que la 1re
+  // n'ait fini d'écrire, et écrasait le passage de niveau avec leveledUp:false
+  // — le joueur voyait alors un bon score sans bouton "niveau suivant".
+  const submitInFlightRef = useRef(false);
 
   function loadLeaderboardStats(key: string) {
     fetch(`/api/verse-game/leaderboard?deviceKey=${encodeURIComponent(key)}`, { cache: "no-store" })
@@ -635,7 +641,8 @@ export default function VerseGamePage() {
   // fin de la partie ACTUELLE, donnant l'impression trompeuse que rien ne
   // s'était passé ou que le niveau suivant n'était jamais débloqué.
   async function submitLevelComplete() {
-    if (!deviceKey) return;
+    if (!deviceKey || submitInFlightRef.current) return;
+    submitInFlightRef.current = true;
     const total = questions.length;
     setResultTotal(total);
     setPointsEarned(0);
@@ -683,10 +690,12 @@ export default function VerseGamePage() {
       setSyncError(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
       setSyncing(false);
+      submitInFlightRef.current = false;
     }
   }
 
   async function handleNext() {
+    if (finished) return;
     if (index + 1 >= questions.length) {
       setFinished(true);
       await submitLevelComplete();
@@ -1034,7 +1043,12 @@ export default function VerseGamePage() {
                   </div>
 
                   {selected !== null && selected !== current.correctAnswer && (
-                    <button type="button" onClick={handleNext} className="btn-primary mt-6 w-full">
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      disabled={finished}
+                      className="btn-primary mt-6 w-full disabled:opacity-60"
+                    >
                       {index + 1 >= questions.length ? "Voir mon score" : "Suivant →"}
                     </button>
                   )}
