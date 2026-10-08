@@ -55,6 +55,56 @@ const AUTO_ADVANCE_DELAY_MS = 900;
 const MAX_STACKED_TOASTS = 5;
 const RANK_MEDALS: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
 
+// Dernier résultat de partie, persisté pour qu'une actualisation de page
+// juste après avoir terminé un niveau (avant d'avoir cliqué "Niveau
+// suivant") restaure exactement cet écran au lieu de repartir dans une
+// nouvelle partie — la personne doit continuer à voir "100%, niveau
+// débloqué" tant qu'elle n'a pas explicitement rejoué ou changé de niveau.
+interface StoredLevelResult {
+  level: number;
+  score: number;
+  total: number;
+  pointsEarned: number;
+  leveledUp: boolean;
+  currentLevelAfter: number;
+  rank: number | null;
+  savedAt: number;
+}
+
+const LAST_RESULT_TTL_MS = 10 * 60 * 1000;
+
+function lastResultStorageKey(deviceKey: string): string {
+  return `verse_game_last_result_v1_${deviceKey}`;
+}
+
+function saveLastResult(deviceKey: string, result: StoredLevelResult) {
+  try {
+    window.localStorage.setItem(lastResultStorageKey(deviceKey), JSON.stringify(result));
+  } catch {
+    // Stockage indisponible : tant pis, juste pas de restauration après actualisation.
+  }
+}
+
+function readLastResult(deviceKey: string): StoredLevelResult | null {
+  try {
+    const raw = window.localStorage.getItem(lastResultStorageKey(deviceKey));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StoredLevelResult;
+    if (Date.now() - parsed.savedAt > LAST_RESULT_TTL_MS) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function clearLastResult(deviceKey: string) {
+  try {
+    window.localStorage.removeItem(lastResultStorageKey(deviceKey));
+  } catch {
+    // Rien à faire.
+  }
+}
+
 function scoreMessage(score: number, total: number): string {
   const percent = (score / total) * 100;
   if (percent === 100) return "Parfait ! Tu connais vraiment bien tes versets. 🏆";
@@ -241,6 +291,11 @@ export default function VerseGamePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [finished, setFinished] = useState(false);
+  // Total de la partie affiché sur l'écran de fin — distinct de
+  // questions.length pour pouvoir restaurer ce même écran après une
+  // actualisation de page sans avoir à recharger les questions (voir
+  // restoreLastResult).
+  const [resultTotal, setResultTotal] = useState(0);
   const [pointsEarned, setPointsEarned] = useState(0);
   const [justLeveledUp, setJustLeveledUp] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -333,6 +388,7 @@ export default function VerseGamePage() {
   }
 
   function loadGame(level: number) {
+    if (deviceKey) clearLastResult(deviceKey);
     setLoading(true);
     setError("");
     setIndex(0);
@@ -363,7 +419,26 @@ export default function VerseGamePage() {
     setDeviceKey(key);
     setIdentified(true);
     loadLeaderboardStats(key);
-    loadProgress(key).then((level) => loadGame(level));
+    loadProgress(key).then((level) => {
+      // Si la personne vient d'actualiser la page juste après avoir
+      // terminé un niveau (avant de cliquer "Niveau suivant"), on restaure
+      // exactement cet écran de résultat au lieu de relancer une partie —
+      // seulement si le niveau serveur confirme bien que la soumission a
+      // réussi (sinon le résultat stocké est obsolète/invalide).
+      const stored = readLastResult(key);
+      if (stored && stored.currentLevelAfter === level) {
+        setSelectedLevel(stored.level);
+        setScore(stored.score);
+        setResultTotal(stored.total);
+        setPointsEarned(stored.pointsEarned);
+        setJustLeveledUp(stored.leveledUp);
+        setMyRank(stored.rank);
+        setFinished(true);
+        setLoading(false);
+        return;
+      }
+      loadGame(level);
+    });
   }
 
   useEffect(() => {
@@ -434,6 +509,8 @@ export default function VerseGamePage() {
   // s'était passé ou que le niveau suivant n'était jamais débloqué.
   async function submitLevelComplete() {
     if (!deviceKey) return;
+    const total = questions.length;
+    setResultTotal(total);
     setPointsEarned(0);
     setJustLeveledUp(false);
     setSyncError("");
@@ -447,7 +524,7 @@ export default function VerseGamePage() {
           deviceKey,
           level: selectedLevel,
           score,
-          total: questions.length,
+          total,
           answers: answersRef.current,
           sessionToken: sessionTokenRef.current,
         }),
@@ -456,12 +533,25 @@ export default function VerseGamePage() {
       if (!res.ok) {
         throw new Error(data.error || "Erreur lors de l'enregistrement de ta progression.");
       }
+      const leveledUp = Boolean(data.leveledUp);
       setPointsEarned(data.pointsEarned ?? 0);
-      setJustLeveledUp(Boolean(data.leveledUp));
+      setJustLeveledUp(leveledUp);
       setTotalPoints(data.totalPoints ?? totalPoints);
       setCurrentLevel(data.currentLevel ?? currentLevel);
       setMyRank(data.rank ?? null);
       loadLeaderboardStats(deviceKey);
+      // Persisté pour survivre à une actualisation de page avant que la
+      // personne ait cliqué "Niveau suivant" — voir startAsIdentifiedPlayer.
+      saveLastResult(deviceKey, {
+        level: selectedLevel,
+        score,
+        total,
+        pointsEarned: data.pointsEarned ?? 0,
+        leveledUp,
+        currentLevelAfter: data.currentLevel ?? currentLevel,
+        rank: data.rank ?? null,
+        savedAt: Date.now(),
+      });
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
@@ -637,7 +727,7 @@ export default function VerseGamePage() {
                     Niveau {selectedLevel} terminé
                   </p>
                   <p className="mt-2 text-4xl font-extrabold text-navy">
-                    {score} / {questions.length}
+                    {score} / {resultTotal}
                   </p>
 
                   {syncing && <p className="mt-2 text-sm text-gray-400">Enregistrement...</p>}
@@ -663,12 +753,12 @@ export default function VerseGamePage() {
                           🎉 Niveau {currentLevel} débloqué !
                         </p>
                       )}
-                      {!justLeveledUp && score < questions.length && (
+                      {!justLeveledUp && score < resultTotal && (
                         <p className="mt-1 text-sm font-semibold text-red-600">
                           ❌ Échec — il faut 100% pour passer au niveau suivant. Reprends ce niveau !
                         </p>
                       )}
-                      {!justLeveledUp && score === questions.length && (
+                      {!justLeveledUp && score === resultTotal && (
                         <p className="mt-1 text-sm font-medium text-gray-500">
                           Tu maîtrises déjà ce niveau — rejoue-le pour gagner encore des points, ou passe au
                           niveau que tu n&apos;as pas encore débloqué.
@@ -682,7 +772,7 @@ export default function VerseGamePage() {
                     </>
                   )}
 
-                  <p className="mt-3 text-gray-600">{scoreMessage(score, questions.length)}</p>
+                  <p className="mt-3 text-gray-600">{scoreMessage(score, resultTotal)}</p>
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
                     {justLeveledUp ? (
                       <button type="button" onClick={handleNextLevel} className="btn-accent">
