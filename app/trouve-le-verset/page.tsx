@@ -13,6 +13,7 @@ import { isValidEmail, isValidName } from "@/lib/validation";
 import { isValidWhatsappValue } from "@/lib/phone-countries";
 import PhoneInput from "@/components/PhoneInput";
 import { MAX_LEVEL } from "@/lib/verse-level";
+import { generateVerseGameImage } from "@/lib/generate-verse-game-image";
 
 interface ReferenceQuestion {
   type: "reference";
@@ -243,6 +244,8 @@ export default function VerseGamePage() {
   const [finished, setFinished] = useState(false);
   const [pointsEarned, setPointsEarned] = useState(0);
   const [justLeveledUp, setJustLeveledUp] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareError, setShareError] = useState("");
   const autoAdvanceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [myRank, setMyRank] = useState<number | null>(null);
@@ -450,6 +453,54 @@ export default function VerseGamePage() {
     setSelected(null);
   }
 
+  async function handleShare() {
+    setShareError("");
+    setSharing(true);
+
+    const participantName = getStoredParticipant()?.name || "Un joueur";
+    const message = justLeveledUp
+      ? `Je viens de débloquer le niveau ${currentLevel} à « Trouve le verset » ! 📖 Viens tester tes connaissances bibliques toi aussi sur quiz.mefzogbadje.org`
+      : `Je joue à « Trouve le verset » et j'en suis au niveau ${selectedLevel} ! 📖 Viens tester tes connaissances bibliques toi aussi sur quiz.mefzogbadje.org`;
+
+    try {
+      const blob = await generateVerseGameImage({
+        participantName,
+        level: justLeveledUp ? currentLevel : selectedLevel,
+        leveledUp: justLeveledUp,
+        totalPoints,
+        rank: myRank,
+      });
+      const file = new File([blob], "trouve-le-verset.png", { type: "image/png" });
+
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({ files: [file], title: "Trouve le verset", text: message });
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "trouve-le-verset.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        return;
+      }
+      setShareError("Impossible de générer l'image, partage du score en texte seulement.");
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
+    } finally {
+      setSharing(false);
+    }
+  }
+
   function changeLevel(delta: number) {
     const next = Math.min(currentLevel, Math.max(1, selectedLevel + delta));
     if (next === selectedLevel) return;
@@ -587,6 +638,17 @@ export default function VerseGamePage() {
                     <Link href="/" className="btn-secondary">
                       🏠 Accueil
                     </Link>
+                  </div>
+                  <div className="mt-3 flex flex-col items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={handleShare}
+                      disabled={sharing}
+                      className="btn-accent"
+                    >
+                      {sharing ? "Préparation de l'image..." : "📤 Partager pour inviter des amis"}
+                    </button>
+                    {shareError && <p className="text-xs font-medium text-red-500">{shareError}</p>}
                   </div>
                 </div>
               )}
