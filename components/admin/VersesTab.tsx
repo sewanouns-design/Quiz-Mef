@@ -3,8 +3,14 @@
 import { useEffect, useState } from "react";
 import type { BibleVerse } from "@/lib/types";
 
+const PAGE_SIZE = 50;
+
 export default function VersesTab() {
   const [verses, setVerses] = useState<BibleVerse[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -28,11 +34,16 @@ export default function VersesTab() {
 
   useEffect(() => {
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, search]);
 
-  function load() {
+  function load(overrides?: { page?: number; search?: string }) {
+    const effectivePage = overrides?.page ?? page;
+    const effectiveSearch = overrides?.search ?? search;
     setLoading(true);
-    fetch("/api/admin/verses", { cache: "no-store" })
+    const params = new URLSearchParams({ page: String(effectivePage), limit: String(PAGE_SIZE) });
+    if (effectiveSearch) params.set("search", effectiveSearch);
+    fetch(`/api/admin/verses?${params.toString()}`, { cache: "no-store" })
       .then(async (res) => {
         if (res.status === 401) {
           throw new Error("Session expirée. Reconnecte-toi pour voir les versets.");
@@ -42,11 +53,20 @@ export default function VersesTab() {
           throw new Error(data.error || "Erreur lors du chargement des versets.");
         }
         setVerses(data.verses ?? []);
+        setTotal(data.total ?? 0);
         setError("");
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Une erreur est survenue."))
       .finally(() => setLoading(false));
   }
+
+  function handleSearchSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setPage(1);
+    setSearch(searchInput.trim());
+  }
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -65,7 +85,10 @@ export default function VersesTab() {
       if (!res.ok) {
         throw new Error(data.error || "Erreur lors de l'ajout.");
       }
-      setVerses((prev) => [data.verse, ...prev]);
+      setPage(1);
+      setSearch("");
+      setSearchInput("");
+      load({ page: 1, search: "" });
       setReference("");
       setText("");
       setBlankWord("");
@@ -140,7 +163,10 @@ export default function VersesTab() {
       if (allRejected.length > 0) {
         setBulkError(allRejected.map((r) => `Ligne ${r.line} : ${r.reason}`).join(" · "));
       }
-      load();
+      setPage(1);
+      setSearch("");
+      setSearchInput("");
+      load({ page: 1, search: "" });
     } catch (err) {
       setBulkProgress("");
       setBulkError(err instanceof Error ? err.message : "Une erreur est survenue.");
@@ -180,6 +206,7 @@ export default function VersesTab() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Erreur lors de la suppression.");
       }
+      setTotal((t) => Math.max(0, t - 1));
     } catch (err) {
       setVerses(previous);
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
@@ -192,7 +219,8 @@ export default function VersesTab() {
       <p className="mb-4 text-sm text-gray-500">
         Banque de versets utilisée par le jeu permanent &quot;Trouve le verset&quot; (accessible depuis
         l&apos;accueil). Le mot à deviner est facultatif : sans lui, le verset ne sert qu&apos;à la
-        variante &quot;devine la référence&quot;.
+        variante &quot;devine la référence&quot;.{" "}
+        {total > 0 && <span className="font-semibold text-navy">{total} verset(s) en base.</span>}
       </p>
 
       <form onSubmit={handleAdd} className="card mb-6 space-y-3">
@@ -290,6 +318,31 @@ export default function VersesTab() {
         </div>
       </form>
 
+      <form onSubmit={handleSearchSubmit} className="mb-3 flex gap-2">
+        <input
+          className="input-field"
+          placeholder="Rechercher par référence ou texte..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+        />
+        <button type="submit" className="btn-accent shrink-0">
+          Rechercher
+        </button>
+        {search && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchInput("");
+              setSearch("");
+              setPage(1);
+            }}
+            className="shrink-0 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-50"
+          >
+            Effacer
+          </button>
+        )}
+      </form>
+
       {loading ? (
         <p className="text-gray-500">Chargement...</p>
       ) : error && verses.length === 0 ? (
@@ -303,7 +356,7 @@ export default function VersesTab() {
         </div>
       ) : verses.length === 0 ? (
         <p className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-400">
-          Aucun verset enregistré.
+          {search ? "Aucun verset ne correspond à cette recherche." : "Aucun verset enregistré."}
         </p>
       ) : (
         <>
@@ -333,6 +386,30 @@ export default function VersesTab() {
               </li>
             ))}
           </ul>
+
+          {totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-navy disabled:opacity-40"
+              >
+                ← Précédent
+              </button>
+              <span className="text-xs text-gray-500">
+                Page {page} / {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-navy disabled:opacity-40"
+              >
+                Suivant →
+              </button>
+            </div>
+          )}
         </>
       )}
     </section>

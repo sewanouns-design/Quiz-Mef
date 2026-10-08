@@ -6,6 +6,12 @@ export const dynamic = "force-dynamic";
 
 const DEFAULT_COUNT = 8;
 const MAX_COUNT = 20;
+// Taille du lot aléatoire tiré de la banque entière (via la fonction SQL
+// get_random_bible_verses, voir migration) pour constituer à la fois les
+// questions et les leurres : large par rapport à `count` pour que les
+// options de chaque question restent variées, mais indépendant de la
+// taille totale de la banque (10 versets ou 30 000, même coût).
+const RANDOM_POOL_SIZE = 80;
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -39,6 +45,12 @@ interface CompleteQuestion {
  * tout moment, sans identification. Les bonnes réponses sont incluses dans
  * la réponse (contrairement au quiz du jour) car il n'y a ici aucun enjeu de
  * classement ou d'anti-triche à protéger — juste un retour immédiat au clic.
+ *
+ * Le tirage passe par la fonction SQL get_random_bible_verses plutôt que de
+ * charger toute la table : avec une banque de plusieurs milliers de versets
+ * (ex. la Bible complète), récupérer tout en mémoire à chaque partie serait
+ * lent et ne piocherait de toute façon pas vraiment au hasard dans
+ * l'ensemble (l'API Supabase plafonne une requête à 1000 lignes).
  */
 export async function GET(request: NextRequest) {
   const countParam = Number(request.nextUrl.searchParams.get("count"));
@@ -46,7 +58,9 @@ export async function GET(request: NextRequest) {
     Number.isFinite(countParam) && countParam > 0 ? Math.min(countParam, MAX_COUNT) : DEFAULT_COUNT;
 
   const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase.from("bible_verses").select("*");
+  const { data, error } = await supabase.rpc("get_random_bible_verses", {
+    limit_count: Math.max(RANDOM_POOL_SIZE, count * 4),
+  });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
