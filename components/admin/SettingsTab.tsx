@@ -32,12 +32,21 @@ export default function SettingsTab() {
   const [success, setSuccess] = useState("");
   const [logoError, setLogoError] = useState("");
   const logoInputRef = useRef<HTMLInputElement>(null);
+  // Texte brut du champ "durée du chrono", distinct de settings.verse_game_timer_seconds :
+  // un <input type="number"> contrôlé directement par un nombre se réinitialise à chaque
+  // frappe dès que le champ passe par une valeur vide ou hors bornes (Number("") || 3 → "3"
+  // réapparaît immédiatement, empêchant de tout effacer pour retaper une nouvelle valeur).
+  // On laisse ce buffer libre pendant la frappe, et on ne valide/clamp qu'à la perte de focus.
+  const [timerSecondsText, setTimerSecondsText] = useState("20");
 
   useEffect(() => {
     fetch("/api/admin/settings", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (data?.settings) setSettings(data.settings);
+        if (data?.settings) {
+          setSettings(data.settings);
+          setTimerSecondsText(String(data.settings.verse_game_timer_seconds ?? 20));
+        }
       })
       .finally(() => setLoading(false));
   }, []);
@@ -566,10 +575,16 @@ export default function SettingsTab() {
                       min={3}
                       max={300}
                       className="input-field text-sm sm:w-32"
-                      value={settings.verse_game_timer_seconds}
-                      onChange={(e) =>
-                        updateField("verse_game_timer_seconds", Number(e.target.value) || 3)
-                      }
+                      value={timerSecondsText}
+                      onChange={(e) => setTimerSecondsText(e.target.value)}
+                      onBlur={() => {
+                        const parsed = Math.round(Number(timerSecondsText));
+                        const clamped = Number.isFinite(parsed)
+                          ? Math.min(300, Math.max(3, parsed))
+                          : settings.verse_game_timer_seconds;
+                        updateField("verse_game_timer_seconds", clamped);
+                        setTimerSecondsText(String(clamped));
+                      }}
                     />
                     <p className="mt-1 text-xs text-gray-400">
                       Passé ce délai, la question est comptée comme fausse et la bonne réponse
