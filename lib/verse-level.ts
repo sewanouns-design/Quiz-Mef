@@ -17,12 +17,80 @@ const LEVEL_LENGTH_BREAKPOINTS = [
   212, 217, 222, 229, 236, 244, 254, 268, 291, Infinity,
 ];
 
+// Un verset court n'est pas forcément facile : les phrases formulaires
+// d'attribution de parole ("L'Éternel parla à Moïse, et dit :") et les
+// listes de noms (généalogies, listes de villes/tribus — "Serug, Nachor,
+// Térach,") sont courtes mais quasiment impossibles à relier à une
+// référence précise : elles se répètent à l'identique dans des dizaines de
+// chapitres, ou n'apportent aucun indice de contexte reconnaissable. On les
+// classe difficiles d'office plutôt que selon leur seule longueur.
+const HARD_OVERRIDE_LEVEL = 85;
+const HARD_OVERRIDE_MAX_LENGTH = 90;
+
+const FORMULAIC_SPEECH_PATTERN = /(l.?éternel|dieu)\b.{0,40}\b(parla|parle|dit)\b.{0,12}à\b/i;
+const GENEALOGY_PATTERN = /\bengendra\b/i;
+
+// Noms/titres bibliques assez connus pour ne pas compter comme "nom
+// bizarre" dans l'heuristique ci-dessous (sinon de nombreux versets très
+// connus, qui ne sont pas du tout difficiles, seraient classés à tort).
+const COMMON_BIBLICAL_NAMES = new Set([
+  "Dieu", "Seigneur", "Éternel", "Jésus", "Jésus-Christ", "Christ", "Esprit", "Israël", "Juda",
+  "Jérusalem", "Sion", "Égypte", "Moïse", "Abraham", "Isaac", "Jacob", "David", "Salomon", "Pierre",
+  "Paul", "Jean", "Jacques", "Marie", "Adam", "Noé", "Satan", "Galilée", "Judée", "Samarie",
+  "Babylone", "Rome", "Éphraïm", "Benjamin", "Lévi", "Aaron", "Josué", "Samuel", "Saül", "Élie",
+  "Élisée", "Ésaïe", "Jérémie", "Daniel", "Ézéchiel", "Ève", "Pharaon",
+]);
+
+const COMMON_FRENCH_WORDS = new Set([
+  "Je", "Tu", "Il", "Elle", "Nous", "Vous", "Ils", "Elles", "On", "Ce", "Cette", "Ces", "Cet",
+  "Celui", "Celle", "Ceux", "Celles", "Mon", "Ma", "Mes", "Ton", "Ta", "Tes", "Son", "Sa", "Ses",
+  "Notre", "Nos", "Votre", "Vos", "Leur", "Leurs", "Qui", "Que", "Quoi", "Dont", "Où", "Comment",
+  "Pourquoi", "Ainsi", "Alors", "Or", "Mais", "Et", "Car", "Donc", "Puis", "Voici", "Voilà", "Eh",
+  "Ah", "Oh", "Ô", "Un", "Une", "Les", "La", "Le", "Des", "Du", "De", "En", "Si", "Comme",
+  "Lorsque", "Après", "Avant", "Pendant", "Depuis", "Afin", "Tout", "Tous", "Toute", "Toutes",
+  "Chacun", "Chaque", "Rien", "Personne", "Aucun", "Quelque", "Quelques", "Plusieurs", "Même",
+  "Aussi", "Encore", "Déjà", "Jamais", "Toujours", "Bientôt", "Maintenant", "Ici", "Là", "Oui",
+  "Non", "Certes",
+]);
+
+/** Repère les versets qui alignent au moins deux noms propres rares en
+ * milieu de phrase (hors noms bibliques courants et mots de liaison) —
+ * signe d'une liste de noms (généalogie, villes, tribus...). */
+function hasObscureNameDensity(text: string): boolean {
+  const words = text.split(/\s+/);
+  let afterBoundary = true;
+  let obscureCapCount = 0;
+  for (const raw of words) {
+    const clean = raw.replace(/^[«"'(]+/, "").replace(/[,.;:!?»")]+$/, "");
+    if (
+      /^[A-ZÀ-Ý]/.test(clean) &&
+      !afterBoundary &&
+      !COMMON_BIBLICAL_NAMES.has(clean) &&
+      !COMMON_FRENCH_WORDS.has(clean)
+    ) {
+      obscureCapCount++;
+    }
+    afterBoundary = /[.!?:;]["')»]*$/.test(raw);
+  }
+  return obscureCapCount >= 2;
+}
+
 /** Niveau (1 à 100) déduit de la longueur du texte, pour un verset sans
  * niveau explicite (ajout/import sans le préciser). */
 export function getVerseLevelFromText(text: string): number {
   const length = text.length;
   const index = LEVEL_LENGTH_BREAKPOINTS.findIndex((max) => length <= max);
-  return index === -1 ? MAX_LEVEL : index + 1;
+  const baseLevel = index === -1 ? MAX_LEVEL : index + 1;
+
+  if (
+    length < HARD_OVERRIDE_MAX_LENGTH &&
+    baseLevel < HARD_OVERRIDE_LEVEL &&
+    (FORMULAIC_SPEECH_PATTERN.test(text) || GENEALOGY_PATTERN.test(text) || hasObscureNameDensity(text))
+  ) {
+    return HARD_OVERRIDE_LEVEL;
+  }
+
+  return baseLevel;
 }
 
 /** Compatibilité avec l'ancien champ à 3 paliers (easy/medium/hard),
