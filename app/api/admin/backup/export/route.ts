@@ -14,7 +14,10 @@ export const dynamic = "force-dynamic";
  * verse_game_activity — purement opérationnelles/éphémères (jetons,
  * anti-spam, abonnements liés à un appareil précis, notifications
  * flottantes de quelques secondes), sans valeur à restaurer après un
- * incident.
+ * incident. bible_verse_stats est inclus pour consultation mais n'est pas
+ * réimporté par /api/admin/backup/restore (sa clé primaire est verse_id,
+ * pas id comme les autres tables) — après un incident, ces statistiques
+ * se reconstituent naturellement au fil des parties suivantes.
  *
  * Sans from/to : sauvegarde complète, du tout premier enregistrement au plus
  * récent — c'est elle qui sert de point de restauration fiable.
@@ -173,6 +176,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: verseGameProgressError.message }, { status: 500 });
   }
 
+  // Comme bible_verses, peut dépasser 1000 lignes une fois le jeu bien
+  // utilisé : mêmes raisons de paginer.
+  const bibleVerseStats: unknown[] = [];
+  for (let from = 0; ; from += BIBLE_VERSES_PAGE_SIZE) {
+    const { data: page, error: pageError } = await supabase
+      .from("bible_verse_stats")
+      .select("*")
+      .order("updated_at", { ascending: true })
+      .range(from, from + BIBLE_VERSES_PAGE_SIZE - 1);
+    if (pageError) {
+      return NextResponse.json({ error: pageError.message }, { status: 500 });
+    }
+    bibleVerseStats.push(...(page ?? []));
+    if (!page || page.length < BIBLE_VERSES_PAGE_SIZE) break;
+  }
+
   const { data: siteUpdates, error: siteUpdatesError } = await supabase
     .from("site_updates")
     .select("*")
@@ -204,6 +223,7 @@ export async function GET(request: NextRequest) {
     bible_verses: bibleVerses,
     verse_game_scores: verseGameScores ?? [],
     verse_game_progress: verseGameProgress ?? [],
+    bible_verse_stats: bibleVerseStats,
     site_updates: siteUpdates ?? [],
     admin_activity_log: adminActivityLog ?? [],
   };

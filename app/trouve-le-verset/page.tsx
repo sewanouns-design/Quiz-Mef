@@ -38,12 +38,19 @@ interface LevelUpToast {
   id: string;
   displayName: string;
   level: number;
+  rank: number | null;
 }
 
 const QUESTIONS_PER_GAME = 10;
 const ACTIVITY_POLL_MS = 4000;
 const TOAST_LIFETIME_MS = 3200;
 const AUTO_ADVANCE_DELAY_MS = 900;
+// Nombre de bulles que la colonne flottante peut tenir en même temps,
+// empilées du plus récent (en bas) au plus ancien (en haut) : au-delà, les
+// plus anciennes sont retirées pour laisser la place aux nouvelles plutôt
+// que de s'accumuler indéfiniment.
+const MAX_STACKED_TOASTS = 5;
+const RANK_MEDALS: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
 
 function scoreMessage(score: number, total: number): string {
   const percent = (score / total) * 100;
@@ -71,8 +78,9 @@ function LevelUpToasts({ toasts }: { toasts: LevelUpToast[] }) {
           key={t.id}
           className="animate-verse-toast flex items-center gap-2 rounded-full bg-navy px-3 py-1.5 text-xs font-semibold text-white shadow-lg"
         >
-          <span>🎉</span>
+          <span>{(t.rank && RANK_MEDALS[t.rank]) || "🎉"}</span>
           <span>
+            {t.rank && <>#{t.rank} · </>}
             {t.displayName} vient d&apos;atteindre le niveau {t.level} !
           </span>
         </div>
@@ -224,6 +232,10 @@ export default function VerseGamePage() {
 
   const [toasts, setToasts] = useState<LevelUpToast[]>([]);
   const activitySinceRef = useRef<string>(new Date().toISOString());
+  // Réponses de la partie en cours (verset + correct/incorrect), envoyées à
+  // la fin du niveau pour alimenter les vraies statistiques de difficulté
+  // par verset (voir lib/verse-level.ts et l'onglet admin correspondant).
+  const answersRef = useRef<{ verseId: string; correct: boolean }[]>([]);
 
   function loadLeaderboardStats(key: string) {
     fetch(`/api/verse-game/leaderboard?deviceKey=${encodeURIComponent(key)}`, { cache: "no-store" })
@@ -241,14 +253,27 @@ export default function VerseGamePage() {
       cache: "no-store",
     })
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: { events: { id: string; displayName: string; level: number }[]; latest: string } | null) => {
+      .then(
+        (
+          data: {
+            events: { id: string; displayName: string; level: number; rank: number | null }[];
+            latest: string;
+          } | null
+        ) => {
         if (!data) return;
         activitySinceRef.current = data.latest;
         if (data.events.length === 0) return;
-        setToasts((prev) => [
-          ...prev,
-          ...data.events.map((e) => ({ id: e.id, displayName: e.displayName, level: e.level })),
-        ]);
+        setToasts((prev) =>
+          [
+            ...prev,
+            ...data.events.map((e) => ({
+              id: e.id,
+              displayName: e.displayName,
+              level: e.level,
+              rank: e.rank,
+            })),
+          ].slice(-MAX_STACKED_TOASTS)
+        );
         for (const e of data.events) {
           setTimeout(() => {
             setToasts((prev) => prev.filter((t) => t.id !== e.id));
@@ -281,6 +306,7 @@ export default function VerseGamePage() {
     setFinished(false);
     setJustLeveledUp(false);
     setPointsEarned(0);
+    answersRef.current = [];
     fetch(`/api/verse-game/questions?count=${QUESTIONS_PER_GAME}&level=${level}`, { cache: "no-store" })
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
@@ -337,7 +363,9 @@ export default function VerseGamePage() {
   function handleAnswer(option: string) {
     if (!current || selected) return;
     setSelected(option);
-    if (option === current.correctAnswer) {
+    const correct = option === current.correctAnswer;
+    answersRef.current.push({ verseId: current.verseId, correct });
+    if (correct) {
       setScore((s) => s + 1);
       autoAdvanceTimeout.current = setTimeout(() => handleNext(), AUTO_ADVANCE_DELAY_MS);
     }
@@ -352,7 +380,13 @@ export default function VerseGamePage() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             cache: "no-store",
-            body: JSON.stringify({ deviceKey, level: selectedLevel, score, total: questions.length }),
+            body: JSON.stringify({
+              deviceKey,
+              level: selectedLevel,
+              score,
+              total: questions.length,
+              answers: answersRef.current,
+            }),
           });
           const data = await res.json().catch(() => ({}));
           if (res.ok) {

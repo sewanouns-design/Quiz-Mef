@@ -389,6 +389,54 @@ as $$
 $$;
 
 -- ------------------------------------------------------------
+-- Statistiques réelles de réussite par verset, alimentées à chaque fin de
+-- niveau (voir /api/verse-game/level-complete) : la vraie mesure de
+-- difficulté n'est pas la longueur du texte (un verset court peut être
+-- bien plus dur à deviner qu'un long) mais le taux d'échec réel des
+-- joueurs sur CE verset précis.
+-- ------------------------------------------------------------
+create table if not exists bible_verse_stats (
+  verse_id uuid primary key references bible_verses(id) on delete cascade,
+  correct_count int not null default 0,
+  incorrect_count int not null default 0,
+  updated_at timestamptz not null default now()
+);
+
+-- Recalcule bible_verses.level à partir du taux d'échec réel, pour tous
+-- les versets ayant assez de réponses enregistrées (min_samples) ; les
+-- autres gardent leur niveau actuel (déduit de la longueur, en attendant
+-- d'avoir assez de données). ntile(100) sur le taux d'échec croissant :
+-- niveau 1 = le moins raté (le plus facile en pratique), niveau 100 = le
+-- plus raté. Déclenché depuis l'admin (onglet "Trouve le verset").
+create or replace function recalculate_verse_levels_by_difficulty(min_samples int default 5)
+returns int
+language plpgsql
+as $$
+declare
+  updated_count int;
+begin
+  with eligible as (
+    select
+      s.verse_id,
+      s.incorrect_count::numeric / (s.correct_count + s.incorrect_count) as error_rate
+    from bible_verse_stats s
+    where (s.correct_count + s.incorrect_count) >= min_samples
+  ),
+  ranked as (
+    select verse_id, ntile(100) over (order by error_rate asc, verse_id) as new_level
+    from eligible
+  )
+  update bible_verses
+  set level = ranked.new_level
+  from ranked
+  where bible_verses.id = ranked.verse_id;
+
+  get diagnostics updated_count = row_count;
+  return updated_count;
+end;
+$$;
+
+-- ------------------------------------------------------------
 -- Meilleur score d'UNE partie (8 questions) de "Trouve le verset", par
 -- appareil — conservé pour compatibilité, mais le classement public se base
 -- désormais sur verse_game_progress.total_points (cumul sur tous les
@@ -432,6 +480,10 @@ create table if not exists verse_game_activity (
   id uuid primary key default gen_random_uuid(),
   device_key text not null,
   level int not null,
+  -- Rang (classement par points cumulés) au moment du passage de niveau,
+  -- pour que la notification flottante affiche "1er/2e/3e..." plutôt
+  -- qu'un simple ordre d'arrivée.
+  rank int,
   created_at timestamptz not null default now()
 );
 
@@ -478,4 +530,5 @@ alter table bible_verses enable row level security;
 alter table verse_game_scores enable row level security;
 alter table verse_game_progress enable row level security;
 alter table verse_game_activity enable row level security;
+alter table bible_verse_stats enable row level security;
 alter table site_updates enable row level security;

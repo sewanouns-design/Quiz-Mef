@@ -11,12 +11,16 @@ const RATE_LIMIT_MAX = 60;
 const RATE_LIMIT_WINDOW_MINUTES = 15;
 const POINTS_PER_CORRECT = 10;
 const PASS_RATIO = 1;
+const MAX_ANSWERS_PER_REQUEST = 50;
 
 /**
  * Enregistre la fin d'un niveau de "Trouve le verset" : ajoute les points
- * gagnés (10 par bonne réponse) au total cumulé, et débloque le niveau
+ * gagnés (10 par bonne réponse) au total cumulé, débloque le niveau
  * suivant si le niveau joué est bien celui en cours (pas un niveau déjà
- * dépassé rejoué) et que toutes les réponses sont correctes.
+ * dépassé rejoué) et que toutes les réponses sont correctes, et alimente
+ * les statistiques réelles de réussite par verset (bible_verse_stats) —
+ * c'est cette mesure, pas la longueur du texte, qui détermine la vraie
+ * difficulté d'un verset (voir recalculate_verse_levels_by_difficulty).
  * Aucune identification requise.
  */
 export async function POST(request: NextRequest) {
@@ -37,6 +41,7 @@ export async function POST(request: NextRequest) {
   const level = Number(body?.level);
   const score = Number(body?.score);
   const total = Number(body?.total);
+  const rawAnswers = Array.isArray(body?.answers) ? body.answers : [];
 
   if (
     !deviceKey ||
@@ -51,6 +56,16 @@ export async function POST(request: NextRequest) {
   ) {
     return NextResponse.json({ error: "Données invalides." }, { status: 400 });
   }
+
+  const answers = rawAnswers
+    .slice(0, MAX_ANSWERS_PER_REQUEST)
+    .filter(
+      (a: unknown): a is { verseId: string; correct: boolean } =>
+        typeof a === "object" &&
+        a !== null &&
+        typeof (a as { verseId?: unknown }).verseId === "string" &&
+        typeof (a as { correct?: unknown }).correct === "boolean"
+    );
 
   const supabase = getSupabaseAdmin();
 
@@ -97,10 +112,21 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (leveledUp) {
-    // Best-effort : un échec ici ne doit jamais faire échouer la requête
-    // (la progression elle-même est déjà enregistrée au-dessus).
-    await supabase.from("verse_game_activity").insert({ device_key: deviceKey, level: newLevel });
+  // Best-effort, par verset : un échec isolé ne doit jamais faire échouer
+  // la requête (la progression elle-même est déjà enregistrée au-dessus).
+  for (const answer of answers) {
+    const { data: stat } = await supabase
+      .from("bible_verse_stats")
+      .select("correct_count, incorrect_count")
+      .eq("verse_id", answer.verseId)
+      .maybeSingle();
+
+    await supabase.from("bible_verse_stats").upsert({
+      verse_id: answer.verseId,
+      correct_count: (stat?.correct_count ?? 0) + (answer.correct ? 1 : 0),
+      incorrect_count: (stat?.incorrect_count ?? 0) + (answer.correct ? 0 : 1),
+      updated_at: new Date().toISOString(),
+    });
   }
 
   const { count: betterCount, error: rankError } = await supabase
@@ -110,12 +136,18 @@ export async function POST(request: NextRequest) {
   if (rankError) {
     return NextResponse.json({ error: rankError.message }, { status: 500 });
   }
+  const rank = (betterCount ?? 0) + 1;
+
+  if (leveledUp) {
+    // Best-effort : la notification flottante est un bonus, pas un enjeu.
+    await supabase.from("verse_game_activity").insert({ device_key: deviceKey, level: newLevel, rank });
+  }
 
   return NextResponse.json({
     pointsEarned,
     totalPoints: newTotalPoints,
     currentLevel: newLevel,
     leveledUp,
-    rank: (betterCount ?? 0) + 1,
+    rank,
   });
 }

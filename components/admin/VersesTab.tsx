@@ -38,6 +38,10 @@ export default function VersesTab() {
   const [bulkResult, setBulkResult] = useState("");
   const [bulkProgress, setBulkProgress] = useState("");
 
+  const [recalculating, setRecalculating] = useState(false);
+  const [recalculateResult, setRecalculateResult] = useState("");
+  const [recalculateError, setRecalculateError] = useState("");
+
   // Même taille que MAX_ITEMS_PER_REQUEST côté serveur
   // (app/api/admin/verses/bulk/route.ts) : un fichier plus volumineux est
   // envoyé en plusieurs requêtes successives plutôt qu'en une seule, pour
@@ -213,6 +217,34 @@ export default function VersesTab() {
       return;
     }
     await importItems(items);
+  }
+
+  async function handleRecalculateLevels() {
+    setRecalculating(true);
+    setRecalculateError("");
+    setRecalculateResult("");
+    try {
+      const res = await fetch("/api/admin/verses/recalculate-levels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Erreur lors du recalcul.");
+      }
+      setRecalculateResult(
+        data.updated > 0
+          ? `${data.updated} verset(s) reclassé(s) selon leur vrai taux d'échec.`
+          : "Pas encore assez de réponses enregistrées pour reclasser de versets."
+      );
+      load();
+    } catch (err) {
+      setRecalculateError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setRecalculating(false);
+    }
   }
 
   async function handleDelete(id: string) {
@@ -438,6 +470,25 @@ export default function VersesTab() {
           </label>
         </div>
       </form>
+
+      <div className="card mb-6 space-y-2">
+        <h3 className="text-sm font-bold text-navy">Reclasser les niveaux selon la vraie difficulté</h3>
+        <p className="text-xs text-gray-500">
+          Un verset court n&apos;est pas forcément facile : ce bouton reclasse les niveaux à partir du
+          taux d&apos;échec réel des joueurs (enregistré à chaque partie), pas de la longueur du texte.
+          Seuls les versets ayant déjà assez de réponses sont reclassés.
+        </p>
+        {recalculateResult && <p className="text-sm font-medium text-green-700">{recalculateResult}</p>}
+        {recalculateError && <p className="text-sm font-medium text-red-600">{recalculateError}</p>}
+        <button
+          type="button"
+          onClick={handleRecalculateLevels}
+          disabled={recalculating}
+          className="btn-secondary"
+        >
+          {recalculating ? "Recalcul en cours..." : "🔄 Reclasser selon la difficulté réelle"}
+        </button>
+      </div>
 
       <form onSubmit={handleSearchSubmit} className="mb-3 flex gap-2">
         <input

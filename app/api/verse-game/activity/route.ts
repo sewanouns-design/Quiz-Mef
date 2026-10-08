@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   const supabase = getSupabaseAdmin();
   const { data: events, error } = await supabase
     .from("verse_game_activity")
-    .select("id, device_key, level, created_at")
+    .select("id, device_key, level, rank, created_at")
     .gt("created_at", since)
     .order("created_at", { ascending: true })
     .limit(MAX_EVENTS);
@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
       id: e.id,
       displayName: formatLeaderboardName(participantByDevice.get(e.device_key)!.name),
       level: e.level,
+      rank: e.rank,
       createdAt: e.created_at,
     }));
 
