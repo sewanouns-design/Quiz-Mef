@@ -10,9 +10,11 @@ export const dynamic = "force-dynamic";
  * via /api/admin/backup/restore.
  *
  * Tables volontairement exclues : participant_login_tokens, login_attempts,
- * rate_limit_events, reengagement_reminders, push_subscriptions — purement
- * opérationnelles/éphémères (jetons, anti-spam, abonnements liés à un
- * appareil précis), sans valeur à restaurer après un incident.
+ * rate_limit_events, reengagement_reminders, push_subscriptions,
+ * verse_game_activity — purement opérationnelles/éphémères (jetons,
+ * anti-spam, abonnements liés à un appareil précis, notifications
+ * flottantes de quelques secondes), sans valeur à restaurer après un
+ * incident.
  *
  * Sans from/to : sauvegarde complète, du tout premier enregistrement au plus
  * récent — c'est elle qui sert de point de restauration fiable.

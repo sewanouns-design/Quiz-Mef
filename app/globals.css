@@ -41,6 +41,28 @@ html {
   animation: verse-ticker linear infinite;
 }
 
+@keyframes verse-toast-float {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.85);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-14px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-48px) scale(0.95);
+  }
+}
+.animate-verse-toast {
+  animation: verse-toast-float 3.2s ease-out forwards;
+}
+
 @keyframes greeting-pop {
   0% {
     opacity: 0;

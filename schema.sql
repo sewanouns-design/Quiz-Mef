@@ -422,6 +422,22 @@ create table if not exists verse_game_progress (
 create index if not exists idx_verse_game_progress_points on verse_game_progress (total_points desc);
 
 -- ------------------------------------------------------------
+-- Fil d'évènements "niveau débloqué", pour des notifications flottantes
+-- façon likes de live TikTok/Facebook (voir /api/verse-game/activity et
+-- components du jeu). Une ligne par passage de niveau ; le nom n'est
+-- résolu qu'à la lecture, et seulement pour les participants ayant activé
+-- "Afficher mon prénom dans le classement".
+-- ------------------------------------------------------------
+create table if not exists verse_game_activity (
+  id uuid primary key default gen_random_uuid(),
+  device_key text not null,
+  level int not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_verse_game_activity_created_at on verse_game_activity (created_at desc);
+
+-- ------------------------------------------------------------
 -- Nouveautés du site, affichées brièvement (pop-up fermable) aux visiteurs
 -- lors de leur première connexion après publication. Pas de ciblage par
 -- appareil côté serveur : chaque navigateur retient localement l'id de la
@@ -461,4 +477,5 @@ alter table push_subscriptions enable row level security;
 alter table bible_verses enable row level security;
 alter table verse_game_scores enable row level security;
 alter table verse_game_progress enable row level security;
+alter table verse_game_activity enable row level security;
 alter table site_updates enable row level security;

@@ -34,19 +34,16 @@ interface CompleteQuestion {
 
 type Question = ReferenceQuestion | CompleteQuestion;
 
-interface LeaderboardEntry {
+interface LevelUpToast {
+  id: string;
   displayName: string;
-  score: number;
   level: number;
 }
 
 const QUESTIONS_PER_GAME = 10;
-const LEADERBOARD_POLL_MS = 5000;
+const ACTIVITY_POLL_MS = 4000;
+const TOAST_LIFETIME_MS = 3200;
 const AUTO_ADVANCE_DELAY_MS = 900;
-const MAX_TICKER_ENTRIES = 10;
-const TICKER_ROW_HEIGHT_PX = 40;
-const TICKER_VISIBLE_ROWS = 4;
-const TICKER_SECONDS_PER_ROW = 2.2;
 
 function scoreMessage(score: number, total: number): string {
   const percent = (score / total) * 100;
@@ -57,55 +54,29 @@ function scoreMessage(score: number, total: number): string {
 }
 
 /**
- * Bandeau de classement "en direct" : une seule colonne qui défile vers le
- * haut en continu (prénom + points cumulés, triés du plus haut au plus
- * bas), plutôt qu'une liste statique à rafraîchir manuellement. Le contenu
- * est dupliqué pour boucler sans à-coup ; les nouvelles données (sondées
- * toutes les 5s) remplacent la liste en douceur, défilement compris — sans
- * jamais changer la hauteur du bandeau (fixe, voir TICKER_VISIBLE_ROWS), ni
- * la mise en page autour, pour éviter tout "saut" visuel à chaque rafraîchissement.
+ * Notifications flottantes "niveau débloqué" façon likes de live
+ * (TikTok/Facebook) : empilées du même côté que la carte de jeu, chacune
+ * monte en flottant puis s'efface — jamais un panneau à part qui prend de
+ * la place en permanence. Seuls les passages de niveau déclenchent une
+ * bulle (pas chaque point gagné), et seulement pour les joueurs ayant
+ * accepté d'apparaître dans les classements (même règle de confidentialité
+ * que partout ailleurs sur le site).
  */
-function LiveLeaderboardTicker({ entries }: { entries: LeaderboardEntry[] }) {
-  if (entries.length === 0) {
-    return (
-      <p
-        className="flex items-center justify-center rounded-xl border border-dashed border-gray-300 text-center text-sm text-gray-400"
-        style={{ height: TICKER_ROW_HEIGHT_PX * TICKER_VISIBLE_ROWS }}
-      >
-        Personne n&apos;a encore choisi d&apos;apparaître dans ce classement.
-      </p>
-    );
-  }
-
-  const limited = entries.slice(0, MAX_TICKER_ENTRIES);
-  const doubled = [...limited, ...limited];
-  const duration = Math.max(limited.length * TICKER_SECONDS_PER_ROW, 6);
-
+function LevelUpToasts({ toasts }: { toasts: LevelUpToast[] }) {
+  if (toasts.length === 0) return null;
   return (
-    <div
-      className="relative overflow-hidden rounded-xl bg-navy/5"
-      style={{ height: TICKER_ROW_HEIGHT_PX * TICKER_VISIBLE_ROWS }}
-    >
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-3 bg-gradient-to-b from-white to-transparent" />
-      <div
-        className="animate-verse-ticker absolute inset-x-0 top-0"
-        style={{ animationDuration: `${duration}s` }}
-      >
-        {doubled.map((e, i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between px-3 text-sm"
-            style={{ height: TICKER_ROW_HEIGHT_PX }}
-          >
-            <span className="flex items-center gap-2 font-semibold text-navy">
-              <span className="text-xs text-gray-400">#{(i % limited.length) + 1}</span>
-              {e.displayName}
-            </span>
-            <span className="font-bold text-accent-dark">{e.score} pts</span>
-          </div>
-        ))}
-      </div>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-3 bg-gradient-to-t from-white to-transparent" />
+    <div className="pointer-events-none fixed right-3 top-20 z-50 flex flex-col items-end gap-2 sm:right-[calc(50%-13rem)]">
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          className="animate-verse-toast flex items-center gap-2 rounded-full bg-navy px-3 py-1.5 text-xs font-semibold text-white shadow-lg"
+        >
+          <span>🎉</span>
+          <span>
+            {t.displayName} vient d&apos;atteindre le niveau {t.level} !
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -251,28 +222,40 @@ export default function VerseGamePage() {
   const [myRank, setMyRank] = useState<number | null>(null);
   const [totalPlayers, setTotalPlayers] = useState(0);
 
-  const [showLeaderboard, setShowLeaderboard] = useState(true);
-  const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
-  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [toasts, setToasts] = useState<LevelUpToast[]>([]);
+  const activitySinceRef = useRef<string>(new Date().toISOString());
 
-  function loadLeaderboard(key: string) {
-    setLeaderboardLoading(true);
+  function loadLeaderboardStats(key: string) {
     fetch(`/api/verse-game/leaderboard?deviceKey=${encodeURIComponent(key)}`, { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
-      .then(
-        (data: {
-          entries: LeaderboardEntry[];
-          totalPlayers: number;
-          myRank: number | null;
-        } | null) => {
-          if (!data) return;
-          setLeaderboardEntries(data.entries ?? []);
-          setTotalPlayers(data.totalPlayers ?? 0);
-          setMyRank(data.myRank);
+      .then((data: { totalPlayers: number; myRank: number | null } | null) => {
+        if (!data) return;
+        setTotalPlayers(data.totalPlayers ?? 0);
+        setMyRank(data.myRank);
+      })
+      .catch(() => {});
+  }
+
+  function pollActivity() {
+    fetch(`/api/verse-game/activity?since=${encodeURIComponent(activitySinceRef.current)}`, {
+      cache: "no-store",
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { events: { id: string; displayName: string; level: number }[]; latest: string } | null) => {
+        if (!data) return;
+        activitySinceRef.current = data.latest;
+        if (data.events.length === 0) return;
+        setToasts((prev) => [
+          ...prev,
+          ...data.events.map((e) => ({ id: e.id, displayName: e.displayName, level: e.level })),
+        ]);
+        for (const e of data.events) {
+          setTimeout(() => {
+            setToasts((prev) => prev.filter((t) => t.id !== e.id));
+          }, TOAST_LIFETIME_MS);
         }
-      )
-      .catch(() => {})
-      .finally(() => setLeaderboardLoading(false));
+      })
+      .catch(() => {});
   }
 
   function loadProgress(key: string) {
@@ -317,7 +300,7 @@ export default function VerseGamePage() {
     const key = getOrCreateAnonymousDeviceKey();
     setDeviceKey(key);
     setIdentified(true);
-    loadLeaderboard(key);
+    loadLeaderboardStats(key);
     loadProgress(key).then((level) => loadGame(level));
   }
 
@@ -335,14 +318,15 @@ export default function VerseGamePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Rafraîchit le classement toutes les 5s tant que le panneau est ouvert,
-  // pour donner une impression de classement "en direct".
+  // Sonde en continu les niveaux débloqués par tout le monde, pour faire
+  // apparaître les notifications flottantes — indépendant du score propre
+  // au joueur, tant que la page est ouverte.
   useEffect(() => {
-    if (!showLeaderboard || !deviceKey) return;
-    const poll = setInterval(() => loadLeaderboard(deviceKey), LEADERBOARD_POLL_MS);
+    if (!identified) return;
+    const poll = setInterval(pollActivity, ACTIVITY_POLL_MS);
     return () => clearInterval(poll);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showLeaderboard, deviceKey]);
+  }, [identified]);
 
   const current = questions[index];
 
@@ -377,7 +361,7 @@ export default function VerseGamePage() {
             setTotalPoints(data.totalPoints ?? totalPoints);
             setCurrentLevel(data.currentLevel ?? currentLevel);
             setMyRank(data.rank ?? null);
-            loadLeaderboard(deviceKey);
+            loadLeaderboardStats(deviceKey);
           }
         } catch {
           // Progression non enregistrée, tant pis — le jeu reste jouable.
@@ -404,6 +388,7 @@ export default function VerseGamePage() {
   return (
     <>
       <SiteHeader />
+      <LevelUpToasts toasts={toasts} />
       <main className="flex min-h-screen flex-col items-center px-6 py-12">
         <div className="w-full max-w-md">
           <div className="mb-6 text-center">
@@ -435,7 +420,10 @@ export default function VerseGamePage() {
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                       Niveau {selectedLevel} / {MAX_LEVEL}
                     </p>
-                    <p className="text-sm font-bold text-navy">🏅 {totalPoints} points</p>
+                    <p className="text-sm font-bold text-navy">
+                      🏅 {totalPoints} points
+                      {myRank && <span className="text-gray-400"> · #{myRank}/{totalPlayers}</span>}
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -446,53 +434,6 @@ export default function VerseGamePage() {
                   >
                     →
                   </button>
-                </div>
-              )}
-
-              <div className="mb-6 flex flex-wrap justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowLeaderboard((v) => !v)}
-                  className={`inline-flex items-center gap-1.5 rounded-2xl border-2 px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors ${
-                    showLeaderboard
-                      ? "border-accent bg-accent/5 text-navy"
-                      : "border-navy/15 bg-white text-navy hover:border-accent/40"
-                  }`}
-                >
-                  🏆 Classement
-                </button>
-              </div>
-
-              {showLeaderboard && (
-                <div className="mb-6 card">
-                  <div className="mb-3 flex items-center gap-2">
-                    <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
-                    </span>
-                    <h2 className="text-sm font-bold text-navy">Classement en direct</h2>
-                  </div>
-                  {leaderboardLoading && leaderboardEntries.length === 0 ? (
-                    <p
-                      className="flex items-center justify-center text-center text-sm text-gray-400"
-                      style={{ height: TICKER_ROW_HEIGHT_PX * TICKER_VISIBLE_ROWS }}
-                    >
-                      Chargement...
-                    </p>
-                  ) : (
-                    <LiveLeaderboardTicker entries={leaderboardEntries} />
-                  )}
-                  {/* Hauteur toujours réservée (texte ou non) pour que l'apparition du
-                      rang ne décale jamais le reste de la page au rafraîchissement. */}
-                  <p className="mt-3 min-h-[2.5rem] text-center text-xs text-gray-400">
-                    {myRank && (
-                      <>
-                        Ton rang actuel : <span className="font-semibold text-accent-dark">#{myRank}</span>{" "}
-                        sur {totalPlayers}. Pour apparaître avec ton prénom ici, active &quot;Afficher mon
-                        prénom dans le classement&quot;.
-                      </>
-                    )}
-                  </p>
                 </div>
               )}
 

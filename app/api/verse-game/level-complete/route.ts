@@ -97,6 +97,12 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  if (leveledUp) {
+    // Best-effort : un échec ici ne doit jamais faire échouer la requête
+    // (la progression elle-même est déjà enregistrée au-dessus).
+    await supabase.from("verse_game_activity").insert({ device_key: deviceKey, level: newLevel });
+  }
+
   const { count: betterCount, error: rankError } = await supabase
     .from("verse_game_progress")
     .select("*", { count: "exact", head: true })
