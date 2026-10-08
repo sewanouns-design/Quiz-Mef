@@ -374,6 +374,16 @@ interface VerseGameAvailability {
 // ressort en vert, comme pour une non-réponse.
 const TIMEOUT_SENTINEL = "\u0000__timeout__";
 
+// Couleur du badge chrono selon la fraction du temps restant : vert tant
+// qu'il reste largement le temps, jaune quand ça se rapproche de la fin,
+// rouge (clignotant) dans les derniers instants.
+function timerColorClass(secondsLeft: number, totalSeconds: number): string {
+  const fraction = totalSeconds > 0 ? secondsLeft / totalSeconds : 0;
+  if (fraction <= 0.25) return "animate-pulse bg-red-100 text-red-600";
+  if (fraction <= 0.5) return "bg-yellow-100 text-yellow-700";
+  return "bg-green-100 text-green-700";
+}
+
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("fr-FR", {
     day: "numeric",
@@ -665,14 +675,15 @@ export default function VerseGamePage() {
     }
   }
 
-  // Temps écoulé sans réponse (chrono admin) : comptée comme fausse,
-  // exactement comme une mauvaise réponse manuelle — la bonne réponse
-  // s'affiche et la personne doit cliquer "Suivant" pour continuer (pas
-  // d'avancement automatique, pour laisser le temps de voir la correction).
+  // Temps écoulé sans réponse (chrono admin) : comptée comme fausse, la
+  // bonne réponse s'affiche brièvement puis on passe automatiquement à la
+  // question suivante (anti-triche : personne ne peut s'attarder après
+  // expiration pour chercher la réponse).
   function handleTimeout() {
     if (!current || selected) return;
     setSelected(TIMEOUT_SENTINEL);
     answersRef.current.push({ verseId: current.verseId, correct: false });
+    autoAdvanceTimeout.current = setTimeout(() => handleNext(), AUTO_ADVANCE_DELAY_MS);
   }
 
   // Chrono par question (optionnel, réglé depuis l'admin) : redémarre à
@@ -1071,18 +1082,23 @@ export default function VerseGamePage() {
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                       Niveau {selectedLevel} · Question {index + 1} / {questions.length} · Score : {score}
                     </p>
-                    {timeLeft !== null && (
+                    {timeLeft !== null && availability && (
                       <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${
-                          timeLeft <= 5
-                            ? "animate-pulse bg-red-100 text-red-600"
-                            : "bg-navy/10 text-navy"
-                        }`}
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${timerColorClass(
+                          timeLeft,
+                          availability.timerSeconds
+                        )}`}
                       >
                         ⏱️ {timeLeft}s
                       </span>
                     )}
                   </div>
+
+                  {selected === TIMEOUT_SENTINEL && (
+                    <p className="mb-3 text-xs font-semibold text-red-500">
+                      ⏱️ Temps écoulé ! Question suivante...
+                    </p>
+                  )}
 
                   {current.type === "reference" ? (
                     <>
@@ -1137,7 +1153,7 @@ export default function VerseGamePage() {
                     })}
                   </div>
 
-                  {selected !== null && selected !== current.correctAnswer && (
+                  {selected !== null && selected !== current.correctAnswer && selected !== TIMEOUT_SENTINEL && (
                     <button
                       type="button"
                       onClick={handleNext}
