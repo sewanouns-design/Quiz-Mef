@@ -61,6 +61,10 @@ export async function PUT(request: NextRequest) {
     returning_greeting,
     text_size,
     about_text,
+    verse_game_enabled,
+    verse_game_schedule_enabled,
+    verse_game_schedule_start,
+    verse_game_schedule_end,
   } = body ?? {};
 
   if (template && !VALID_TEMPLATES.includes(template)) {
@@ -83,6 +87,37 @@ export async function PUT(request: NextRequest) {
     if (!validSteps) {
       return NextResponse.json({ error: "Format des étapes invalide" }, { status: 400 });
     }
+  }
+
+  let parsedScheduleStart: string | null | undefined;
+  if (verse_game_schedule_start !== undefined) {
+    if (verse_game_schedule_start === null || verse_game_schedule_start === "") {
+      parsedScheduleStart = null;
+    } else {
+      const d = new Date(verse_game_schedule_start);
+      if (Number.isNaN(d.getTime())) {
+        return NextResponse.json({ error: "Date de début du créneau invalide" }, { status: 400 });
+      }
+      parsedScheduleStart = d.toISOString();
+    }
+  }
+  let parsedScheduleEnd: string | null | undefined;
+  if (verse_game_schedule_end !== undefined) {
+    if (verse_game_schedule_end === null || verse_game_schedule_end === "") {
+      parsedScheduleEnd = null;
+    } else {
+      const d = new Date(verse_game_schedule_end);
+      if (Number.isNaN(d.getTime())) {
+        return NextResponse.json({ error: "Date de fin du créneau invalide" }, { status: 400 });
+      }
+      parsedScheduleEnd = d.toISOString();
+    }
+  }
+  if (parsedScheduleStart && parsedScheduleEnd && parsedScheduleStart >= parsedScheduleEnd) {
+    return NextResponse.json(
+      { error: "La fin du créneau doit être après son début" },
+      { status: 400 }
+    );
   }
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -116,6 +151,11 @@ export async function PUT(request: NextRequest) {
   if (returning_greeting !== undefined) updates.returning_greeting = returning_greeting;
   if (text_size !== undefined) updates.text_size = text_size;
   if (about_text !== undefined) updates.about_text = about_text;
+  if (verse_game_enabled !== undefined) updates.verse_game_enabled = Boolean(verse_game_enabled);
+  if (verse_game_schedule_enabled !== undefined)
+    updates.verse_game_schedule_enabled = Boolean(verse_game_schedule_enabled);
+  if (parsedScheduleStart !== undefined) updates.verse_game_schedule_start = parsedScheduleStart;
+  if (parsedScheduleEnd !== undefined) updates.verse_game_schedule_end = parsedScheduleEnd;
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase

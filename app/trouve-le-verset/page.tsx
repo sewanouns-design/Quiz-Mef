@@ -207,7 +207,25 @@ function IdentificationGate({ onIdentified }: { onIdentified: () => void }) {
   );
 }
 
+interface VerseGameAvailability {
+  open: boolean;
+  enabled: boolean;
+  scheduleEnabled: boolean;
+  opensAt: string | null;
+  closesAt: string | null;
+}
+
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function VerseGamePage() {
+  const [availability, setAvailability] = useState<VerseGameAvailability | null>(null);
   const [identified, setIdentified] = useState<boolean | null>(null);
   const [deviceKey, setDeviceKey] = useState("");
 
@@ -236,6 +254,10 @@ export default function VerseGamePage() {
   // la fin du niveau pour alimenter les vraies statistiques de difficulté
   // par verset (voir lib/verse-level.ts et l'onglet admin correspondant).
   const answersRef = useRef<{ verseId: string; correct: boolean }[]>([]);
+  // Jeton anti-triche émis par /api/verse-game/questions à chaque partie,
+  // requis par /api/verse-game/level-complete pour prouver que ces
+  // questions ont bien été chargées avant la validation du niveau.
+  const sessionTokenRef = useRef<string>("");
 
   function loadLeaderboardStats(key: string) {
     fetch(`/api/verse-game/leaderboard?deviceKey=${encodeURIComponent(key)}`, { cache: "no-store" })
@@ -314,6 +336,7 @@ export default function VerseGamePage() {
           throw new Error(data.error || "Erreur lors du chargement du jeu.");
         }
         setQuestions(data.questions ?? []);
+        sessionTokenRef.current = data.sessionToken ?? "";
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Une erreur est survenue."))
       .finally(() => setLoading(false));
@@ -331,13 +354,32 @@ export default function VerseGamePage() {
   }
 
   useEffect(() => {
-    const stored = getStoredParticipant();
-    if (stored?.name && stored?.deviceKey) {
-      startAsIdentifiedPlayer();
-    } else {
-      setIdentified(false);
-      setLoading(false);
-    }
+    fetch("/api/verse-game/status", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : { open: true, enabled: true, scheduleEnabled: false, opensAt: null, closesAt: null }))
+      .then((data: VerseGameAvailability) => {
+        setAvailability(data);
+        if (!data.open) {
+          setLoading(false);
+          return;
+        }
+        const stored = getStoredParticipant();
+        if (stored?.name && stored?.deviceKey) {
+          startAsIdentifiedPlayer();
+        } else {
+          setIdentified(false);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        setAvailability({ open: true, enabled: true, scheduleEnabled: false, opensAt: null, closesAt: null });
+        const stored = getStoredParticipant();
+        if (stored?.name && stored?.deviceKey) {
+          startAsIdentifiedPlayer();
+        } else {
+          setIdentified(false);
+          setLoading(false);
+        }
+      });
     return () => {
       if (autoAdvanceTimeout.current) clearTimeout(autoAdvanceTimeout.current);
     };
@@ -386,6 +428,7 @@ export default function VerseGamePage() {
               score,
               total: questions.length,
               answers: answersRef.current,
+              sessionToken: sessionTokenRef.current,
             }),
           });
           const data = await res.json().catch(() => ({}));
@@ -435,9 +478,34 @@ export default function VerseGamePage() {
             </p>
           </div>
 
-          {identified === false && <IdentificationGate onIdentified={startAsIdentifiedPlayer} />}
+          {availability === null && <p className="text-center text-gray-400">Chargement...</p>}
 
-          {identified && (
+          {availability && !availability.open && (
+            <div className="card text-center">
+              <p className="text-3xl">⏳</p>
+              {!availability.enabled ? (
+                <p className="mt-3 font-medium text-gray-600">
+                  Le jeu « Trouve le verset » est actuellement désactivé. Reviens plus tard !
+                </p>
+              ) : (
+                <p className="mt-3 font-medium text-gray-600">
+                  Le jeu est accessible uniquement sur un créneau précis.
+                  {availability.opensAt && Date.now() < new Date(availability.opensAt).getTime() && (
+                    <> Ouverture le {formatDateTime(availability.opensAt)}.</>
+                  )}
+                  {availability.closesAt && Date.now() > new Date(availability.closesAt).getTime() && (
+                    <> Le créneau s&apos;est terminé le {formatDateTime(availability.closesAt)}.</>
+                  )}
+                </p>
+              )}
+            </div>
+          )}
+
+          {availability?.open && identified === false && (
+            <IdentificationGate onIdentified={startAsIdentifiedPlayer} />
+          )}
+
+          {availability?.open && identified && (
             <>
               {progressLoaded && (
                 <div className="mb-6 flex items-center justify-between gap-2 rounded-2xl border-2 border-navy/15 bg-white px-3 py-2.5 shadow-sm">

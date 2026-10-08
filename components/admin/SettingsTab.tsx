@@ -15,6 +15,15 @@ import type { HomeStep, SiteSettings } from "@/lib/types";
 
 const MAX_LOGO_FILE_BYTES = 250 * 1024;
 
+/** Convertit un ISO stocké en base en valeur locale pour un <input type="datetime-local">. */
+function toDatetimeLocalValue(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export default function SettingsTab() {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
   const [loading, setLoading] = useState(true);
@@ -464,6 +473,78 @@ export default function SettingsTab() {
                 />
               </div>
             </div>
+          )}
+        </div>
+
+        {/* Trouve le verset : activation + créneau horaire */}
+        <div className="mb-6 rounded-xl border border-gray-200 p-4">
+          <h3 className="mb-3 text-sm font-bold text-navy">🎮 Jeu « Trouve le verset »</h3>
+          <label className="mb-3 flex items-center gap-2 text-sm font-medium text-navy">
+            <input
+              type="checkbox"
+              checked={settings.verse_game_enabled}
+              onChange={(e) => updateField("verse_game_enabled", e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            Activer le jeu (visible et jouable sur le site)
+          </label>
+
+          {settings.verse_game_enabled && (
+            <>
+              <label className="mb-3 flex items-center gap-2 text-sm font-medium text-navy">
+                <input
+                  type="checkbox"
+                  checked={settings.verse_game_schedule_enabled}
+                  onChange={(e) => updateField("verse_game_schedule_enabled", e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                Limiter à un créneau horaire
+              </label>
+
+              {settings.verse_game_schedule_enabled && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="label-field" htmlFor="verse_game_schedule_start">
+                      Ouverture
+                    </label>
+                    <input
+                      id="verse_game_schedule_start"
+                      type="datetime-local"
+                      className="input-field text-sm"
+                      value={toDatetimeLocalValue(settings.verse_game_schedule_start)}
+                      onChange={(e) =>
+                        updateField(
+                          "verse_game_schedule_start",
+                          e.target.value ? new Date(e.target.value).toISOString() : null
+                        )
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="label-field" htmlFor="verse_game_schedule_end">
+                      Fermeture
+                    </label>
+                    <input
+                      id="verse_game_schedule_end"
+                      type="datetime-local"
+                      className="input-field text-sm"
+                      value={toDatetimeLocalValue(settings.verse_game_schedule_end)}
+                      onChange={(e) =>
+                        updateField(
+                          "verse_game_schedule_end",
+                          e.target.value ? new Date(e.target.value).toISOString() : null
+                        )
+                      }
+                    />
+                  </div>
+                  <p className="col-span-full text-xs text-gray-400">
+                    Hors de ce créneau, le jeu affiche un message d&apos;indisponibilité. Laisse un champ
+                    vide pour ne pas limiter ce côté-là (seulement l&apos;ouverture, ou seulement la
+                    fermeture).
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
 

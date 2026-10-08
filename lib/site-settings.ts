@@ -50,8 +50,48 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   text_size: "normal",
   about_text:
     "Quiz Biblique est un espace proposé par la Mission Évangélique de la Foi (MEF) pour permettre à chacun de tester et d'approfondir ses connaissances de la Parole de Dieu, de façon simple et conviviale. Un nouveau quiz est proposé chaque jour, avec des questions issues de la leçon du moment — seul ou en famille, à ton rythme.",
+  verse_game_enabled: true,
+  verse_game_schedule_enabled: false,
+  verse_game_schedule_start: null,
+  verse_game_schedule_end: null,
   updated_at: "",
 };
+
+export interface VerseGameAvailability {
+  open: boolean;
+  enabled: boolean;
+  scheduleEnabled: boolean;
+  opensAt: string | null;
+  closesAt: string | null;
+}
+
+/**
+ * Détermine si "Trouve le verset" est jouable en ce moment, selon les
+ * réglages admin : désactivation complète, ou créneau horaire optionnel
+ * (ignoré tant que verse_game_schedule_enabled est faux).
+ */
+export function getVerseGameAvailability(settings: SiteSettings): VerseGameAvailability {
+  const opensAt = settings.verse_game_schedule_start;
+  const closesAt = settings.verse_game_schedule_end;
+
+  if (!settings.verse_game_enabled) {
+    return { open: false, enabled: false, scheduleEnabled: settings.verse_game_schedule_enabled, opensAt, closesAt };
+  }
+  if (!settings.verse_game_schedule_enabled) {
+    return { open: true, enabled: true, scheduleEnabled: false, opensAt, closesAt };
+  }
+
+  const now = Date.now();
+  const start = opensAt ? new Date(opensAt).getTime() : null;
+  const end = closesAt ? new Date(closesAt).getTime() : null;
+  if (start !== null && Number.isFinite(start) && now < start) {
+    return { open: false, enabled: true, scheduleEnabled: true, opensAt, closesAt };
+  }
+  if (end !== null && Number.isFinite(end) && now > end) {
+    return { open: false, enabled: true, scheduleEnabled: true, opensAt, closesAt };
+  }
+  return { open: true, enabled: true, scheduleEnabled: true, opensAt, closesAt };
+}
 
 export const TEXT_SIZE_OPTIONS: { value: SiteSettings["text_size"]; label: string }[] = [
   { value: "normal", label: "Normal" },

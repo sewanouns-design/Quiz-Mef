@@ -182,6 +182,10 @@ export interface SiteSettings {
   returning_greeting: string;
   text_size: "normal" | "large" | "xlarge";
   about_text: string;
+  verse_game_enabled: boolean;
+  verse_game_schedule_enabled: boolean;
+  verse_game_schedule_start: string | null;
+  verse_game_schedule_end: string | null;
   updated_at: string;
 }
 

@@ -255,6 +255,14 @@ create table if not exists site_settings (
   text_size text not null default 'normal' check (text_size in ('normal', 'large', 'xlarge')),
   -- Texte affiché sur la page "À propos" (menu du site).
   about_text text not null default 'Quiz Biblique est un espace proposé par la Mission Évangélique de la Foi (MEF) pour permettre à chacun de tester et d''approfondir ses connaissances de la Parole de Dieu, de façon simple et conviviale. Un nouveau quiz est proposé chaque jour, avec des questions issues de la leçon du moment — seul ou en famille, à ton rythme.',
+  -- "Trouve le verset" : l'admin peut désactiver le jeu entièrement, et/ou
+  -- le limiter à un créneau horaire (verse_game_schedule_enabled) borné par
+  -- verse_game_schedule_start/_end — les deux colonnes de créneau restent
+  -- ignorées si le créneau n'est pas activé.
+  verse_game_enabled boolean not null default true,
+  verse_game_schedule_enabled boolean not null default false,
+  verse_game_schedule_start timestamptz,
+  verse_game_schedule_end timestamptz,
   updated_at timestamptz default now()
 );
 

@@ -3,6 +3,8 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { isSameOriginRequest } from "@/lib/auth";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/rate-limit";
 import { MAX_LEVEL } from "@/lib/verse-level";
+import { getSiteSettings, getVerseGameAvailability } from "@/lib/site-settings";
+import { verifyVerseGameSessionToken } from "@/lib/verse-game-session";
 
 export const dynamic = "force-dynamic";
 
@@ -36,11 +38,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const settings = await getSiteSettings();
+  if (!getVerseGameAvailability(settings).open) {
+    return NextResponse.json({ error: "Le jeu n'est pas disponible actuellement." }, { status: 403 });
+  }
+
   const body = await request.json().catch(() => ({}));
   const deviceKey = typeof body?.deviceKey === "string" ? body.deviceKey.trim() : "";
   const level = Number(body?.level);
   const score = Number(body?.score);
   const total = Number(body?.total);
+  const sessionToken = typeof body?.sessionToken === "string" ? body.sessionToken : "";
   const rawAnswers = Array.isArray(body?.answers) ? body.answers : [];
 
   if (
@@ -57,7 +65,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Données invalides." }, { status: 400 });
   }
 
-  const answers = rawAnswers
+  const answers: { verseId: string; correct: boolean }[] = rawAnswers
     .slice(0, MAX_ANSWERS_PER_REQUEST)
     .filter(
       (a: unknown): a is { verseId: string; correct: boolean } =>
@@ -66,6 +74,21 @@ export async function POST(request: NextRequest) {
         typeof (a as { verseId?: unknown }).verseId === "string" &&
         typeof (a as { correct?: unknown }).correct === "boolean"
     );
+
+  // Anti-triche : le jeton vient de /api/verse-game/questions et prouve que
+  // ces questions, pour ce niveau, ont bien été chargées il y a assez
+  // longtemps pour avoir pu être lues et répondues par un humain.
+  const sessionCheck = verifyVerseGameSessionToken(
+    sessionToken,
+    level,
+    answers.map((a) => a.verseId)
+  );
+  if (!sessionCheck.valid) {
+    return NextResponse.json(
+      { error: "Session de jeu invalide ou expirée — recharge la page et rejoue ce niveau." },
+      { status: 400 }
+    );
+  }
 
   const supabase = getSupabaseAdmin();
 

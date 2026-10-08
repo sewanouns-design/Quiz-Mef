@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { MAX_LEVEL } from "@/lib/verse-level";
+import { getSiteSettings, getVerseGameAvailability } from "@/lib/site-settings";
+import { createVerseGameSessionToken } from "@/lib/verse-game-session";
 import type { BibleVerse } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +49,19 @@ interface CompleteQuestion {
  * protéger — juste un retour immédiat au clic.
  */
 export async function GET(request: NextRequest) {
+  const settings = await getSiteSettings();
+  const availability = getVerseGameAvailability(settings);
+  if (!availability.open) {
+    return NextResponse.json(
+      {
+        error: availability.enabled
+          ? "Le jeu est actuellement fermé (hors créneau horaire)."
+          : "Le jeu \"Trouve le verset\" est actuellement désactivé.",
+      },
+      { status: 403 }
+    );
+  }
+
   const countParam = Number(request.nextUrl.searchParams.get("count"));
   const count =
     Number.isFinite(countParam) && countParam > 0 ? Math.min(countParam, MAX_COUNT) : DEFAULT_COUNT;
@@ -109,5 +124,10 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  return NextResponse.json({ questions, level });
+  const sessionToken = createVerseGameSessionToken(
+    level,
+    selected.map((v) => v.id)
+  );
+
+  return NextResponse.json({ questions, level, sessionToken });
 }
