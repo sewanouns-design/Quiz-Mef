@@ -10,13 +10,13 @@ const RATE_LIMIT_ROUTE = "verse-game-level-complete";
 const RATE_LIMIT_MAX = 60;
 const RATE_LIMIT_WINDOW_MINUTES = 15;
 const POINTS_PER_CORRECT = 10;
-const PASS_RATIO = 0.75;
+const PASS_RATIO = 1;
 
 /**
  * Enregistre la fin d'un niveau de "Trouve le verset" : ajoute les points
  * gagnés (10 par bonne réponse) au total cumulé, et débloque le niveau
  * suivant si le niveau joué est bien celui en cours (pas un niveau déjà
- * dépassé rejoué) et qu'au moins 75% des réponses sont correctes.
+ * dépassé rejoué) et que toutes les réponses sont correctes (8/8).
  * Aucune identification requise.
  */
 export async function POST(request: NextRequest) {
