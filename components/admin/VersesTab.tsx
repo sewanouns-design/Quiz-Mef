@@ -1,15 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { BibleVerse, VerseDifficulty } from "@/lib/types";
+import type { BibleVerse } from "@/lib/types";
 
 const PAGE_SIZE = 50;
-
-const DIFFICULTY_LABELS: Record<VerseDifficulty, string> = {
-  easy: "Facile",
-  medium: "Moyen",
-  hard: "Difficile",
-};
 
 export default function VersesTab() {
   const [verses, setVerses] = useState<BibleVerse[]>([]);
@@ -23,7 +17,7 @@ export default function VersesTab() {
   const [reference, setReference] = useState("");
   const [text, setText] = useState("");
   const [blankWord, setBlankWord] = useState("");
-  const [difficulty, setDifficulty] = useState<"" | VerseDifficulty>("");
+  const [level, setLevel] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -34,7 +28,7 @@ export default function VersesTab() {
   const [editReference, setEditReference] = useState("");
   const [editText, setEditText] = useState("");
   const [editBlankWord, setEditBlankWord] = useState("");
-  const [editDifficulty, setEditDifficulty] = useState<"" | VerseDifficulty>("");
+  const [editLevel, setEditLevel] = useState("");
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editError, setEditError] = useState("");
 
@@ -99,7 +93,7 @@ export default function VersesTab() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ reference, text, blankWord, difficulty: difficulty || null }),
+        body: JSON.stringify({ reference, text, blankWord, level: level ? Number(level) : null }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -112,7 +106,7 @@ export default function VersesTab() {
       setReference("");
       setText("");
       setBlankWord("");
-      setDifficulty("");
+      setLevel("");
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
@@ -131,13 +125,13 @@ export default function VersesTab() {
           reference: parts[0] ?? "",
           text: parts[1] ?? "",
           blankWord: parts[2] ?? "",
-          difficulty: parts[3] ?? "",
+          level: parts[3] ?? "",
         };
       });
   }
 
   async function importItems(
-    items: { reference: string; text: string; blankWord: string; difficulty?: string }[]
+    items: { reference: string; text: string; blankWord: string; level?: string }[]
   ) {
     setBulkSubmitting(true);
     setBulkError("");
@@ -288,7 +282,7 @@ export default function VersesTab() {
     setEditReference(v.reference);
     setEditText(v.text);
     setEditBlankWord(v.blank_word ?? "");
-    setEditDifficulty(v.difficulty ?? "");
+    setEditLevel(v.level ? String(v.level) : "");
     setEditError("");
   }
 
@@ -307,7 +301,7 @@ export default function VersesTab() {
           reference: editReference,
           text: editText,
           blankWord: editBlankWord,
-          difficulty: editDifficulty || null,
+          level: editLevel ? Number(editLevel) : null,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -372,20 +366,19 @@ export default function VersesTab() {
           />
         </div>
         <div>
-          <label className="label-field" htmlFor="verse-difficulty">
-            Difficulté (facultatif)
+          <label className="label-field" htmlFor="verse-level">
+            Niveau 1-100 (facultatif)
           </label>
-          <select
-            id="verse-difficulty"
+          <input
+            id="verse-level"
+            type="number"
+            min={1}
+            max={100}
             className="input-field"
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value as "" | VerseDifficulty)}
-          >
-            <option value="">Automatique (selon la longueur du texte)</option>
-            <option value="easy">Facile</option>
-            <option value="medium">Moyen</option>
-            <option value="hard">Difficile</option>
-          </select>
+            placeholder="Automatique (selon la longueur du texte)"
+            value={level}
+            onChange={(e) => setLevel(e.target.value)}
+          />
         </div>
         {formError && <p className="text-sm font-medium text-red-600">{formError}</p>}
         <button
@@ -402,7 +395,7 @@ export default function VersesTab() {
         <p className="text-xs text-gray-500">
           Un verset par ligne, champs séparés par <code className="rounded bg-gray-100 px-1">|</code> :{" "}
           <code className="rounded bg-gray-100 px-1">
-            Référence | Texte complet | Mot à deviner (facultatif) | Difficulté easy/medium/hard (facultatif)
+            Référence | Texte complet | Mot à deviner (facultatif) | Niveau 1-100 (facultatif)
           </code>
           <br />
           Exemple : <code className="rounded bg-gray-100 px-1">
@@ -533,16 +526,15 @@ export default function VersesTab() {
                     onChange={(e) => setEditBlankWord(e.target.value)}
                     placeholder="Mot à deviner (facultatif)"
                   />
-                  <select
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
                     className="input-field"
-                    value={editDifficulty}
-                    onChange={(e) => setEditDifficulty(e.target.value as "" | VerseDifficulty)}
-                  >
-                    <option value="">Automatique (selon la longueur du texte)</option>
-                    <option value="easy">Facile</option>
-                    <option value="medium">Moyen</option>
-                    <option value="hard">Difficile</option>
-                  </select>
+                    placeholder="Niveau 1-100 (automatique si vide)"
+                    value={editLevel}
+                    onChange={(e) => setEditLevel(e.target.value)}
+                  />
                   {editError && <p className="text-sm font-medium text-red-600">{editError}</p>}
                   <div className="flex gap-2">
                     <button
@@ -576,9 +568,9 @@ export default function VersesTab() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-navy">{v.reference}</p>
-                      {v.difficulty && (
+                      {v.level && (
                         <span className="shrink-0 rounded-full bg-navy/5 px-2 py-0.5 text-[11px] font-semibold text-navy/70">
-                          {DIFFICULTY_LABELS[v.difficulty]}
+                          Niveau {v.level}
                         </span>
                       )}
                     </div>

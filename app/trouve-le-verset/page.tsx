@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import { getOrCreateAnonymousDeviceKey } from "@/lib/participant-storage";
+import { MAX_LEVEL } from "@/lib/verse-level";
 
 interface ReferenceQuestion {
   type: "reference";
@@ -28,7 +29,7 @@ type Question = ReferenceQuestion | CompleteQuestion;
 interface LeaderboardEntry {
   displayName: string;
   score: number;
-  total: number;
+  level: number;
 }
 
 const QUESTIONS_PER_GAME = 8;
@@ -49,11 +50,10 @@ function scoreMessage(score: number, total: number): string {
 
 /**
  * Bandeau de classement "en direct" : une seule colonne qui défile vers le
- * haut en continu (prénom + score, triés du plus haut au plus bas), plutôt
- * qu'une liste statique à rafraîchir manuellement — l'impression recherchée
- * est celle d'un classement qui "se passe à l'instant", pas un tableau figé.
- * Le contenu est dupliqué pour boucler sans à-coup ; les nouvelles données
- * (sondées toutes les 5s) remplacent la liste en douceur, défilement compris.
+ * haut en continu (prénom + points cumulés, triés du plus haut au plus
+ * bas), plutôt qu'une liste statique à rafraîchir manuellement. Le contenu
+ * est dupliqué pour boucler sans à-coup ; les nouvelles données (sondées
+ * toutes les 5s) remplacent la liste en douceur, défilement compris.
  */
 function LiveLeaderboardTicker({ entries }: { entries: LeaderboardEntry[] }) {
   if (entries.length === 0) {
@@ -88,9 +88,7 @@ function LiveLeaderboardTicker({ entries }: { entries: LeaderboardEntry[] }) {
               <span className="text-xs text-gray-400">#{(i % limited.length) + 1}</span>
               {e.displayName}
             </span>
-            <span className="font-bold text-accent-dark">
-              {e.score} pt{e.score > 1 ? "s" : ""}
-            </span>
+            <span className="font-bold text-accent-dark">{e.score} pts</span>
           </div>
         ))}
       </div>
@@ -101,6 +99,12 @@ function LiveLeaderboardTicker({ entries }: { entries: LeaderboardEntry[] }) {
 
 export default function VerseGamePage() {
   const [deviceKey, setDeviceKey] = useState("");
+
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [selectedLevel, setSelectedLevel] = useState(1);
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [progressLoaded, setProgressLoaded] = useState(false);
+
   const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -108,15 +112,14 @@ export default function VerseGamePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [finished, setFinished] = useState(false);
+  const [pointsEarned, setPointsEarned] = useState(0);
+  const [justLeveledUp, setJustLeveledUp] = useState(false);
+  const autoAdvanceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [myRank, setMyRank] = useState<number | null>(null);
-  const [myBestScore, setMyBestScore] = useState<number | null>(null);
-  const [myBestTotal, setMyBestTotal] = useState<number | null>(null);
   const [totalPlayers, setTotalPlayers] = useState(0);
-  const [justBeatBest, setJustBeatBest] = useState(false);
 
   const [showLeaderboard, setShowLeaderboard] = useState(true);
-  const autoAdvanceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
@@ -129,30 +132,41 @@ export default function VerseGamePage() {
           entries: LeaderboardEntry[];
           totalPlayers: number;
           myRank: number | null;
-          myScore: number | null;
-          myTotal: number | null;
         } | null) => {
           if (!data) return;
           setLeaderboardEntries(data.entries ?? []);
           setTotalPlayers(data.totalPlayers ?? 0);
           setMyRank(data.myRank);
-          setMyBestScore(data.myScore);
-          setMyBestTotal(data.myTotal);
         }
       )
       .catch(() => {})
       .finally(() => setLeaderboardLoading(false));
   }
 
-  function loadGame() {
+  function loadProgress(key: string) {
+    return fetch(`/api/verse-game/progress?deviceKey=${encodeURIComponent(key)}`, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { currentLevel: number; totalPoints: number } | null) => {
+        if (!data) return 1;
+        setCurrentLevel(data.currentLevel);
+        setSelectedLevel(data.currentLevel);
+        setTotalPoints(data.totalPoints);
+        return data.currentLevel;
+      })
+      .catch(() => 1)
+      .finally(() => setProgressLoaded(true));
+  }
+
+  function loadGame(level: number) {
     setLoading(true);
     setError("");
     setIndex(0);
     setScore(0);
     setSelected(null);
     setFinished(false);
-    setJustBeatBest(false);
-    fetch(`/api/verse-game/questions?count=${QUESTIONS_PER_GAME}`, { cache: "no-store" })
+    setJustLeveledUp(false);
+    setPointsEarned(0);
+    fetch(`/api/verse-game/questions?count=${QUESTIONS_PER_GAME}&level=${level}`, { cache: "no-store" })
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
@@ -168,14 +182,14 @@ export default function VerseGamePage() {
     const key = getOrCreateAnonymousDeviceKey();
     setDeviceKey(key);
     loadLeaderboard(key);
-    loadGame();
+    loadProgress(key).then((level) => loadGame(level));
     return () => {
       if (autoAdvanceTimeout.current) clearTimeout(autoAdvanceTimeout.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Rafraîchit le classement toutes les 10s tant que le panneau est ouvert,
+  // Rafraîchit le classement toutes les 5s tant que le panneau est ouvert,
   // pour donner une impression de classement "en direct".
   useEffect(() => {
     if (!showLeaderboard || !deviceKey) return;
@@ -204,28 +218,41 @@ export default function VerseGamePage() {
       setFinished(true);
       if (deviceKey) {
         try {
-          const res = await fetch("/api/verse-game/score", {
+          const res = await fetch("/api/verse-game/level-complete", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             cache: "no-store",
-            body: JSON.stringify({ deviceKey, score, total: questions.length }),
+            body: JSON.stringify({ deviceKey, level: selectedLevel, score, total: questions.length }),
           });
           const data = await res.json().catch(() => ({}));
           if (res.ok) {
-            setJustBeatBest(Boolean(data.isNewBest));
+            setPointsEarned(data.pointsEarned ?? 0);
+            setJustLeveledUp(Boolean(data.leveledUp));
+            setTotalPoints(data.totalPoints ?? totalPoints);
+            setCurrentLevel(data.currentLevel ?? currentLevel);
             setMyRank(data.rank ?? null);
-            setMyBestScore(data.bestScore ?? null);
-            setMyBestTotal(questions.length);
             loadLeaderboard(deviceKey);
           }
         } catch {
-          // Score non enregistré, tant pis — le jeu reste jouable.
+          // Progression non enregistrée, tant pis — le jeu reste jouable.
         }
       }
       return;
     }
     setIndex((i) => i + 1);
     setSelected(null);
+  }
+
+  function changeLevel(delta: number) {
+    const next = Math.min(currentLevel, Math.max(1, selectedLevel + delta));
+    if (next === selectedLevel) return;
+    setSelectedLevel(next);
+    loadGame(next);
+  }
+
+  function handleNextLevel() {
+    setSelectedLevel(currentLevel);
+    loadGame(currentLevel);
   }
 
   return (
@@ -239,17 +266,40 @@ export default function VerseGamePage() {
             </div>
             <h1 className="text-2xl font-bold text-navy">Trouve le verset</h1>
             <p className="mt-1 text-gray-600">
-              Devine la référence ou complète le texte — joue autant de fois que tu veux.
+              Devine la référence ou complète le texte — monte de niveau en niveau.
             </p>
           </div>
 
-          <div className="mb-6 flex flex-wrap justify-center gap-3">
-            {myBestScore !== null && (
-              <div className="rounded-2xl border-2 border-navy/15 bg-white px-4 py-2.5 text-center text-sm font-semibold text-navy shadow-sm">
-                🌟 Meilleur score : {myBestScore} / {myBestTotal}
-                {myRank && <span className="text-gray-400"> · #{myRank}</span>}
+          {progressLoaded && (
+            <div className="mb-6 flex items-center justify-between gap-2 rounded-2xl border-2 border-navy/15 bg-white px-3 py-2.5 shadow-sm">
+              <button
+                type="button"
+                onClick={() => changeLevel(-1)}
+                disabled={selectedLevel <= 1 || loading}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-navy disabled:opacity-30"
+                aria-label="Niveau précédent"
+              >
+                ←
+              </button>
+              <div className="text-center">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  Niveau {selectedLevel} / {MAX_LEVEL}
+                </p>
+                <p className="text-sm font-bold text-navy">🏅 {totalPoints} points</p>
               </div>
-            )}
+              <button
+                type="button"
+                onClick={() => changeLevel(1)}
+                disabled={selectedLevel >= currentLevel || loading}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-navy disabled:opacity-30"
+                aria-label="Niveau suivant"
+              >
+                →
+              </button>
+            </div>
+          )}
+
+          <div className="mb-6 flex flex-wrap justify-center gap-3">
             <button
               type="button"
               onClick={() => setShowLeaderboard((v) => !v)}
@@ -292,7 +342,11 @@ export default function VerseGamePage() {
           {!loading && error && (
             <div className="card text-center">
               <p className="text-sm font-medium text-red-600">{error}</p>
-              <button type="button" onClick={loadGame} className="btn-secondary mt-4">
+              <button
+                type="button"
+                onClick={() => loadGame(selectedLevel)}
+                className="btn-secondary mt-4"
+              >
                 Réessayer
               </button>
             </div>
@@ -301,13 +355,16 @@ export default function VerseGamePage() {
           {!loading && !error && finished && (
             <div className="card text-center">
               <p className="text-sm font-semibold uppercase tracking-wide text-accent-dark">
-                Partie terminée
+                Niveau {selectedLevel} terminé
               </p>
               <p className="mt-2 text-4xl font-extrabold text-navy">
                 {score} / {questions.length}
               </p>
-              {justBeatBest && (
-                <p className="mt-1 text-sm font-semibold text-accent-dark">🎉 Nouveau meilleur score !</p>
+              <p className="mt-1 text-sm font-semibold text-accent-dark">+{pointsEarned} points</p>
+              {justLeveledUp && (
+                <p className="mt-1 text-sm font-semibold text-green-700">
+                  🎉 Niveau {currentLevel} débloqué !
+                </p>
               )}
               {myRank && (
                 <p className="mt-1 text-sm text-gray-500">
@@ -316,9 +373,15 @@ export default function VerseGamePage() {
               )}
               <p className="mt-3 text-gray-600">{scoreMessage(score, questions.length)}</p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-                <button type="button" onClick={loadGame} className="btn-accent">
-                  🔁 Rejouer
-                </button>
+                {justLeveledUp ? (
+                  <button type="button" onClick={handleNextLevel} className="btn-accent">
+                    ⬆️ Niveau suivant
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => loadGame(selectedLevel)} className="btn-accent">
+                    🔁 Rejouer ce niveau
+                  </button>
+                )}
                 <Link href="/" className="btn-secondary">
                   🏠 Accueil
                 </Link>
@@ -329,7 +392,7 @@ export default function VerseGamePage() {
           {!loading && !error && !finished && current && (
             <div className="card">
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Question {index + 1} / {questions.length} · Score : {score}
+                Niveau {selectedLevel} · Question {index + 1} / {questions.length} · Score : {score}
               </p>
 
               {current.type === "reference" ? (

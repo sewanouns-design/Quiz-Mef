@@ -13,6 +13,7 @@ const RESTORE_ORDER = [
   "site_settings",
   "bible_verses",
   "verse_game_scores",
+  "verse_game_progress",
   "site_updates",
   "daily_quizzes",
   "daily_questions",

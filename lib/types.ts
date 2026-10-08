@@ -37,6 +37,8 @@ export type PublicQuestion = Omit<
   "correct_option" | "correct_text" | "justification"
 >;
 
+/** Ancien champ à 3 paliers, conservé en base mais plus utilisé par le jeu
+ * (remplacé par `level`, 1 à 100 — voir lib/verse-level.ts). */
 export type VerseDifficulty = "easy" | "medium" | "hard";
 
 export interface BibleVerse {
@@ -45,6 +47,7 @@ export interface BibleVerse {
   text: string;
   blank_word: string | null;
   difficulty: VerseDifficulty | null;
+  level: number | null;
   created_at: string;
 }
 
@@ -54,6 +57,14 @@ export interface VerseGameScore {
   best_score: number;
   total_questions: number;
   games_played: number;
+  updated_at: string;
+}
+
+export interface VerseGameProgress {
+  id: string;
+  device_key: string;
+  current_level: number;
+  total_points: number;
   updated_at: string;
 }
 

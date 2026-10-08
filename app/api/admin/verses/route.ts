@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
+import { resolveVerseLevel } from "@/lib/verse-level";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,6 @@ const MAX_TEXT_LENGTH = 2000;
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
 const MAX_BULK_DELETE = 500;
-const VALID_DIFFICULTIES = ["easy", "medium", "hard"];
 
 /**
  * Liste paginée (et filtrable par référence/texte) plutôt qu'un chargement
@@ -63,7 +63,6 @@ export async function POST(request: NextRequest) {
   const reference = typeof body?.reference === "string" ? body.reference.trim() : "";
   const text = typeof body?.text === "string" ? body.text.trim() : "";
   const blankWord = typeof body?.blankWord === "string" ? body.blankWord.trim() : "";
-  const difficulty = VALID_DIFFICULTIES.includes(body?.difficulty) ? body.difficulty : null;
 
   if (!reference || !text) {
     return NextResponse.json({ error: "La référence et le texte sont requis." }, { status: 400 });
@@ -78,10 +77,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const level = resolveVerseLevel(body?.level, text);
+
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("bible_verses")
-    .insert({ reference, text, blank_word: blankWord || null, difficulty })
+    .insert({ reference, text, blank_word: blankWord || null, level })
     .select()
     .single();
 

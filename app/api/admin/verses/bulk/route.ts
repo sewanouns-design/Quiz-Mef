@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
+import { resolveVerseLevel } from "@/lib/verse-level";
 
 export const dynamic = "force-dynamic";
 
@@ -16,13 +17,12 @@ const MAX_ITEMS_PER_REQUEST = 1000;
 // upsert portant sur trop de lignes à la fois peut dépasser les limites de
 // la base, donc on le découpe aussi côté serveur.
 const DB_CHUNK_SIZE = 200;
-const VALID_DIFFICULTIES = ["easy", "medium", "hard"];
 
 interface RawVerseItem {
   reference?: unknown;
   text?: unknown;
   blankWord?: unknown;
-  difficulty?: unknown;
+  level?: unknown;
 }
 
 export async function POST(request: NextRequest) {
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     reference: string;
     text: string;
     blank_word: string | null;
-    difficulty: string | null;
+    level: number;
   }[] = [];
   const rejected: { line: number; reason: string }[] = [];
   const seenReferences = new Set<string>();
@@ -59,8 +59,7 @@ export async function POST(request: NextRequest) {
     const reference = typeof item.reference === "string" ? item.reference.trim() : "";
     const text = typeof item.text === "string" ? item.text.trim() : "";
     const blankWord = typeof item.blankWord === "string" ? item.blankWord.trim() : "";
-    const difficultyRaw = typeof item.difficulty === "string" ? item.difficulty.trim().toLowerCase() : "";
-    const difficulty = VALID_DIFFICULTIES.includes(difficultyRaw) ? difficultyRaw : null;
+    const level = resolveVerseLevel(item.level, text);
 
     if (!reference || !text) {
       rejected.push({ line: index + 1, reason: "référence ou texte manquant" });
@@ -82,12 +81,12 @@ export async function POST(request: NextRequest) {
         reference,
         text,
         blank_word: blankWord || null,
-        difficulty,
+        level,
       };
       return;
     }
     seenReferences.add(reference);
-    rows.push({ reference, text, blank_word: blankWord || null, difficulty });
+    rows.push({ reference, text, blank_word: blankWord || null, level });
   });
 
   if (rows.length === 0) {

@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { getVerseDifficulty } from "@/lib/verse-difficulty";
+import { MAX_LEVEL } from "@/lib/verse-level";
 import type { BibleVerse } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 const DEFAULT_COUNT = 8;
 const MAX_COUNT = 20;
-// Taille du lot aléatoire tiré de la banque entière (via la fonction SQL
-// get_random_bible_verses, voir migration) pour constituer à la fois les
-// questions et les leurres, et avoir assez de versets de chaque difficulté
-// pour construire une progression facile → difficile : large par rapport à
-// `count`, mais indépendant de la taille totale de la banque (10 versets ou
-// 30 000, même coût).
-const RANDOM_POOL_SIZE = 150;
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -43,78 +36,47 @@ interface CompleteQuestion {
 }
 
 /**
- * Construit la liste finale de versets à utiliser pour les questions :
- * mélangée aléatoirement À L'INTÉRIEUR de chaque palier de difficulté (donc
- * différente d'une partie à l'autre, même pour le même joueur), mais les
- * paliers eux-mêmes s'enchaînent toujours facile → moyen → difficile, pour
- * une difficulté progressive au fil de la partie.
- */
-function buildProgressivePool(pool: BibleVerse[], count: number): BibleVerse[] {
-  const byTier: Record<"easy" | "medium" | "hard", BibleVerse[]> = {
-    easy: [],
-    medium: [],
-    hard: [],
-  };
-  for (const verse of shuffle(pool)) {
-    byTier[getVerseDifficulty(verse)].push(verse);
-  }
-
-  const perTier = Math.ceil(count / 3);
-  const ordered: BibleVerse[] = [];
-  const tiers: ("easy" | "medium" | "hard")[] = ["easy", "medium", "hard"];
-
-  for (const tier of tiers) {
-    ordered.push(...byTier[tier].splice(0, perTier));
-  }
-
-  // Si un palier n'avait pas assez de versets, complète avec ce qu'il reste
-  // (quel que soit le palier), toujours en respectant l'ordre facile → dur.
-  if (ordered.length < count) {
-    const leftovers = [...byTier.easy, ...byTier.medium, ...byTier.hard];
-    ordered.push(...leftovers.slice(0, count - ordered.length));
-  }
-
-  return ordered.slice(0, count);
-}
-
-/**
- * Banque de questions pour "Trouve le verset" : jeu permanent, rejouable à
- * tout moment, sans identification. Les bonnes réponses sont incluses dans
- * la réponse (contrairement au quiz du jour) car il n'y a ici aucun enjeu de
- * classement ou d'anti-triche à protéger — juste un retour immédiat au clic.
+ * Banque de questions pour "Trouve le verset" : jeu à 100 niveaux, chacun
+ * piochant exclusivement dans les versets de ce niveau (voir
+ * get_random_bible_verses_by_level, migration verse_game_levels) — niveau 1
+ * les versets les plus courts/faciles, niveau 100 les plus longs/difficiles.
+ * Mélangé aléatoirement à chaque partie, différemment pour chaque joueur.
  *
- * Le tirage passe par la fonction SQL get_random_bible_verses plutôt que de
- * charger toute la table : avec une banque de plusieurs milliers de versets
- * (ex. la Bible complète), récupérer tout en mémoire à chaque partie serait
- * lent et ne piocherait de toute façon pas vraiment au hasard dans
- * l'ensemble (l'API Supabase plafonne une requête à 1000 lignes).
+ * Les bonnes réponses sont incluses dans la réponse (contrairement au quiz
+ * du jour) car il n'y a ici aucun enjeu de classement anti-triche à
+ * protéger — juste un retour immédiat au clic.
  */
 export async function GET(request: NextRequest) {
   const countParam = Number(request.nextUrl.searchParams.get("count"));
   const count =
     Number.isFinite(countParam) && countParam > 0 ? Math.min(countParam, MAX_COUNT) : DEFAULT_COUNT;
 
+  const levelParam = Number(request.nextUrl.searchParams.get("level"));
+  const level =
+    Number.isFinite(levelParam) && levelParam >= 1 && levelParam <= MAX_LEVEL ? Math.floor(levelParam) : 1;
+
   const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase.rpc("get_random_bible_verses", {
-    limit_count: Math.max(RANDOM_POOL_SIZE, count * 8),
+  const { data, error } = await supabase.rpc("get_random_bible_verses_by_level", {
+    lvl: level,
+    limit_count: Math.max(count * 4, 40),
   });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const randomPool = (data ?? []) as BibleVerse[];
-  if (randomPool.length < 4) {
+  const pool = (data ?? []) as BibleVerse[];
+  if (pool.length < 4) {
     return NextResponse.json(
-      { error: "Pas encore assez de versets enregistrés pour jouer." },
+      { error: "Pas encore assez de versets enregistrés à ce niveau pour jouer." },
       { status: 400 }
     );
   }
 
-  const withBlank = randomPool.filter((v) => v.blank_word && v.text.includes(v.blank_word));
-  const pool = buildProgressivePool(randomPool, Math.min(count, randomPool.length));
+  const withBlank = pool.filter((v) => v.blank_word && v.text.includes(v.blank_word));
+  const selected = shuffle(pool).slice(0, Math.min(count, pool.length));
 
-  const questions: (ReferenceQuestion | CompleteQuestion)[] = pool.map((verse) => {
+  const questions: (ReferenceQuestion | CompleteQuestion)[] = selected.map((verse) => {
     const canComplete =
       Boolean(verse.blank_word) && verse.text.includes(verse.blank_word as string) && withBlank.length >= 4;
     const useComplete = canComplete && Math.random() < 0.5;
@@ -137,10 +99,7 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    const decoyRefs = shuffle(randomPool.filter((v) => v.id !== verse.id).map((v) => v.reference)).slice(
-      0,
-      3
-    );
+    const decoyRefs = shuffle(pool.filter((v) => v.id !== verse.id).map((v) => v.reference)).slice(0, 3);
     return {
       type: "reference",
       verseId: verse.id,
@@ -150,5 +109,5 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  return NextResponse.json({ questions });
+  return NextResponse.json({ questions, level });
 }

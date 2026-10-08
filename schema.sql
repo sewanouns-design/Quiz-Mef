@@ -352,12 +352,18 @@ create table if not exists bible_verses (
   -- variante "complète le texte". Facultatif : sans ça, le verset n'est
   -- utilisé que pour la variante "devine la référence".
   blank_word text,
-  -- Facultatif : si l'admin ne le renseigne pas, la difficulté est déduite
-  -- automatiquement à la volée (longueur du texte) côté jeu — voir
-  -- lib/verse-difficulty.ts.
+  -- Ancien champ à 3 paliers, conservé pour ne pas perdre de données mais
+  -- plus utilisé par le jeu depuis l'introduction de `level` (100 paliers).
   difficulty text check (difficulty in ('easy', 'medium', 'hard')),
+  -- Niveau 1 à 100 : 1 = le plus facile (texte court), 100 = le plus
+  -- difficile (texte long). Calculé automatiquement si l'admin ne le
+  -- renseigne pas — voir lib/verse-level.ts pour les seuils de longueur.
+  level smallint check (level between 1 and 100),
   created_at timestamptz default now()
 );
+
+create index if not exists idx_bible_verses_created_at on bible_verses (created_at);
+create index if not exists idx_bible_verses_level on bible_verses (level);
 
 -- Tirage aléatoire indépendant de la taille de la table (voir
 -- app/api/verse-game/questions/route.ts) : une requête Supabase classique
@@ -371,15 +377,22 @@ as $$
   select * from bible_verses order by random() limit limit_count;
 $$;
 
-create index if not exists idx_bible_verses_created_at on bible_verses (created_at);
+-- Même principe, mais limité à un niveau précis (1-100) : c'est la fonction
+-- utilisée pour construire les questions d'une partie, chaque niveau étant
+-- joué séparément (voir verse_game_progress plus bas).
+create or replace function get_random_bible_verses_by_level(lvl int, limit_count int)
+returns setof bible_verses
+language sql
+stable
+as $$
+  select * from bible_verses where level = lvl order by random() limit limit_count;
+$$;
 
 -- ------------------------------------------------------------
--- Meilleur score de "Trouve le verset", par appareil. Volontairement sans
--- clé étrangère vers participants : jouer ne nécessite aucune
--- identification, donc device_key peut ne correspondre à aucune fiche
--- participant. Le classement public (voir la route leaderboard) ne montre
--- un nom que pour les device_key qui correspondent à un participant ayant
--- activé "Afficher mon prénom dans le classement".
+-- Meilleur score d'UNE partie (8 questions) de "Trouve le verset", par
+-- appareil — conservé pour compatibilité, mais le classement public se base
+-- désormais sur verse_game_progress.total_points (cumul sur tous les
+-- niveaux), plus représentatif de la progression réelle.
 -- ------------------------------------------------------------
 create table if not exists verse_game_scores (
   id uuid primary key default gen_random_uuid(),
@@ -391,6 +404,22 @@ create table if not exists verse_game_scores (
 );
 
 create index if not exists idx_verse_game_scores_best_score on verse_game_scores (best_score desc);
+
+-- ------------------------------------------------------------
+-- Progression par appareil dans "Trouve le verset" : niveau le plus haut
+-- débloqué (on commence au niveau 1, jusqu'à 100) et points cumulés au fil
+-- des niveaux réussis. Comme verse_game_scores, volontairement sans FK vers
+-- participants : jouer ne nécessite aucune identification.
+-- ------------------------------------------------------------
+create table if not exists verse_game_progress (
+  id uuid primary key default gen_random_uuid(),
+  device_key text not null unique,
+  current_level int not null default 1 check (current_level between 1 and 100),
+  total_points int not null default 0,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_verse_game_progress_points on verse_game_progress (total_points desc);
 
 -- ------------------------------------------------------------
 -- Nouveautés du site, affichées brièvement (pop-up fermable) aux visiteurs
@@ -431,4 +460,5 @@ alter table admin_activity_log enable row level security;
 alter table push_subscriptions enable row level security;
 alter table bible_verses enable row level security;
 alter table verse_game_scores enable row level security;
+alter table verse_game_progress enable row level security;
 alter table site_updates enable row level security;

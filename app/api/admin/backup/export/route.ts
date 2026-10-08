@@ -137,12 +137,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: suggestionsError.message }, { status: 500 });
   }
 
-  const { data: bibleVerses, error: bibleVersesError } = await supabase
-    .from("bible_verses")
-    .select("*")
-    .order("created_at", { ascending: true });
-  if (bibleVersesError) {
-    return NextResponse.json({ error: bibleVersesError.message }, { status: 500 });
+  // bible_verses peut compter plusieurs dizaines de milliers de lignes (ex.
+  // la Bible complète) : une seule requête Supabase plafonne à 1000 lignes,
+  // donc on la pagine pour ne rien perdre dans la sauvegarde.
+  const bibleVerses: unknown[] = [];
+  const BIBLE_VERSES_PAGE_SIZE = 1000;
+  for (let from = 0; ; from += BIBLE_VERSES_PAGE_SIZE) {
+    const { data: page, error: pageError } = await supabase
+      .from("bible_verses")
+      .select("*")
+      .order("created_at", { ascending: true })
+      .range(from, from + BIBLE_VERSES_PAGE_SIZE - 1);
+    if (pageError) {
+      return NextResponse.json({ error: pageError.message }, { status: 500 });
+    }
+    bibleVerses.push(...(page ?? []));
+    if (!page || page.length < BIBLE_VERSES_PAGE_SIZE) break;
   }
 
   const { data: verseGameScores, error: verseGameScoresError } = await supabase
@@ -151,6 +161,14 @@ export async function GET(request: NextRequest) {
     .order("best_score", { ascending: false });
   if (verseGameScoresError) {
     return NextResponse.json({ error: verseGameScoresError.message }, { status: 500 });
+  }
+
+  const { data: verseGameProgress, error: verseGameProgressError } = await supabase
+    .from("verse_game_progress")
+    .select("*")
+    .order("total_points", { ascending: false });
+  if (verseGameProgressError) {
+    return NextResponse.json({ error: verseGameProgressError.message }, { status: 500 });
   }
 
   const { data: siteUpdates, error: siteUpdatesError } = await supabase
@@ -181,8 +199,9 @@ export async function GET(request: NextRequest) {
     lesson_questions: lessonQuestions ?? [],
     lesson_question_replies: lessonQuestionReplies,
     suggestions: suggestions ?? [],
-    bible_verses: bibleVerses ?? [],
+    bible_verses: bibleVerses,
     verse_game_scores: verseGameScores ?? [],
+    verse_game_progress: verseGameProgress ?? [],
     site_updates: siteUpdates ?? [],
     admin_activity_log: adminActivityLog ?? [],
   };
