@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     const text = typeof item.text === "string" ? item.text.trim() : "";
     const blankWord = typeof item.blankWord === "string" ? item.blankWord.trim() : "";
     const explicitLevel = hasExplicitLevel(item.level);
-    const level = resolveVerseLevel(item.level, text);
+    const level = resolveVerseLevel(item.level, text, reference);
 
     if (!reference || !text) {
       rejected.push({ line: index + 1, reason: "référence ou texte manquant" });

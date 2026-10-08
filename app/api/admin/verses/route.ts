@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const level = resolveVerseLevel(body?.level, text);
+  const level = resolveVerseLevel(body?.level, text, reference);
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase

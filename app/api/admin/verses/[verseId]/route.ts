@@ -24,7 +24,7 @@ export async function PATCH(
 
   const { data: existing, error: fetchError } = await supabase
     .from("bible_verses")
-    .select("text")
+    .select("text, reference")
     .eq("id", params.verseId)
     .maybeSingle();
   if (fetchError) {
@@ -62,7 +62,8 @@ export async function PATCH(
   }
   if (body?.level !== undefined) {
     const textToCheck = (updates.text as string | undefined) ?? existing.text;
-    updates.level = resolveVerseLevel(body.level, textToCheck);
+    const referenceToCheck = (updates.reference as string | undefined) ?? existing.reference;
+    updates.level = resolveVerseLevel(body.level, textToCheck, referenceToCheck);
   }
 
   if (Object.keys(updates).length === 0) {
