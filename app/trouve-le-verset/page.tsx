@@ -650,6 +650,23 @@ export default function VerseGamePage() {
             </p>
           </div>
 
+          <div className="mb-6 rounded-2xl border-2 border-navy/10 bg-white p-4 text-sm text-gray-600">
+            <p className="mb-2 font-semibold text-navy">📜 Règles du jeu</p>
+            <ul className="list-disc space-y-1 pl-5">
+              <li>100 niveaux, du plus facile au plus difficile.</li>
+              <li>
+                Chaque niveau compte {QUESTIONS_PER_GAME} questions : devine la référence du verset, ou le
+                mot manquant.
+              </li>
+              <li>
+                Au moins {Math.round(PASS_RATIO * 100)}% de bonnes réponses pour débloquer le niveau
+                suivant — sinon, il faut le rejouer.
+              </li>
+              <li>10 points par bonne réponse, même en rejouant un niveau déjà réussi.</li>
+              <li>Le classement se base sur le total de points cumulés sur tous les niveaux.</li>
+            </ul>
+          </div>
+
           {availability === null && <p className="text-center text-gray-400">Chargement...</p>}
 
           {availability && !availability.open && (
@@ -694,10 +711,11 @@ export default function VerseGamePage() {
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                       Niveau {selectedLevel} / {MAX_LEVEL}
                     </p>
-                    <p className="text-sm font-bold text-navy">
+                    <Link href="/trouve-le-verset/classement" className="text-sm font-bold text-navy">
                       🏅 {totalPoints} points
                       {myRank && <span className="text-gray-400"> · #{myRank}/{totalPlayers}</span>}
-                    </p>
+                      <span className="ml-1 text-accent-dark">· Classement</span>
+                    </Link>
                   </div>
                   <button
                     type="button"
