@@ -100,7 +100,7 @@ function IdentificationGate({ onIdentified }: { onIdentified: () => void }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [showInLeaderboard, setShowInLeaderboard] = useState(false);
+  const [showInLeaderboard, setShowInLeaderboard] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 

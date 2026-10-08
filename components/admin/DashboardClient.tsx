@@ -13,6 +13,7 @@ import LessonQuestionsTab from "./LessonQuestionsTab";
 import SuggestionsTab from "./SuggestionsTab";
 import BackupTab from "./BackupTab";
 import VersesTab from "./VersesTab";
+import VerseGamePlayersTab from "./VerseGamePlayersTab";
 import UpdatesTab from "./UpdatesTab";
 
 const TABS = [
@@ -24,6 +25,7 @@ const TABS = [
   { id: "results", label: "Résultats", icon: "🏆" },
   { id: "leaderboard", label: "Classement", icon: "🥇" },
   { id: "verses", label: "Trouve le verset", icon: "📖" },
+  { id: "verse-game-players", label: "Joueurs du jeu", icon: "🎮" },
   { id: "updates", label: "Nouveautés", icon: "🆕" },
   { id: "settings", label: "Personnalisation", icon: "🎨" },
   { id: "backup", label: "Sauvegarde", icon: "💾" },
@@ -87,6 +89,7 @@ export default function DashboardClient() {
           {activeTab === "results" && <ResultsTab />}
           {activeTab === "leaderboard" && <LeaderboardTab />}
           {activeTab === "verses" && <VersesTab />}
+          {activeTab === "verse-game-players" && <VerseGamePlayersTab />}
           {activeTab === "updates" && <UpdatesTab />}
           {activeTab === "settings" && <SettingsTab />}
           {activeTab === "backup" && <BackupTab />}

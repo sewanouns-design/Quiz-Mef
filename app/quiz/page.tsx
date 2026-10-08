@@ -29,7 +29,7 @@ function QuizIdentificationForm() {
   const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [showInLeaderboard, setShowInLeaderboard] = useState(false);
+  const [showInLeaderboard, setShowInLeaderboard] = useState(true);
   const [loading, setLoading] = useState(false);
   const [checkingQuiz, setCheckingQuiz] = useState(true);
   const [error, setError] = useState("");
