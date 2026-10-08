@@ -32,8 +32,11 @@ interface LeaderboardEntry {
 }
 
 const QUESTIONS_PER_GAME = 8;
-const LEADERBOARD_POLL_MS = 10000;
-const MEDALS = ["🥇", "🥈", "🥉"];
+const LEADERBOARD_POLL_MS = 5000;
+const MAX_TICKER_ENTRIES = 10;
+const TICKER_ROW_HEIGHT_PX = 40;
+const TICKER_VISIBLE_ROWS = 4;
+const TICKER_SECONDS_PER_ROW = 2.2;
 
 function scoreMessage(score: number, total: number): string {
   const percent = (score / total) * 100;
@@ -41,6 +44,58 @@ function scoreMessage(score: number, total: number): string {
   if (percent >= 70) return "Très bien joué ! 👏";
   if (percent >= 40) return "Pas mal, continue à t'entraîner ! 💪";
   return "Rejoue pour mieux les retenir. 📖";
+}
+
+/**
+ * Bandeau de classement "en direct" : une seule colonne qui défile vers le
+ * haut en continu (prénom + score, triés du plus haut au plus bas), plutôt
+ * qu'une liste statique à rafraîchir manuellement — l'impression recherchée
+ * est celle d'un classement qui "se passe à l'instant", pas un tableau figé.
+ * Le contenu est dupliqué pour boucler sans à-coup ; les nouvelles données
+ * (sondées toutes les 5s) remplacent la liste en douceur, défilement compris.
+ */
+function LiveLeaderboardTicker({ entries }: { entries: LeaderboardEntry[] }) {
+  if (entries.length === 0) {
+    return (
+      <p className="rounded-xl border border-dashed border-gray-300 p-4 text-center text-sm text-gray-400">
+        Personne n&apos;a encore choisi d&apos;apparaître dans ce classement.
+      </p>
+    );
+  }
+
+  const limited = entries.slice(0, MAX_TICKER_ENTRIES);
+  const doubled = [...limited, ...limited];
+  const duration = Math.max(limited.length * TICKER_SECONDS_PER_ROW, 6);
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-xl bg-navy/5"
+      style={{ height: TICKER_ROW_HEIGHT_PX * TICKER_VISIBLE_ROWS }}
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-3 bg-gradient-to-b from-white to-transparent" />
+      <div
+        className="animate-verse-ticker absolute inset-x-0 top-0"
+        style={{ animationDuration: `${duration}s` }}
+      >
+        {doubled.map((e, i) => (
+          <div
+            key={i}
+            className="flex items-center justify-between px-3 text-sm"
+            style={{ height: TICKER_ROW_HEIGHT_PX }}
+          >
+            <span className="flex items-center gap-2 font-semibold text-navy">
+              <span className="text-xs text-gray-400">#{(i % limited.length) + 1}</span>
+              {e.displayName}
+            </span>
+            <span className="font-bold text-accent-dark">
+              {e.score} pt{e.score > 1 ? "s" : ""}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-3 bg-gradient-to-t from-white to-transparent" />
+    </div>
+  );
 }
 
 export default function VerseGamePage() {
@@ -59,7 +114,7 @@ export default function VerseGamePage() {
   const [totalPlayers, setTotalPlayers] = useState(0);
   const [justBeatBest, setJustBeatBest] = useState(false);
 
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(true);
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
@@ -200,34 +255,17 @@ export default function VerseGamePage() {
 
           {showLeaderboard && (
             <div className="mb-6 card">
-              <h2 className="mb-3 text-sm font-bold text-navy">🏆 Classement en direct</h2>
+              <div className="mb-3 flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                </span>
+                <h2 className="text-sm font-bold text-navy">Classement en direct</h2>
+              </div>
               {leaderboardLoading && leaderboardEntries.length === 0 ? (
                 <p className="text-center text-sm text-gray-400">Chargement...</p>
-              ) : leaderboardEntries.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-gray-300 p-4 text-center text-sm text-gray-400">
-                  Personne n&apos;a encore choisi d&apos;apparaître dans ce classement.
-                </p>
               ) : (
-                <ol className="space-y-2">
-                  {leaderboardEntries.map((e, i) => (
-                    <li
-                      key={i}
-                      className={`flex items-center justify-between rounded-xl border px-3 py-2 text-sm ${
-                        i < 3 ? "border-accent bg-accent/10" : "border-gray-200 bg-white"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 text-center font-bold text-navy">
-                          {MEDALS[i] ?? i + 1}
-                        </span>
-                        <span className="font-semibold text-navy">{e.displayName}</span>
-                      </div>
-                      <span className="font-bold text-navy">
-                        {e.score} / {e.total}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
+                <LiveLeaderboardTicker entries={leaderboardEntries} />
               )}
               {myRank && (
                 <p className="mt-3 text-center text-xs text-gray-400">
