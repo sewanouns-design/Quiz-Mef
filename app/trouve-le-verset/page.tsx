@@ -45,6 +45,10 @@ interface LevelUpToast {
 }
 
 const QUESTIONS_PER_GAME = 10;
+// Même seuil que PASS_RATIO côté serveur (/api/verse-game/level-complete) —
+// à garder synchronisé : uniquement pour savoir quel message afficher, la
+// vraie décision de débloquer le niveau suivant reste toujours côté serveur.
+const PASS_RATIO = 0.8;
 const ACTIVITY_POLL_MS = 4000;
 const TOAST_LIFETIME_MS = 3200;
 const AUTO_ADVANCE_DELAY_MS = 900;
@@ -58,8 +62,9 @@ const RANK_MEDALS: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
 // Dernier résultat de partie, persisté pour qu'une actualisation de page
 // juste après avoir terminé un niveau (avant d'avoir cliqué "Niveau
 // suivant") restaure exactement cet écran au lieu de repartir dans une
-// nouvelle partie — la personne doit continuer à voir "100%, niveau
-// débloqué" tant qu'elle n'a pas explicitement rejoué ou changé de niveau.
+// nouvelle partie — la personne doit continuer à voir son résultat (et
+// "niveau débloqué" le cas échéant) tant qu'elle n'a pas explicitement
+// rejoué ou changé de niveau.
 interface StoredLevelResult {
   level: number;
   score: number;
@@ -753,12 +758,13 @@ export default function VerseGamePage() {
                           🎉 Niveau {currentLevel} débloqué !
                         </p>
                       )}
-                      {!justLeveledUp && score < resultTotal && (
+                      {!justLeveledUp && resultTotal > 0 && score / resultTotal < PASS_RATIO && (
                         <p className="mt-1 text-sm font-semibold text-red-600">
-                          ❌ Échec — il faut 100% pour passer au niveau suivant. Reprends ce niveau !
+                          ❌ Échec — il faut au moins 80% de bonnes réponses pour passer au niveau suivant.
+                          Reprends ce niveau !
                         </p>
                       )}
-                      {!justLeveledUp && score === resultTotal && (
+                      {!justLeveledUp && resultTotal > 0 && score / resultTotal >= PASS_RATIO && (
                         <p className="mt-1 text-sm font-medium text-gray-500">
                           Tu maîtrises déjà ce niveau — rejoue-le pour gagner encore des points, ou passe au
                           niveau que tu n&apos;as pas encore débloqué.

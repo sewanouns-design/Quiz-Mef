@@ -12,14 +12,15 @@ const RATE_LIMIT_ROUTE = "verse-game-level-complete";
 const RATE_LIMIT_MAX = 60;
 const RATE_LIMIT_WINDOW_MINUTES = 15;
 const POINTS_PER_CORRECT = 10;
-const PASS_RATIO = 1;
+const PASS_RATIO = 0.8;
 const MAX_ANSWERS_PER_REQUEST = 50;
 
 /**
  * Enregistre la fin d'un niveau de "Trouve le verset" : ajoute les points
  * gagnés (10 par bonne réponse) au total cumulé, débloque le niveau
  * suivant si le niveau joué est bien celui en cours (pas un niveau déjà
- * dépassé rejoué) et que toutes les réponses sont correctes, et alimente
+ * dépassé rejoué) et qu'au moins 80% des réponses sont correctes (PASS_RATIO),
+ * et alimente
  * les statistiques réelles de réussite par verset (bible_verse_stats) —
  * c'est cette mesure, pas la longueur du texte, qui détermine la vraie
  * difficulté d'un verset (voir recalculate_verse_levels_by_difficulty).
