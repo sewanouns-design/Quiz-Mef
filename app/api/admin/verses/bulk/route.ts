@@ -6,7 +6,16 @@ export const dynamic = "force-dynamic";
 
 const MAX_REFERENCE_LENGTH = 100;
 const MAX_TEXT_LENGTH = 2000;
-const MAX_ITEMS = 300;
+// Une seule requête peut contenir jusqu'à ce nombre de versets : le client
+// (VersesTab) découpe lui-même un fichier plus volumineux en plusieurs
+// requêtes successives de cette taille, pour rester bien en dessous des
+// limites de taille de requête et de durée d'exécution de la plateforme,
+// même pour une banque de plusieurs milliers de versets.
+const MAX_ITEMS_PER_REQUEST = 1000;
+// Taille des lots envoyés à Supabase à l'intérieur d'une même requête : un
+// upsert portant sur trop de lignes à la fois peut dépasser les limites de
+// la base, donc on le découpe aussi côté serveur.
+const DB_CHUNK_SIZE = 200;
 
 interface RawVerseItem {
   reference?: unknown;
@@ -28,12 +37,16 @@ export async function POST(request: NextRequest) {
   if (items.length === 0) {
     return NextResponse.json({ error: "Aucun verset à importer." }, { status: 400 });
   }
-  if (items.length > MAX_ITEMS) {
-    return NextResponse.json({ error: `Trop de versets à la fois (max ${MAX_ITEMS}).` }, { status: 400 });
+  if (items.length > MAX_ITEMS_PER_REQUEST) {
+    return NextResponse.json(
+      { error: `Trop de versets dans une seule requête (max ${MAX_ITEMS_PER_REQUEST}).` },
+      { status: 400 }
+    );
   }
 
   const rows: { reference: string; text: string; blank_word: string | null }[] = [];
   const rejected: { line: number; reason: string }[] = [];
+  const seenReferences = new Set<string>();
 
   items.forEach((item, index) => {
     const reference = typeof item.reference === "string" ? item.reference.trim() : "";
@@ -52,6 +65,18 @@ export async function POST(request: NextRequest) {
       rejected.push({ line: index + 1, reason: "le mot à deviner n'apparaît pas dans le texte" });
       return;
     }
+    // Deux lignes avec la même référence dans le même lot : upsert refuserait
+    // le lot entier ("ON CONFLICT DO UPDATE command cannot affect row a
+    // second time"), donc on ne garde que la dernière occurrence.
+    if (seenReferences.has(reference)) {
+      rows[rows.findIndex((r) => r.reference === reference)] = {
+        reference,
+        text,
+        blank_word: blankWord || null,
+      };
+      return;
+    }
+    seenReferences.add(reference);
     rows.push({ reference, text, blank_word: blankWord || null });
   });
 
@@ -60,14 +85,22 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("bible_verses")
-    .upsert(rows, { onConflict: "reference", ignoreDuplicates: false })
-    .select();
+  let imported = 0;
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  for (let i = 0; i < rows.length; i += DB_CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + DB_CHUNK_SIZE);
+    const { error, count } = await supabase
+      .from("bible_verses")
+      .upsert(chunk, { onConflict: "reference", ignoreDuplicates: false, count: "exact" });
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message, imported, rejected },
+        { status: 500 }
+      );
+    }
+    imported += count ?? chunk.length;
   }
 
-  return NextResponse.json({ verses: data ?? [], imported: data?.length ?? 0, rejected });
+  return NextResponse.json({ imported, rejected });
 }

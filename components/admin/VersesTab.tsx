@@ -18,6 +18,13 @@ export default function VersesTab() {
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [bulkError, setBulkError] = useState("");
   const [bulkResult, setBulkResult] = useState("");
+  const [bulkProgress, setBulkProgress] = useState("");
+
+  // Même taille que MAX_ITEMS_PER_REQUEST côté serveur
+  // (app/api/admin/verses/bulk/route.ts) : un fichier plus volumineux est
+  // envoyé en plusieurs requêtes successives plutôt qu'en une seule, pour
+  // qu'un import de plusieurs milliers de versets passe sans problème.
+  const BULK_CHUNK_SIZE = 1000;
 
   useEffect(() => {
     load();
@@ -84,44 +91,84 @@ export default function VersesTab() {
       });
   }
 
-  async function handleBulkImport(e: React.FormEvent) {
-    e.preventDefault();
-    const items = parseBulkText(bulkText);
-    if (items.length === 0) return;
-
+  async function importItems(items: { reference: string; text: string; blankWord: string }[]) {
     setBulkSubmitting(true);
     setBulkError("");
     setBulkResult("");
+    setBulkProgress("");
+
+    let totalImported = 0;
+    const allRejected: { line: number; reason: string }[] = [];
+
     try {
-      const res = await fetch("/api/admin/verses/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        body: JSON.stringify({ verses: items }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || "Erreur lors de l'import.");
+      for (let i = 0; i < items.length; i += BULK_CHUNK_SIZE) {
+        const chunk = items.slice(i, i + BULK_CHUNK_SIZE);
+        if (items.length > BULK_CHUNK_SIZE) {
+          setBulkProgress(
+            `Envoi en cours... ${Math.min(i + BULK_CHUNK_SIZE, items.length)} / ${items.length}`
+          );
+        }
+
+        const res = await fetch("/api/admin/verses/bulk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({ verses: chunk }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(
+            data.error ||
+              `Erreur lors de l'import (lots ${totalImported} verset(s) déjà importé(s) avant l'erreur).`
+          );
+        }
+        totalImported += data.imported ?? 0;
+        if (Array.isArray(data.rejected)) {
+          for (const r of data.rejected) {
+            allRejected.push({ line: i + r.line, reason: r.reason });
+          }
+        }
       }
-      const rejectedCount = data.rejected?.length ?? 0;
+
+      setBulkProgress("");
       setBulkResult(
-        `${data.imported ?? 0} verset(s) importé(s).` +
-          (rejectedCount > 0 ? ` ${rejectedCount} ligne(s) ignorée(s) (voir ci-dessous).` : "")
+        `${totalImported} verset(s) importé(s).` +
+          (allRejected.length > 0
+            ? ` ${allRejected.length} ligne(s) ignorée(s) (voir ci-dessous).`
+            : "")
       );
-      if (rejectedCount > 0) {
-        setBulkError(
-          data.rejected
-            .map((r: { line: number; reason: string }) => `Ligne ${r.line} : ${r.reason}`)
-            .join(" · ")
-        );
+      if (allRejected.length > 0) {
+        setBulkError(allRejected.map((r) => `Ligne ${r.line} : ${r.reason}`).join(" · "));
       }
-      setBulkText("");
       load();
     } catch (err) {
+      setBulkProgress("");
       setBulkError(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
       setBulkSubmitting(false);
     }
+  }
+
+  async function handleBulkImport(e: React.FormEvent) {
+    e.preventDefault();
+    const items = parseBulkText(bulkText);
+    if (items.length === 0) return;
+    await importItems(items);
+    setBulkText("");
+  }
+
+  async function handleBulkFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    const raw = await file.text();
+    const items = parseBulkText(raw);
+    if (items.length === 0) {
+      setBulkError("Le fichier ne contient aucune ligne au bon format.");
+      return;
+    }
+    await importItems(items);
   }
 
   async function handleDelete(id: string) {
@@ -205,6 +252,12 @@ export default function VersesTab() {
           Exemple : <code className="rounded bg-gray-100 px-1">
             Jean 3:16 | Car Dieu a tant aimé le monde... | aimé
           </code>
+          <br />
+          Même format par collage ci-dessous ou par fichier <code className="rounded bg-gray-100 px-1">.txt</code>{" "}
+          — un fichier peut contenir des milliers de versets, il est envoyé automatiquement par lots.{" "}
+          <a href="/exemple-versets.txt" download className="font-semibold text-accent-dark hover:underline">
+            Télécharger un exemple de fichier →
+          </a>
         </p>
         <textarea
           className="input-field min-h-[140px] font-mono text-xs"
@@ -212,15 +265,29 @@ export default function VersesTab() {
           value={bulkText}
           onChange={(e) => setBulkText(e.target.value)}
         />
+        {bulkProgress && <p className="text-sm font-medium text-gray-500">{bulkProgress}</p>}
         {bulkResult && <p className="text-sm font-medium text-green-700">{bulkResult}</p>}
         {bulkError && <p className="text-sm font-medium text-red-600">{bulkError}</p>}
-        <button
-          type="submit"
-          disabled={bulkSubmitting || !bulkText.trim()}
-          className="btn-accent"
-        >
-          {bulkSubmitting ? "Import..." : "Importer tout"}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="submit" disabled={bulkSubmitting || !bulkText.trim()} className="btn-accent">
+            {bulkSubmitting ? "Import..." : "Importer le texte collé"}
+          </button>
+          <span className="text-xs text-gray-400">ou</span>
+          <label
+            className={`cursor-pointer rounded-lg border border-navy/20 px-4 py-2 text-sm font-semibold text-navy transition-colors hover:bg-navy/5 ${
+              bulkSubmitting ? "pointer-events-none opacity-50" : ""
+            }`}
+          >
+            📄 Importer un fichier .txt
+            <input
+              type="file"
+              accept=".txt,text/plain"
+              className="hidden"
+              disabled={bulkSubmitting}
+              onChange={handleBulkFile}
+            />
+          </label>
+        </div>
       </form>
 
       {loading ? (
