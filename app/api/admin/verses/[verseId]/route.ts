@@ -86,23 +86,15 @@ export async function PATCH(
   return NextResponse.json({ verse: data });
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { verseId: string } }
-) {
+// Désactivée pour le moment (suppression accidentelle de versets) : on
+// garde la route mais elle refuse toute suppression tant que ce n'est pas
+// réactivé explicitement.
+export async function DELETE(request: NextRequest) {
   if (!isAdminRequestAuthenticated(request)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
-  if (!isSameOriginRequest(request)) {
-    return NextResponse.json({ error: "Requête refusée (origine invalide)" }, { status: 403 });
-  }
-
-  const supabase = getSupabaseAdmin();
-  const { error } = await supabase.from("bible_verses").delete().eq("id", params.verseId);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ ok: true });
+  return NextResponse.json(
+    { error: "La suppression de versets est désactivée pour le moment." },
+    { status: 403 }
+  );
 }

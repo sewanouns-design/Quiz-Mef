@@ -9,7 +9,6 @@ const MAX_REFERENCE_LENGTH = 100;
 const MAX_TEXT_LENGTH = 2000;
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
-const MAX_BULK_DELETE = 500;
 
 /**
  * Liste paginée (et filtrable par référence/texte) plutôt qu'un chargement
@@ -96,36 +95,15 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ verse: data });
 }
 
+// Désactivée pour le moment (suppression accidentelle de versets) : on
+// garde la route mais elle refuse toute suppression tant que ce n'est pas
+// réactivé explicitement.
 export async function DELETE(request: NextRequest) {
   if (!isAdminRequestAuthenticated(request)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
-  if (!isSameOriginRequest(request)) {
-    return NextResponse.json({ error: "Requête refusée (origine invalide)" }, { status: 403 });
-  }
-
-  const body = await request.json().catch(() => ({}));
-  const ids = Array.isArray(body?.ids) ? body.ids.filter((id: unknown) => typeof id === "string") : [];
-
-  if (ids.length === 0) {
-    return NextResponse.json({ error: "Aucun verset sélectionné." }, { status: 400 });
-  }
-  if (ids.length > MAX_BULK_DELETE) {
-    return NextResponse.json(
-      { error: `Trop de versets sélectionnés à la fois (max ${MAX_BULK_DELETE}).` },
-      { status: 400 }
-    );
-  }
-
-  const supabase = getSupabaseAdmin();
-  const { error, count } = await supabase
-    .from("bible_verses")
-    .delete({ count: "exact" })
-    .in("id", ids);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ deleted: count ?? ids.length });
+  return NextResponse.json(
+    { error: "La suppression de versets est désactivée pour le moment." },
+    { status: 403 }
+  );
 }

@@ -21,9 +21,6 @@ export default function VersesTab() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [bulkDeleting, setBulkDeleting] = useState(false);
-
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editReference, setEditReference] = useState("");
   const [editText, setEditText] = useState("");
@@ -50,7 +47,6 @@ export default function VersesTab() {
 
   useEffect(() => {
     load();
-    setSelectedIds(new Set());
     setEditingId(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, search]);
@@ -244,68 +240,6 @@ export default function VersesTab() {
       setRecalculateError(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
       setRecalculating(false);
-    }
-  }
-
-  async function handleDelete(id: string) {
-    const previous = verses;
-    setVerses((prev) => prev.filter((v) => v.id !== id));
-    try {
-      const res = await fetch(`/api/admin/verses/${id}`, { method: "DELETE", cache: "no-store" });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Erreur lors de la suppression.");
-      }
-      setTotal((t) => Math.max(0, t - 1));
-    } catch (err) {
-      setVerses(previous);
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
-    }
-  }
-
-  function toggleSelected(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }
-
-  function toggleSelectAllOnPage() {
-    setSelectedIds((prev) => {
-      const allSelected = verses.every((v) => prev.has(v.id));
-      if (allSelected) return new Set();
-      return new Set(verses.map((v) => v.id));
-    });
-  }
-
-  async function handleDeleteSelected() {
-    if (selectedIds.size === 0) return;
-    const ids = Array.from(selectedIds);
-    setBulkDeleting(true);
-    setError("");
-    try {
-      const res = await fetch("/api/admin/verses", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        body: JSON.stringify({ ids }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || "Erreur lors de la suppression.");
-      }
-      setSelectedIds(new Set());
-      setTotal((t) => Math.max(0, t - (data.deleted ?? ids.length)));
-      load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
-    } finally {
-      setBulkDeleting(false);
     }
   }
 
@@ -534,26 +468,9 @@ export default function VersesTab() {
         <>
           {error && <p className="mb-2 text-sm font-medium text-red-600">{error}</p>}
 
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <label className="flex items-center gap-2 text-xs font-semibold text-gray-500">
-              <input
-                type="checkbox"
-                checked={verses.length > 0 && verses.every((v) => selectedIds.has(v.id))}
-                onChange={toggleSelectAllOnPage}
-              />
-              Tout sélectionner (cette page)
-            </label>
-            {selectedIds.size > 0 && (
-              <button
-                type="button"
-                onClick={handleDeleteSelected}
-                disabled={bulkDeleting}
-                className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
-              >
-                {bulkDeleting ? "Suppression..." : `Supprimer la sélection (${selectedIds.size})`}
-              </button>
-            )}
-          </div>
+          <p className="mb-2 text-xs text-gray-400">
+            La suppression de versets est désactivée pour le moment — tu peux les modifier.
+          </p>
 
           <ul className="space-y-2">
             {verses.map((v) =>
@@ -610,12 +527,6 @@ export default function VersesTab() {
                   key={v.id}
                   className="flex items-start justify-between gap-3 rounded-xl border border-gray-200 p-3"
                 >
-                  <input
-                    type="checkbox"
-                    className="mt-1 shrink-0"
-                    checked={selectedIds.has(v.id)}
-                    onChange={() => toggleSelected(v.id)}
-                  />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-navy">{v.reference}</p>
@@ -639,13 +550,6 @@ export default function VersesTab() {
                       className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-navy transition-colors hover:bg-gray-50"
                     >
                       Modifier
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(v.id)}
-                      className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50"
-                    >
-                      Supprimer
                     </button>
                   </div>
                 </li>
