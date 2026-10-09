@@ -72,6 +72,7 @@ export interface SiteUpdate {
   id: string;
   title: string;
   description: string;
+  icon: string;
   link_href: string | null;
   link_label: string | null;
   created_at: string;

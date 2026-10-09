@@ -612,6 +612,9 @@ create table if not exists site_updates (
   id uuid primary key default gen_random_uuid(),
   title text not null,
   description text not null,
+  -- Emoji/icône affiché dans le badge carré du pop-up "nouveauté" (voir
+  -- components/home/NewsPopup.tsx).
+  icon text not null default '🆕',
   link_href text,
   link_label text,
   created_at timestamptz not null default now()

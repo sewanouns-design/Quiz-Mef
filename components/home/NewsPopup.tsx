@@ -6,14 +6,14 @@ import type { SiteUpdate } from "@/lib/types";
 const SEEN_STORAGE_KEY = "mef_last_seen_update";
 
 /**
- * Pop-up fermable listant brièvement les nouveautés du site pas encore vues
- * sur cet appareil (comparé à l'id de la plus récente déjà vue, en
- * localStorage). Contrairement au pop-up du quiz hebdo, fermer celui-ci le
- * fait disparaître DÉFINITIVEMENT pour ces nouveautés précises — il ne
- * revient qu'au moment où l'admin en publie de nouvelles.
+ * Pop-up fermable "coup de projecteur" sur la DERNIÈRE nouveauté pas encore
+ * vue sur cet appareil (comparé à son id, en localStorage) — une seule à la
+ * fois, en grand, plutôt qu'une liste. Fermer le pop-up le fait disparaître
+ * DÉFINITIVEMENT pour cette nouveauté (et les plus anciennes) ; il ne revient
+ * que lorsque l'admin en publie une plus récente.
  */
 export default function NewsPopup() {
-  const [updates, setUpdates] = useState<SiteUpdate[]>([]);
+  const [update, setUpdate] = useState<SiteUpdate | null>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -21,7 +21,8 @@ export default function NewsPopup() {
       .then((res) => res.json())
       .then((data) => {
         const all: SiteUpdate[] = data.updates ?? [];
-        if (all.length === 0) return;
+        const latest = all[0];
+        if (!latest) return;
 
         let lastSeen = "";
         try {
@@ -30,11 +31,8 @@ export default function NewsPopup() {
           // stockage indisponible : on affiche quand même, tant pis pour la mémorisation
         }
 
-        const lastSeenIndex = all.findIndex((u) => u.id === lastSeen);
-        const unseen = lastSeenIndex === -1 ? all : all.slice(0, lastSeenIndex);
-
-        if (unseen.length > 0) {
-          setUpdates(unseen);
+        if (latest.id !== lastSeen) {
+          setUpdate(latest);
           setVisible(true);
         }
       })
@@ -43,16 +41,16 @@ export default function NewsPopup() {
 
   function handleClose() {
     setVisible(false);
-    if (updates.length > 0) {
+    if (update) {
       try {
-        window.localStorage.setItem(SEEN_STORAGE_KEY, updates[0].id);
+        window.localStorage.setItem(SEEN_STORAGE_KEY, update.id);
       } catch {
         // tant pis, le pop-up pourra réapparaître
       }
     }
   }
 
-  if (!visible || updates.length === 0) return null;
+  if (!visible || !update) return null;
 
   return (
     <div
@@ -60,7 +58,7 @@ export default function NewsPopup() {
       onClick={handleClose}
     >
       <div
-        className="animate-greeting-pop relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+        className="animate-greeting-pop relative w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -71,31 +69,36 @@ export default function NewsPopup() {
         >
           ✕
         </button>
-        <div className="mb-3 text-center">
-          <span className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-navy text-2xl">
-            🆕
+
+        <div className="relative mx-auto mb-4 mt-2 h-20 w-20">
+          <span className="flex h-20 w-20 items-center justify-center rounded-2xl bg-navy text-4xl shadow-lg">
+            {update.icon}
           </span>
-          <p className="text-xs font-bold uppercase tracking-wide text-navy/60">Quoi de neuf</p>
+          <span className="absolute -right-2 -top-2 rounded-md bg-accent px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow">
+            Nouveau
+          </span>
         </div>
-        <ul className="space-y-3">
-          {updates.map((u) => (
-            <li key={u.id} className="rounded-xl bg-navy/5 p-3">
-              <p className="font-semibold text-navy">{u.title}</p>
-              <p className="mt-0.5 text-sm text-gray-600">{u.description}</p>
-              {u.link_href && (
-                <a
-                  href={u.link_href}
-                  className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-accent-dark hover:underline"
-                >
-                  {u.link_label || "Découvrir"} →
-                </a>
-              )}
-            </li>
-          ))}
-        </ul>
-        <button type="button" onClick={handleClose} className="btn-accent mt-4 w-full">
-          Fermer
-        </button>
+
+        <h2 className="text-xl font-extrabold uppercase text-navy">{update.title}</h2>
+        <p className="mt-2 text-gray-600">{update.description}</p>
+
+        {update.link_href ? (
+          <a
+            href={update.link_href}
+            onClick={handleClose}
+            className="btn-accent mt-5 block w-full text-center text-base font-extrabold uppercase tracking-wide"
+          >
+            {update.link_label || "Découvrir"}
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={handleClose}
+            className="btn-accent mt-5 w-full text-base font-extrabold uppercase tracking-wide"
+          >
+            Fermer
+          </button>
+        )}
       </div>
     </div>
   );

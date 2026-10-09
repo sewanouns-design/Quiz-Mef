@@ -10,6 +10,7 @@ export default function UpdatesTab() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [icon, setIcon] = useState("🆕");
   const [linkHref, setLinkHref] = useState("");
   const [linkLabel, setLinkLabel] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -48,7 +49,7 @@ export default function UpdatesTab() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ title, description, linkHref, linkLabel }),
+        body: JSON.stringify({ title, description, icon, linkHref, linkLabel }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -57,6 +58,7 @@ export default function UpdatesTab() {
       setUpdates((prev) => [data.update, ...prev]);
       setTitle("");
       setDescription("");
+      setIcon("🆕");
       setLinkHref("");
       setLinkLabel("");
     } catch (err) {
@@ -114,6 +116,19 @@ export default function UpdatesTab() {
             placeholder="Une phrase ou deux, l'essentiel seulement."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="label-field" htmlFor="update-icon">
+            Icône (emoji affiché dans le badge)
+          </label>
+          <input
+            id="update-icon"
+            className="input-field w-24 text-center text-xl"
+            maxLength={8}
+            placeholder="🆕"
+            value={icon}
+            onChange={(e) => setIcon(e.target.value)}
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -177,7 +192,10 @@ export default function UpdatesTab() {
                 className="flex items-start justify-between gap-3 rounded-xl border border-gray-200 p-3"
               >
                 <div className="min-w-0">
-                  <p className="font-semibold text-navy">{u.title}</p>
+                  <p className="font-semibold text-navy">
+                    <span className="mr-1">{u.icon}</span>
+                    {u.title}
+                  </p>
                   <p className="text-sm text-gray-600">{u.description}</p>
                   {u.link_href && (
                     <p className="mt-1 text-xs text-gray-400">

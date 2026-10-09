@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
   const description = typeof body?.description === "string" ? body.description.trim() : "";
   const linkHref = typeof body?.linkHref === "string" ? body.linkHref.trim() : "";
   const linkLabel = typeof body?.linkLabel === "string" ? body.linkLabel.trim() : "";
+  const icon = typeof body?.icon === "string" && body.icon.trim() ? body.icon.trim().slice(0, 8) : "🆕";
 
   if (!title || !description) {
     return NextResponse.json({ error: "Le titre et la description sont requis." }, { status: 400 });
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
     .insert({
       title,
       description,
+      icon,
       link_href: linkHref || null,
       link_label: linkHref ? linkLabel || "Découvrir" : null,
     })
