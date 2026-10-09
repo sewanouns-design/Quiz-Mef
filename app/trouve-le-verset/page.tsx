@@ -815,9 +815,10 @@ export default function VerseGamePage() {
     setSharing(true);
 
     const participantName = getStoredParticipant()?.name || "Un joueur";
+    const gameLink = "https://quiz.mefzogbadje.org/trouve-le-verset";
     const message = justLeveledUp
-      ? `Je viens de débloquer le niveau ${currentLevel} à « Trouve le verset » ! 📖 Viens tester tes connaissances bibliques toi aussi sur quiz.mefzogbadje.org`
-      : `Je joue à « Trouve le verset » et j'en suis au niveau ${selectedLevel} ! 📖 Viens tester tes connaissances bibliques toi aussi sur quiz.mefzogbadje.org`;
+      ? `Je viens de débloquer le niveau ${currentLevel} à « Trouve le verset » ! 📖 Viens tester tes connaissances bibliques toi aussi : ${gameLink}`
+      : `Je joue à « Trouve le verset » et j'en suis au niveau ${selectedLevel} ! 📖 Viens tester tes connaissances bibliques toi aussi : ${gameLink}`;
 
     try {
       const blob = await generateVerseGameImage({

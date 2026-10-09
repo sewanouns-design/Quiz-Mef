@@ -216,7 +216,8 @@ export default function ResultsPage() {
     setShareError("");
     setSharing(true);
 
-    const message = `J'ai obtenu ${data.score}/${data.maxScore} au quiz « ${data.quiz.title} » ! ⁉️ Teste tes connaissances toi aussi sur quiz.mefzogbadje.org`;
+    const quizLink = `https://quiz.mefzogbadje.org/quiz?quiz=${encodeURIComponent(data.quiz.id)}`;
+    const message = `J'ai obtenu ${data.score}/${data.maxScore} au quiz « ${data.quiz.title} » ! ⁉️ Teste tes connaissances toi aussi : ${quizLink}`;
 
     try {
       const blob = await generateResultsImage({

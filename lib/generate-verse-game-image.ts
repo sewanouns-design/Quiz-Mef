@@ -1,6 +1,10 @@
-// Image partageable générée à la fin d'un niveau de "Trouve le verset",
-// sur le même principe visuel que lib/generate-results-image.ts (quiz du
-// jour), pour inciter les gens qui la voient à venir jouer eux aussi.
+// Image partageable générée à la fin d'un niveau de "Trouve le verset", pour
+// inciter les gens qui la voient à venir jouer eux aussi. Même gabarit que
+// lib/generate-results-image.ts (quiz du jour), mais habillage volontairement
+// distinct — couleur d'accent sarcelle plutôt que rouge, médaillon carré
+// façon page de livre plutôt que rond, confettis en petits rectangles façon
+// pages plutôt qu'en points — pour qu'une image "jeu" ne se confonde jamais
+// avec une image "quiz" au premier coup d'œil.
 export interface VerseGameImageParams {
   participantName: string;
   level: number;
@@ -11,8 +15,8 @@ export interface VerseGameImageParams {
 
 const NAVY = "#14213d";
 const NAVY_DARK = "#0a1428";
-const ACCENT = "#b91c1c";
-const ACCENT_LIGHT = "#dc2626";
+const ACCENT = "#0d9488";
+const ACCENT_LIGHT = "#2dd4bf";
 
 function roundRect(
   ctx: CanvasRenderingContext2D,
@@ -73,14 +77,21 @@ export async function generateVerseGameImage(params: VerseGameImageParams): Prom
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
-  const dotColors = [ACCENT, ACCENT_LIGHT, "#ffffff"];
-  for (let i = 0; i < 55; i++) {
-    const r = Math.random() * 7 + 3;
-    ctx.beginPath();
-    ctx.fillStyle = dotColors[Math.floor(Math.random() * dotColors.length)];
-    ctx.globalAlpha = Math.random() * 0.3 + 0.1;
-    ctx.arc(Math.random() * width, Math.random() * (height * 0.85), r, 0, Math.PI * 2);
+  // Petites "pages" rectangulaires flottantes plutôt que des confettis
+  // circulaires — motif distinct du quiz pour qu'une image "jeu" se
+  // reconnaisse au premier coup d'œil, même en miniature.
+  const pageColors = [ACCENT, ACCENT_LIGHT, "#ffffff"];
+  for (let i = 0; i < 40; i++) {
+    const w = Math.random() * 16 + 10;
+    const h = w * 1.3;
+    ctx.save();
+    ctx.translate(Math.random() * width, Math.random() * (height * 0.85));
+    ctx.rotate(((Math.random() * 50 - 25) * Math.PI) / 180);
+    ctx.globalAlpha = Math.random() * 0.25 + 0.08;
+    ctx.fillStyle = pageColors[Math.floor(Math.random() * pageColors.length)];
+    roundRect(ctx, -w / 2, -h / 2, w, h, 3);
     ctx.fill();
+    ctx.restore();
   }
   ctx.globalAlpha = 1;
 
@@ -112,23 +123,19 @@ export async function generateVerseGameImage(params: VerseGameImageParams): Prom
 
   const cursorY = 400;
 
+  // Médaillon carré arrondi façon page de livre (coin pas plié, pour rester
+  // simple au rendu) plutôt que le rond du quiz.
   const medalCenterY = cursorY + 155;
-  const medalRadius = 100;
-  const medalGradient = ctx.createRadialGradient(
-    width / 2,
-    medalCenterY,
-    10,
-    width / 2,
-    medalCenterY,
-    medalRadius
-  );
+  const medalSize = 190;
+  const medalX = width / 2 - medalSize / 2;
+  const medalY = medalCenterY - medalSize / 2;
+  const medalGradient = ctx.createLinearGradient(medalX, medalY, medalX, medalY + medalSize);
   medalGradient.addColorStop(0, ACCENT_LIGHT);
   medalGradient.addColorStop(1, ACCENT);
   ctx.save();
-  ctx.shadowColor = "rgba(185,28,28,0.55)";
+  ctx.shadowColor = "rgba(13,148,136,0.5)";
   ctx.shadowBlur = 40;
-  ctx.beginPath();
-  ctx.arc(width / 2, medalCenterY, medalRadius, 0, Math.PI * 2);
+  roundRect(ctx, medalX, medalY, medalSize, medalSize, 36);
   ctx.fillStyle = medalGradient;
   ctx.fill();
   ctx.restore();
@@ -147,7 +154,7 @@ export async function generateVerseGameImage(params: VerseGameImageParams): Prom
   const badgeW = 460;
   const badgeX = width / 2 - badgeW / 2;
   roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 28);
-  ctx.fillStyle = "rgba(185,28,28,0.18)";
+  ctx.fillStyle = "rgba(13,148,136,0.2)";
   ctx.fill();
   ctx.lineWidth = 2;
   ctx.strokeStyle = ACCENT_LIGHT;
