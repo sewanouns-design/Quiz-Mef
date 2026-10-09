@@ -15,15 +15,6 @@ import type { HomeStep, SiteSettings } from "@/lib/types";
 
 const MAX_LOGO_FILE_BYTES = 250 * 1024;
 
-/** Convertit un ISO stocké en base en valeur locale pour un <input type="datetime-local">. */
-function toDatetimeLocalValue(iso: string | null): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 export default function SettingsTab() {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
   const [loading, setLoading] = useState(true);
@@ -32,21 +23,12 @@ export default function SettingsTab() {
   const [success, setSuccess] = useState("");
   const [logoError, setLogoError] = useState("");
   const logoInputRef = useRef<HTMLInputElement>(null);
-  // Texte brut du champ "durée du chrono", distinct de settings.verse_game_timer_seconds :
-  // un <input type="number"> contrôlé directement par un nombre se réinitialise à chaque
-  // frappe dès que le champ passe par une valeur vide ou hors bornes (Number("") || 3 → "3"
-  // réapparaît immédiatement, empêchant de tout effacer pour retaper une nouvelle valeur).
-  // On laisse ce buffer libre pendant la frappe, et on ne valide/clamp qu'à la perte de focus.
-  const [timerSecondsText, setTimerSecondsText] = useState("20");
 
   useEffect(() => {
     fetch("/api/admin/settings", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (data?.settings) {
-          setSettings(data.settings);
-          setTimerSecondsText(String(data.settings.verse_game_timer_seconds ?? 20));
-        }
+        if (data?.settings) setSettings(data.settings);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -127,7 +109,7 @@ export default function SettingsTab() {
         throw new Error(data.error || "Erreur lors de l'enregistrement.");
       }
 
-      setSuccess("Personnalisation enregistrée.");
+      setSuccess("Apparence enregistrée.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
@@ -144,7 +126,7 @@ export default function SettingsTab() {
       <section className="card">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold" style={{ color: settings.color_primary }}>
-            Personnalisation de la page d&apos;accueil
+            Apparence de la page d&apos;accueil
           </h2>
           <a
             href="/"
@@ -482,118 +464,6 @@ export default function SettingsTab() {
                 />
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Trouve le verset : activation + créneau horaire */}
-        <div className="mb-6 rounded-xl border border-gray-200 p-4">
-          <h3 className="mb-3 text-sm font-bold text-navy">🎮 Jeu « Trouve le verset »</h3>
-          <label className="mb-3 flex items-center gap-2 text-sm font-medium text-navy">
-            <input
-              type="checkbox"
-              checked={settings.verse_game_enabled}
-              onChange={(e) => updateField("verse_game_enabled", e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            Activer le jeu (visible et jouable sur le site)
-          </label>
-
-          {settings.verse_game_enabled && (
-            <>
-              <label className="mb-3 flex items-center gap-2 text-sm font-medium text-navy">
-                <input
-                  type="checkbox"
-                  checked={settings.verse_game_schedule_enabled}
-                  onChange={(e) => updateField("verse_game_schedule_enabled", e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-                Limiter à un créneau horaire
-              </label>
-
-              {settings.verse_game_schedule_enabled && (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="label-field" htmlFor="verse_game_schedule_start">
-                      Ouverture
-                    </label>
-                    <input
-                      id="verse_game_schedule_start"
-                      type="datetime-local"
-                      className="input-field text-sm"
-                      value={toDatetimeLocalValue(settings.verse_game_schedule_start)}
-                      onChange={(e) =>
-                        updateField(
-                          "verse_game_schedule_start",
-                          e.target.value ? new Date(e.target.value).toISOString() : null
-                        )
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="label-field" htmlFor="verse_game_schedule_end">
-                      Fermeture
-                    </label>
-                    <input
-                      id="verse_game_schedule_end"
-                      type="datetime-local"
-                      className="input-field text-sm"
-                      value={toDatetimeLocalValue(settings.verse_game_schedule_end)}
-                      onChange={(e) =>
-                        updateField(
-                          "verse_game_schedule_end",
-                          e.target.value ? new Date(e.target.value).toISOString() : null
-                        )
-                      }
-                    />
-                  </div>
-                  <p className="col-span-full text-xs text-gray-400">
-                    Hors de ce créneau, le jeu affiche un message d&apos;indisponibilité. Laisse un champ
-                    vide pour ne pas limiter ce côté-là (seulement l&apos;ouverture, ou seulement la
-                    fermeture).
-                  </p>
-                </div>
-              )}
-
-              <div className="mt-4 border-t border-gray-100 pt-4">
-                <label className="mb-3 flex items-center gap-2 text-sm font-medium text-navy">
-                  <input
-                    type="checkbox"
-                    checked={settings.verse_game_timer_enabled}
-                    onChange={(e) => updateField("verse_game_timer_enabled", e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300"
-                  />
-                  Chrono par question
-                </label>
-                {settings.verse_game_timer_enabled && (
-                  <div>
-                    <label className="label-field" htmlFor="verse_game_timer_seconds">
-                      Durée par question (secondes)
-                    </label>
-                    <input
-                      id="verse_game_timer_seconds"
-                      type="number"
-                      min={3}
-                      max={300}
-                      className="input-field text-sm sm:w-32"
-                      value={timerSecondsText}
-                      onChange={(e) => setTimerSecondsText(e.target.value)}
-                      onBlur={() => {
-                        const parsed = Math.round(Number(timerSecondsText));
-                        const clamped = Number.isFinite(parsed)
-                          ? Math.min(300, Math.max(3, parsed))
-                          : settings.verse_game_timer_seconds;
-                        updateField("verse_game_timer_seconds", clamped);
-                        setTimerSecondsText(String(clamped));
-                      }}
-                    />
-                    <p className="mt-1 text-xs text-gray-400">
-                      Passé ce délai, la question est comptée comme fausse et la bonne réponse
-                      s&apos;affiche automatiquement.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </>
           )}
         </div>
 
