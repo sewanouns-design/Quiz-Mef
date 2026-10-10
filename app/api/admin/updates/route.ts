@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
+import { getSiteSettings } from "@/lib/site-settings";
+import { sendPushToAllSubscribers } from "@/lib/push";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +74,15 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const settings = await getSiteSettings();
+  if (settings.notify_push_new_update) {
+    await sendPushToAllSubscribers({
+      title: "Nouveauté sur le site",
+      body: `${icon} ${title}`,
+      url: linkHref || "/",
+    });
   }
 
   return NextResponse.json({ update: data });

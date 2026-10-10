@@ -53,3 +53,44 @@ export async function sendPushToParticipant(
   }
   return sent;
 }
+
+/**
+ * Diffuse une notification push à TOUS les appareils abonnés (nouveau quiz,
+ * nouveauté, réouverture d'un jeu...), indépendamment du participant.
+ * Best-effort, même logique de nettoyage des abonnements expirés que
+ * sendPushToParticipant.
+ */
+export async function sendPushToAllSubscribers(payload: {
+  title: string;
+  body: string;
+  url: string;
+}): Promise<number> {
+  if (!ensureConfigured()) return 0;
+
+  const supabase = getSupabaseAdmin();
+  const { data: subscriptions } = await supabase
+    .from("push_subscriptions")
+    .select("id, endpoint, p256dh, auth");
+
+  let sent = 0;
+  for (const sub of subscriptions ?? []) {
+    try {
+      await webpush.sendNotification(
+        {
+          endpoint: sub.endpoint,
+          keys: { p256dh: sub.p256dh, auth: sub.auth },
+        },
+        JSON.stringify(payload)
+      );
+      sent += 1;
+    } catch (err) {
+      const statusCode = (err as { statusCode?: number })?.statusCode;
+      if (statusCode === 404 || statusCode === 410) {
+        await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+      } else {
+        console.error(`Erreur diffusion push (abonnement ${sub.id}) :`, err);
+      }
+    }
+  }
+  return sent;
+}

@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
 import { getSiteSettings } from "@/lib/site-settings";
 import { logAdminActivity } from "@/lib/admin-activity";
+import { sendPushToAllSubscribers } from "@/lib/push";
 import type { HomeStep, HomeTemplate } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -68,6 +69,9 @@ export async function PUT(request: NextRequest) {
     verse_game_timer_enabled,
     verse_game_timer_seconds,
     quiz_share_direct_link_enabled,
+    notify_push_new_quiz,
+    notify_push_new_update,
+    notify_push_verse_game_reopened,
   } = body ?? {};
 
   if (template && !VALID_TEMPLATES.includes(template)) {
@@ -175,8 +179,20 @@ export async function PUT(request: NextRequest) {
   if (parsedTimerSeconds !== undefined) updates.verse_game_timer_seconds = parsedTimerSeconds;
   if (quiz_share_direct_link_enabled !== undefined)
     updates.quiz_share_direct_link_enabled = Boolean(quiz_share_direct_link_enabled);
+  if (notify_push_new_quiz !== undefined)
+    updates.notify_push_new_quiz = Boolean(notify_push_new_quiz);
+  if (notify_push_new_update !== undefined)
+    updates.notify_push_new_update = Boolean(notify_push_new_update);
+  if (notify_push_verse_game_reopened !== undefined)
+    updates.notify_push_verse_game_reopened = Boolean(notify_push_verse_game_reopened);
 
   const supabase = getSupabaseAdmin();
+
+  // Pour détecter une réouverture du jeu (false → true) et déclencher la
+  // notification push correspondante une fois la mise à jour effectuée.
+  const wasVerseGameEnabled =
+    verse_game_enabled !== undefined ? (await getSiteSettings()).verse_game_enabled : null;
+
   const { data, error } = await supabase
     .from("site_settings")
     .upsert({ id: "default", ...updates }, { onConflict: "id" })
@@ -185,6 +201,18 @@ export async function PUT(request: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (
+    wasVerseGameEnabled === false &&
+    data.verse_game_enabled === true &&
+    data.notify_push_verse_game_reopened
+  ) {
+    await sendPushToAllSubscribers({
+      title: "Le jeu est de retour",
+      body: "« Trouve le verset » est de nouveau jouable !",
+      url: "/trouve-le-verset",
+    });
   }
 
   await logAdminActivity(

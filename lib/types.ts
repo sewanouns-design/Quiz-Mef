@@ -190,6 +190,9 @@ export interface SiteSettings {
   verse_game_timer_enabled: boolean;
   verse_game_timer_seconds: number;
   quiz_share_direct_link_enabled: boolean;
+  notify_push_new_quiz: boolean;
+  notify_push_new_update: boolean;
+  notify_push_verse_game_reopened: boolean;
   updated_at: string;
 }
 

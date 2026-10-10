@@ -9,6 +9,7 @@ import {
 } from "@/lib/participant-storage";
 import { isValidEmail, isValidName } from "@/lib/validation";
 import { isValidWhatsappValue } from "@/lib/phone-countries";
+import { requestPushSubscription } from "@/lib/push-client";
 import PhoneInput from "@/components/PhoneInput";
 import SiteHeader from "@/components/SiteHeader";
 
@@ -187,6 +188,11 @@ function QuizIdentificationForm() {
         whatsapp: participant?.whatsapp ?? whatsapp,
         showInLeaderboard: true,
       });
+
+      // Demande d'autorisation de notifications dès l'identification plutôt
+      // que d'attendre un clic sur un bouton : best-effort, ne doit jamais
+      // bloquer la navigation vers le quiz.
+      requestPushSubscription(deviceKey).catch(() => {});
 
       router.push(`/quiz/${selectedQuizId}`);
     } catch (err) {

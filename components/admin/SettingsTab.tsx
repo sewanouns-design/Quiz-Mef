@@ -482,6 +482,61 @@ export default function SettingsTab() {
           </p>
         </div>
 
+        <div className="mb-6 rounded-xl border border-gray-200 p-4">
+          <h3 className="mb-1 text-sm font-bold text-navy">🔔 Notifications push</h3>
+          <p className="mb-3 text-xs text-gray-400">
+            Envoyées directement dans la barre de notifications du téléphone, à tous les
+            participants ayant déjà activé les rappels. Choisis quels événements en déclenchent
+            une.
+          </p>
+          <div className="divide-y divide-gray-100">
+            <label className="flex items-start gap-2 py-2 text-sm font-medium text-navy">
+              <input
+                type="checkbox"
+                checked={settings.notify_push_new_quiz}
+                onChange={(e) => updateField("notify_push_new_quiz", e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300"
+              />
+              <span>
+                Nouveau quiz publié
+                <span className="mt-0.5 block text-xs font-normal text-gray-400">
+                  « Nouveau quiz disponible »
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2 py-2 text-sm font-medium text-navy">
+              <input
+                type="checkbox"
+                checked={settings.notify_push_new_update}
+                onChange={(e) => updateField("notify_push_new_update", e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300"
+              />
+              <span>
+                Nouveauté publiée
+                <span className="mt-0.5 block text-xs font-normal text-gray-400">
+                  « Nouveauté sur le site »
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2 py-2 text-sm font-medium text-navy">
+              <input
+                type="checkbox"
+                checked={settings.notify_push_verse_game_reopened}
+                onChange={(e) =>
+                  updateField("notify_push_verse_game_reopened", e.target.checked)
+                }
+                className="mt-0.5 h-4 w-4 rounded border-gray-300"
+              />
+              <span>
+                Jeu « Trouve le verset » réactivé
+                <span className="mt-0.5 block text-xs font-normal text-gray-400">
+                  « Le jeu est de retour »
+                </span>
+              </span>
+            </label>
+          </div>
+        </div>
+
         <button
           type="button"
           onClick={handleSave}

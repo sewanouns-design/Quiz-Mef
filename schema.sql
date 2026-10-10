@@ -272,6 +272,12 @@ create table if not exists site_settings (
   -- vers l'accueil du site plutôt que directement vers le quiz joué — activer
   -- ce champ pour revenir au lien direct vers le quiz.
   quiz_share_direct_link_enabled boolean not null default false,
+
+  -- Notifications push diffusées à tous les abonnés (voir push_subscriptions) :
+  -- chaque case détermine si cet événement envoie une notification.
+  notify_push_new_quiz boolean not null default true,
+  notify_push_new_update boolean not null default false,
+  notify_push_verse_game_reopened boolean not null default false,
   updated_at timestamptz default now()
 );
 

@@ -4,6 +4,8 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
 import { validateQuizQuestions } from "@/lib/quiz-validation";
 import { logAdminActivity } from "@/lib/admin-activity";
+import { getSiteSettings } from "@/lib/site-settings";
+import { sendPushToAllSubscribers } from "@/lib/push";
 import type { QuestionImport } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -85,7 +87,18 @@ export async function POST(request: NextRequest) {
     isActive: Boolean(isActive),
   });
 
-  if (isActive) revalidateTag("home");
+  if (isActive) {
+    revalidateTag("home");
+
+    const settings = await getSiteSettings();
+    if (settings.notify_push_new_quiz) {
+      await sendPushToAllSubscribers({
+        title: "Nouveau quiz disponible",
+        body: `« ${quiz.title} » — teste tes connaissances dès maintenant !`,
+        url: `/quiz?quiz=${encodeURIComponent(quiz.id)}`,
+      });
+    }
+  }
 
   return NextResponse.json({ quiz });
 }
