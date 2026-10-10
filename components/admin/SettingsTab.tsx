@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import ColorPickerInput from "./ColorPickerInput";
 import HomePreview from "./HomePreview";
 import LogoIcon, { isImageLogo } from "@/components/LogoIcon";
+import { useToast } from "@/components/Toast";
 import {
   DEFAULT_SITE_SETTINGS,
   FONT_OPTIONS,
@@ -16,11 +17,10 @@ import type { HomeStep, SiteSettings } from "@/lib/types";
 const MAX_LOGO_FILE_BYTES = 250 * 1024;
 
 export default function SettingsTab() {
+  const toast = useToast();
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [logoError, setLogoError] = useState("");
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -93,8 +93,6 @@ export default function SettingsTab() {
   }
 
   async function handleSave() {
-    setError("");
-    setSuccess("");
     setSaving(true);
     try {
       const res = await fetch("/api/admin/settings", {
@@ -109,9 +107,9 @@ export default function SettingsTab() {
         throw new Error(data.error || "Erreur lors de l'enregistrement.");
       }
 
-      setSuccess("Apparence enregistrée.");
+      toast.success("Apparence enregistrée.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      toast.error(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
       setSaving(false);
     }
@@ -466,9 +464,6 @@ export default function SettingsTab() {
             </div>
           )}
         </div>
-
-        {error && <p className="mb-4 text-sm font-medium text-red-600">{error}</p>}
-        {success && <p className="mb-4 text-sm font-medium text-green-600">{success}</p>}
 
         <button
           type="button"

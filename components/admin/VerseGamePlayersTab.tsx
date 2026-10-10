@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/Toast";
 import { MAX_LEVEL } from "@/lib/verse-level";
 
 interface Player {
@@ -15,6 +16,7 @@ interface Player {
 const PAGE_SIZE = 50;
 
 export default function VerseGamePlayersTab() {
+  const toast = useToast();
   const [players, setPlayers] = useState<Player[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -98,8 +100,11 @@ export default function VerseGamePlayersTab() {
         )
       );
       setEditingKey(null);
+      toast.success("Joueur modifié.");
     } catch (err) {
-      setEditError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setEditError(message);
+      toast.error(message);
     } finally {
       setEditSubmitting(false);
     }
@@ -107,7 +112,6 @@ export default function VerseGamePlayersTab() {
 
   async function handleReset(deviceKey: string) {
     setResettingKey(deviceKey);
-    setError("");
     try {
       const res = await fetch(`/api/admin/verse-game/players/${encodeURIComponent(deviceKey)}`, {
         method: "DELETE",
@@ -117,9 +121,10 @@ export default function VerseGamePlayersTab() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Erreur lors de la réinitialisation.");
       }
+      toast.success("Progression réinitialisée.");
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      toast.error(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
       setResettingKey(null);
     }

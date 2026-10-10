@@ -3,6 +3,7 @@ import "./globals.css";
 import { inter } from "@/lib/fonts";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import InstallPrompt from "@/components/InstallPrompt";
+import { ToastProvider } from "@/components/Toast";
 
 const title = "Quiz Biblique";
 const description = "Teste tes connaissances sur la leçon du jour — Mission Évangélique de la Foi";
@@ -42,9 +43,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr" className={inter.variable}>
       <body>
-        {children}
-        <ServiceWorkerRegister />
-        <InstallPrompt />
+        <ToastProvider>
+          {children}
+          <ServiceWorkerRegister />
+          <InstallPrompt />
+        </ToastProvider>
       </body>
     </html>
   );

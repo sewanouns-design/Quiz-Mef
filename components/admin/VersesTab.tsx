@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/Toast";
 import type { BibleVerse } from "@/lib/types";
 
 const PAGE_SIZE = 50;
 
 export default function VersesTab() {
+  const toast = useToast();
   const [verses, setVerses] = useState<BibleVerse[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -107,8 +109,11 @@ export default function VersesTab() {
       setText("");
       setBlankWord("");
       setLevel("");
+      toast.success("Verset ajouté.");
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setFormError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -172,12 +177,13 @@ export default function VersesTab() {
       }
 
       setBulkProgress("");
-      setBulkResult(
+      const summary =
         `${totalImported} verset(s) importé(s).` +
-          (allRejected.length > 0
-            ? ` ${allRejected.length} ligne(s) ignorée(s) (voir ci-dessous).`
-            : "")
-      );
+        (allRejected.length > 0
+          ? ` ${allRejected.length} ligne(s) ignorée(s) (voir ci-dessous).`
+          : "");
+      setBulkResult(summary);
+      toast.success(summary);
       if (allRejected.length > 0) {
         setBulkError(allRejected.map((r) => `Ligne ${r.line} : ${r.reason}`).join(" · "));
       }
@@ -187,7 +193,9 @@ export default function VersesTab() {
       load({ page: 1, search: "" });
     } catch (err) {
       setBulkProgress("");
-      setBulkError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setBulkError(message);
+      toast.error(message);
     } finally {
       setBulkSubmitting(false);
     }
@@ -230,14 +238,17 @@ export default function VersesTab() {
       if (!res.ok) {
         throw new Error(data.error || "Erreur lors du recalcul.");
       }
-      setRecalculateResult(
+      const summary =
         data.updated > 0
           ? `${data.updated} verset(s) reclassé(s) selon leur vrai taux d'échec.`
-          : "Pas encore assez de réponses enregistrées pour reclasser de versets."
-      );
+          : "Pas encore assez de réponses enregistrées pour reclasser de versets.";
+      setRecalculateResult(summary);
+      toast.success(summary);
       load();
     } catch (err) {
-      setRecalculateError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setRecalculateError(message);
+      toast.error(message);
     } finally {
       setRecalculating(false);
     }
@@ -276,8 +287,11 @@ export default function VersesTab() {
       }
       setVerses((prev) => prev.map((v) => (v.id === editingId ? data.verse : v)));
       setEditingId(null);
+      toast.success("Verset modifié.");
     } catch (err) {
-      setEditError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setEditError(message);
+      toast.error(message);
     } finally {
       setEditSubmitting(false);
     }

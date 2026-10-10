@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/Toast";
 import type { SiteSettings } from "@/lib/types";
 
 /** Convertit un ISO stocké en base en valeur locale pour un <input type="datetime-local">. */
@@ -41,11 +42,10 @@ const DEFAULTS: VerseGameSettings = {
  * parallèle dans l'onglet Apparence.
  */
 export default function VerseGameSettingsTab() {
+  const toast = useToast();
   const [settings, setSettings] = useState<VerseGameSettings>(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   // Voir SettingsTab : buffer texte libre pour la durée, validé/borné seulement au blur.
   const [timerSecondsText, setTimerSecondsText] = useState("20");
 
@@ -66,8 +66,6 @@ export default function VerseGameSettingsTab() {
   }
 
   async function handleSave() {
-    setError("");
-    setSuccess("");
     setSaving(true);
     try {
       const res = await fetch("/api/admin/settings", {
@@ -82,9 +80,9 @@ export default function VerseGameSettingsTab() {
         throw new Error(data.error || "Erreur lors de l'enregistrement.");
       }
 
-      setSuccess("Réglages enregistrés.");
+      toast.success("Réglages enregistrés.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      toast.error(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
       setSaving(false);
     }
@@ -207,9 +205,6 @@ export default function VerseGameSettingsTab() {
           </div>
         </>
       )}
-
-      {error && <p className="mb-4 mt-4 text-sm font-medium text-red-600">{error}</p>}
-      {success && <p className="mb-4 mt-4 text-sm font-medium text-green-600">{success}</p>}
 
       <button type="button" onClick={handleSave} disabled={saving} className="btn-accent mt-4">
         {saving ? "Enregistrement..." : "Enregistrer"}

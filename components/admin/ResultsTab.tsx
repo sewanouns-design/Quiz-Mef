@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import QuizSelect from "./QuizSelect";
 import ParticipantDetailModal from "./ParticipantDetailModal";
+import { useToast } from "@/components/Toast";
 
 interface Submission {
   id: string;
@@ -19,6 +20,7 @@ function toWhatsappLink(whatsapp: string): string {
 }
 
 export default function ResultsTab() {
+  const toast = useToast();
   const [quizId, setQuizId] = useState("");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(false);
@@ -89,9 +91,12 @@ export default function ResultsTab() {
         throw new Error(data.error || "Erreur lors de la suppression.");
       }
       setSelectedIds(new Set());
+      toast.success(`${count} résultat(s) supprimé(s).`);
       loadSubmissions();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setError(message);
+      toast.error(message);
     } finally {
       setDeleting(false);
     }

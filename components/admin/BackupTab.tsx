@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useToast } from "@/components/Toast";
 
 interface BackupPayload {
   type: "full" | "period";
@@ -33,6 +34,7 @@ async function downloadBackup(url: string, filenameFallback: string) {
 }
 
 export default function BackupTab() {
+  const toast = useToast();
   const [exportingFull, setExportingFull] = useState(false);
   const [exportingPeriod, setExportingPeriod] = useState(false);
   const [exportError, setExportError] = useState("");
@@ -55,8 +57,11 @@ export default function BackupTab() {
         "/api/admin/backup/export",
         `quiz-mef-sauvegarde-complete-${today}.json`
       );
+      toast.success("Sauvegarde téléchargée.");
     } catch (err) {
-      setExportError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setExportError(message);
+      toast.error(message);
     } finally {
       setExportingFull(false);
     }
@@ -78,8 +83,11 @@ export default function BackupTab() {
         `/api/admin/backup/export?${params.toString()}`,
         `quiz-mef-sauvegarde-periode-${today}.json`
       );
+      toast.success("Export téléchargé.");
     } catch (err) {
-      setExportError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setExportError(message);
+      toast.error(message);
     } finally {
       setExportingPeriod(false);
     }
@@ -128,8 +136,11 @@ export default function BackupTab() {
       setPendingFile(null);
       setPendingFileName("");
       if (fileInputRef.current) fileInputRef.current.value = "";
+      toast.success("Restauration terminée.");
     } catch (err) {
-      setRestoreError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setRestoreError(message);
+      toast.error(message);
     } finally {
       setRestoring(false);
     }

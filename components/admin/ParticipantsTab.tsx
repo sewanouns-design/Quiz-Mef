@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import ParticipantDetailModal from "./ParticipantDetailModal";
 import MergeParticipantsModal from "./MergeParticipantsModal";
+import { useToast } from "@/components/Toast";
 
 interface Participant {
   id: string;
@@ -19,6 +20,7 @@ function toWhatsappLink(whatsapp: string): string {
 }
 
 export default function ParticipantsTab() {
+  const toast = useToast();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -92,9 +94,12 @@ export default function ParticipantsTab() {
         throw new Error(data.error || "Erreur lors de la suppression.");
       }
       setSelectedIds(new Set());
+      toast.success(`${count} participant(s) supprimé(s).`);
       loadParticipants();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setError(message);
+      toast.error(message);
     } finally {
       setDeleting(false);
     }

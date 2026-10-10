@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/Toast";
 import type { SiteUpdate } from "@/lib/types";
 
 export default function UpdatesTab() {
+  const toast = useToast();
   const [updates, setUpdates] = useState<SiteUpdate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -61,8 +63,11 @@ export default function UpdatesTab() {
       setIcon("🆕");
       setLinkHref("");
       setLinkLabel("");
+      toast.success("Nouveauté ajoutée.");
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setFormError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -77,9 +82,10 @@ export default function UpdatesTab() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Erreur lors de la suppression.");
       }
+      toast.success("Nouveauté supprimée.");
     } catch (err) {
       setUpdates(previous);
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      toast.error(err instanceof Error ? err.message : "Une erreur est survenue.");
     }
   }
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import QuestionBuilder, { type EditableQuestion } from "./QuestionBuilder";
 import LessonQuestionsModal from "./LessonQuestionsModal";
 import { parseQuizQuestionsInput } from "@/lib/quiz-import-parser";
+import { useToast } from "@/components/Toast";
 
 interface QuizListItem {
   id: string;
@@ -253,6 +254,7 @@ function tryParseQuestions(json: string): EditableQuestion[] | null {
 }
 
 export default function QuizTab() {
+  const toast = useToast();
   const [quizzes, setQuizzes] = useState<QuizListItem[]>([]);
   const [loadingList, setLoadingList] = useState(true);
 
@@ -455,17 +457,20 @@ export default function QuizTab() {
         throw new Error(data.error || "Erreur lors de l'enregistrement du quiz.");
       }
 
-      if (isEdit && data.regrade) {
-        setSuccess(
-          `Quiz modifié avec succès. Recalcul : ${data.regrade.answersUpdated} réponse(s) et ${data.regrade.submissionsUpdated} copie(s) mises à jour.`
-        );
-      } else {
-        setSuccess(isEdit ? "Quiz modifié avec succès." : "Quiz créé avec succès.");
-      }
+      const successMessage =
+        isEdit && data.regrade
+          ? `Quiz modifié avec succès. Recalcul : ${data.regrade.answersUpdated} réponse(s) et ${data.regrade.submissionsUpdated} copie(s) mises à jour.`
+          : isEdit
+            ? "Quiz modifié avec succès."
+            : "Quiz créé avec succès.";
+      setSuccess(successMessage);
+      toast.success(successMessage);
       resetForm();
       loadQuizzes();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -484,11 +489,13 @@ export default function QuizTab() {
       if (!res.ok) {
         throw new Error(data.error || "Erreur lors du recalcul.");
       }
-      setRegradeMessage(
-        `Recalcul terminé pour « ${quizzes.find((q) => q.id === quizId)?.title ?? "ce quiz"} » : ${data.answersUpdated} réponse(s) et ${data.submissionsUpdated} copie(s) mises à jour.`
-      );
+      const message = `Recalcul terminé pour « ${quizzes.find((q) => q.id === quizId)?.title ?? "ce quiz"} » : ${data.answersUpdated} réponse(s) et ${data.submissionsUpdated} copie(s) mises à jour.`;
+      setRegradeMessage(message);
+      toast.success(message);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setError(message);
+      toast.error(message);
     } finally {
       setRegradingQuizId(null);
     }
@@ -505,9 +512,12 @@ export default function QuizTab() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Erreur lors de l'activation.");
       }
+      toast.success("Quiz activé.");
       loadQuizzes();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setError(message);
+      toast.error(message);
     }
   }
 
@@ -523,9 +533,12 @@ export default function QuizTab() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Erreur lors de la désactivation.");
       }
+      toast.success("Quiz désactivé.");
       loadQuizzes();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setError(message);
+      toast.error(message);
     } finally {
       setDeactivatingQuizId(null);
     }
@@ -550,10 +563,14 @@ export default function QuizTab() {
         throw new Error(data.error || "Erreur lors de la suppression.");
       }
       if (editingQuizId === quiz.id) resetForm();
-      setSuccess(`« ${quiz.title} » a été supprimé.`);
+      const message = `« ${quiz.title} » a été supprimé.`;
+      setSuccess(message);
+      toast.success(message);
       loadQuizzes();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setError(message);
+      toast.error(message);
     } finally {
       setDeletingQuizId(null);
     }
@@ -604,7 +621,9 @@ export default function QuizTab() {
       link.remove();
       URL.revokeObjectURL(url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setError(message);
+      toast.error(message);
     } finally {
       setExportingQuizId(null);
     }

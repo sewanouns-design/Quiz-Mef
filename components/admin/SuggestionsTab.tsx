@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/Toast";
 
 interface SuggestionEntry {
   id: string;
@@ -19,6 +20,7 @@ interface SuggestionEntry {
 }
 
 export default function SuggestionsTab() {
+  const toast = useToast();
   const [suggestions, setSuggestions] = useState<SuggestionEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -61,8 +63,11 @@ export default function SuggestionsTab() {
         throw new Error(data.error || "Erreur lors de la mise à jour.");
       }
       setSuggestions((prev) => prev.map((s) => (s.id === id ? { ...s, ...data.suggestion } : s)));
+      toast.success(body.adminResponse !== undefined ? "Réponse enregistrée." : "Mise à jour effectuée.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setError(message);
+      toast.error(message);
     } finally {
       setSavingId(null);
     }
