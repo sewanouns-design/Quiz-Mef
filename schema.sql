@@ -268,6 +268,10 @@ create table if not exists site_settings (
   -- comptée comme fausse et la bonne réponse est révélée.
   verse_game_timer_enabled boolean not null default false,
   verse_game_timer_seconds integer not null default 20 check (verse_game_timer_seconds between 3 and 300),
+  -- Partage du quiz : par défaut, le message partagé (WhatsApp/natif) pointe
+  -- vers l'accueil du site plutôt que directement vers le quiz joué — activer
+  -- ce champ pour revenir au lien direct vers le quiz.
+  quiz_share_direct_link_enabled boolean not null default false,
   updated_at timestamptz default now()
 );
 

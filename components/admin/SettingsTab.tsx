@@ -465,6 +465,23 @@ export default function SettingsTab() {
           )}
         </div>
 
+        <div className="mb-6 rounded-xl border border-gray-200 p-4">
+          <h3 className="mb-3 text-sm font-bold text-navy">🔗 Partage du quiz</h3>
+          <label className="flex items-center gap-2 text-sm font-medium text-navy">
+            <input
+              type="checkbox"
+              checked={settings.quiz_share_direct_link_enabled}
+              onChange={(e) => updateField("quiz_share_direct_link_enabled", e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            Lien direct vers le quiz dans le message partagé
+          </label>
+          <p className="mt-1 text-xs text-gray-400">
+            Désactivé : le message partagé (WhatsApp, partage natif) pointe vers l&apos;accueil du
+            site. Activé : il pointe directement vers le quiz joué.
+          </p>
+        </div>
+
         <button
           type="button"
           onClick={handleSave}

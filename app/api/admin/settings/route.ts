@@ -67,6 +67,7 @@ export async function PUT(request: NextRequest) {
     verse_game_schedule_end,
     verse_game_timer_enabled,
     verse_game_timer_seconds,
+    quiz_share_direct_link_enabled,
   } = body ?? {};
 
   if (template && !VALID_TEMPLATES.includes(template)) {
@@ -172,6 +173,8 @@ export async function PUT(request: NextRequest) {
   if (verse_game_timer_enabled !== undefined)
     updates.verse_game_timer_enabled = Boolean(verse_game_timer_enabled);
   if (parsedTimerSeconds !== undefined) updates.verse_game_timer_seconds = parsedTimerSeconds;
+  if (quiz_share_direct_link_enabled !== undefined)
+    updates.quiz_share_direct_link_enabled = Boolean(quiz_share_direct_link_enabled);
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase

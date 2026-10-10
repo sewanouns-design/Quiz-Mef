@@ -189,6 +189,7 @@ export interface SiteSettings {
   verse_game_schedule_end: string | null;
   verse_game_timer_enabled: boolean;
   verse_game_timer_seconds: number;
+  quiz_share_direct_link_enabled: boolean;
   updated_at: string;
 }
 

@@ -216,8 +216,19 @@ export default function ResultsPage() {
     setShareError("");
     setSharing(true);
 
-    const quizLink = `https://quiz.mefzogbadje.org/quiz?quiz=${encodeURIComponent(data.quiz.id)}`;
-    const message = `J'ai obtenu ${data.score}/${data.maxScore} au quiz « ${data.quiz.title} » ! ⁉️ Teste tes connaissances toi aussi : ${quizLink}`;
+    let shareLink = "https://quiz.mefzogbadje.org/";
+    try {
+      const brandRes = await fetch("/api/site-brand");
+      if (brandRes.ok) {
+        const brand = await brandRes.json();
+        if (brand.quizShareDirectLinkEnabled) {
+          shareLink = `https://quiz.mefzogbadje.org/quiz?quiz=${encodeURIComponent(data.quiz.id)}`;
+        }
+      }
+    } catch {
+      // Lien par défaut (accueil) conservé en cas d'échec de la requête.
+    }
+    const message = `J'ai obtenu ${data.score}/${data.maxScore} au quiz « ${data.quiz.title} » ! ⁉️ Teste tes connaissances toi aussi : ${shareLink}`;
 
     try {
       const blob = await generateResultsImage({

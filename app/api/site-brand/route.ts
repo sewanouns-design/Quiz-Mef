@@ -15,5 +15,9 @@ const getCachedSettings = unstable_cache(getSiteSettings, ["site-brand-settings"
 
 export async function GET() {
   const settings = await getCachedSettings();
-  return NextResponse.json({ logoIcon: settings.logo_icon, siteName: settings.site_name });
+  return NextResponse.json({
+    logoIcon: settings.logo_icon,
+    siteName: settings.site_name,
+    quizShareDirectLinkEnabled: settings.quiz_share_direct_link_enabled,
+  });
 }

@@ -56,6 +56,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   verse_game_schedule_end: null,
   verse_game_timer_enabled: false,
   verse_game_timer_seconds: 20,
+  quiz_share_direct_link_enabled: false,
   updated_at: "",
 };
 
