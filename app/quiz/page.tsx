@@ -189,9 +189,10 @@ function QuizIdentificationForm() {
         showInLeaderboard: true,
       });
 
-      // Demande d'autorisation de notifications dès l'identification plutôt
-      // que d'attendre un clic sur un bouton : best-effort, ne doit jamais
-      // bloquer la navigation vers le quiz.
+      // Demande d'autorisation dès l'identification (nouveau participant) ;
+      // PushAutoSubscribe (layout racine) couvre les anciens participants
+      // qui n'en repassent pas par ce formulaire. Best-effort, ne doit
+      // jamais bloquer la navigation vers le quiz.
       requestPushSubscription(deviceKey).catch(() => {});
 
       router.push(`/quiz/${selectedQuizId}`);

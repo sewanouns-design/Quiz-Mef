@@ -3,6 +3,7 @@ import "./globals.css";
 import { inter } from "@/lib/fonts";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import InstallPrompt from "@/components/InstallPrompt";
+import PushAutoSubscribe from "@/components/PushAutoSubscribe";
 import { ToastProvider } from "@/components/Toast";
 
 const title = "Quiz Biblique";
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <ServiceWorkerRegister />
           <InstallPrompt />
+          <PushAutoSubscribe />
         </ToastProvider>
       </body>
     </html>
