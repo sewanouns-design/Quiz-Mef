@@ -214,7 +214,7 @@ export default function LessonSourceTab() {
               <p className="mt-1 text-xs text-gray-500">Numéro de la première leçon à produire. Pour ton PDF actuel : 7.</p>
             </div>
             <div>
-              <label className="label-field" htmlFor="lesson-source-quarter-start">Début du trimestre</label>
+              <label className="label-field" htmlFor="lesson-source-quarter-start">Début du trimestre (PDF)</label>
               <input
                 id="lesson-source-quarter-start"
                 type="date"
@@ -222,10 +222,10 @@ export default function LessonSourceTab() {
                 onChange={(event) => setQuarterStart(event.target.value)}
                 className="input-field"
               />
-              <p className="mt-1 text-xs text-gray-500">Premier jour couvert par l’automatisation.</p>
+              <p className="mt-1 text-xs text-gray-500">Pour ce livret : 06/09/2026. La leçon 7 commence le 12/10/2026.</p>
             </div>
             <div>
-              <label className="label-field" htmlFor="lesson-source-quarter-end">Fin du trimestre</label>
+              <label className="label-field" htmlFor="lesson-source-quarter-end">Fin du trimestre (PDF)</label>
               <input
                 id="lesson-source-quarter-end"
                 type="date"
@@ -233,7 +233,7 @@ export default function LessonSourceTab() {
                 onChange={(event) => setQuarterEnd(event.target.value)}
                 className="input-field"
               />
-              <p className="mt-1 text-xs text-gray-500">Dernier jour couvert par ce PDF.</p>
+              <p className="mt-1 text-xs text-gray-500">Pour ce livret : 29/11/2026.</p>
             </div>
           </div>
           <button type="submit" disabled={uploading || !file} className="btn-primary">
