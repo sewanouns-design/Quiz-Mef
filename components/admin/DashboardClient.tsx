@@ -8,6 +8,7 @@ import QuizTab from "./QuizTab";
 import ParticipantsTab from "./ParticipantsTab";
 import ResultsTab from "./ResultsTab";
 import LeaderboardTab from "./LeaderboardTab";
+import QuarterlyRankingTab from "./QuarterlyRankingTab";
 import SettingsTab from "./SettingsTab";
 import LessonQuestionsTab from "./LessonQuestionsTab";
 import SuggestionsTab from "./SuggestionsTab";
@@ -67,6 +68,7 @@ const CATEGORIES: Category[] = [
           { id: "suggestions", label: "Suggestions", render: () => <SuggestionsTab /> },
           { id: "results", label: "Résultats", render: () => <ResultsTab /> },
           { id: "leaderboard", label: "Classement", render: () => <LeaderboardTab /> },
+          { id: "quarterly-ranking", label: "Gagnants trimestriels", render: () => <QuarterlyRankingTab /> },
         ],
       },
     ],

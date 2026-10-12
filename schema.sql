@@ -80,6 +80,24 @@ create table if not exists daily_quizzes (
 create index if not exists idx_daily_quizzes_is_active on daily_quizzes (is_active);
 
 -- ------------------------------------------------------------
+-- Compétitions trimestrielles et paramètres de récompense
+-- ------------------------------------------------------------
+create table if not exists quarterly_competitions (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  period_start date not null,
+  period_end date not null,
+  final_quiz_id uuid not null references daily_quizzes(id),
+  winner_count int not null default 5 check (winner_count between 1 and 100),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  check (period_end >= period_start)
+);
+
+create index if not exists idx_quarterly_competitions_period
+  on quarterly_competitions (period_start, period_end);
+
+-- ------------------------------------------------------------
 -- Questions
 -- ------------------------------------------------------------
 create table if not exists daily_questions (
@@ -641,6 +659,7 @@ create index if not exists idx_site_updates_created_at on site_updates (created_
 alter table participants enable row level security;
 alter table participant_login_tokens enable row level security;
 alter table daily_quizzes enable row level security;
+alter table quarterly_competitions enable row level security;
 alter table daily_questions enable row level security;
 alter table daily_submissions enable row level security;
 alter table daily_answers enable row level security;
