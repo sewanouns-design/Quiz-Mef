@@ -42,6 +42,18 @@ Exemple WEEKLY :
 "title": "Quiz hebdomadaire — Leçon 7"
 "subtitle": "Créé pour être sage et prudent"
 
+Règles automatiques de disponibilité :
+
+- Utilise le fuseau horaire de Cotonou, Bénin : Africa/Porto-Novo, UTC+01:00.
+- Pour un quiz DAILY, le champ "expiresAt" doit être le dimanche de la même semaine à 17:00:00+01:00.
+- Pour un quiz WEEKLY, le champ "expiresAt" doit être le lundi suivant à 09:00:00+01:00.
+- Le champ "expiresAt" doit être renvoyé au format ISO 8601 avec le décalage +01:00.
+- Ne laisse jamais "expiresAt" vide et ne choisis jamais une date inventée : calcule-la à partir de la date fournie.
+
+Exemples :
+- Une journée de la semaine du 12 au 18 octobre 2026 expire le 18 octobre 2026 à 17:00:00+01:00.
+- Le quiz hebdomadaire de cette même semaine expire le 19 octobre 2026 à 09:00:00+01:00.
+
 ==================================================
 2. PÉRIMÈTRE OBLIGATOIRE DU CONTENU
 ==================================================
@@ -139,6 +151,27 @@ Si une proposition est globalement vraie dans la Bible mais n’est pas la répo
 
 Répartis la position de la bonne réponse entre les indices 0, 1, 2 et 3. Ne place pas systématiquement la bonne réponse au même endroit.
 
+Procédure obligatoire de construction des quatre options :
+
+1. Identifie d’abord, dans la source, le fait précis testé par la question.
+2. Construis la bonne réponse à partir de ce fait précis.
+3. Construis ensuite trois distracteurs « voisins » en modifiant une seule dimension à la fois : acteur, lieu, moment, cause, conséquence, objectif, condition, degré, ordre ou relation entre deux idées.
+4. Réutilise autant que possible le même vocabulaire, les mêmes personnages, les mêmes lieux, les mêmes périodes et le même niveau de détail que dans la bonne réponse.
+5. Les distracteurs doivent ressembler à des confusions qu’un lecteur attentif pourrait réellement faire, et non à des réponses générales de culture biblique.
+
+Règles anti-réponse-évidente :
+
+- Ne rends jamais la bonne réponse plus longue, plus précise ou plus nuancée que les trois autres.
+- Ne mets jamais une expression biblique connue uniquement dans la bonne réponse.
+- Ne place jamais dans les distracteurs des éléments absurdes, hors époque, hors lieu ou manifestement étrangers au passage.
+- Ne produis jamais trois réponses vagues face à une réponse exacte.
+- Ne change pas de catégorie entre les options : quatre personnes, quatre lieux, quatre causes, quatre conséquences ou quatre formulations comparables.
+- Ne donne pas la réponse par élimination grammaticale, par longueur, par répétition d’un mot-clé ou par ton plus moral/religieux.
+- Quand la source contient plusieurs éléments vrais, demande une combinaison précise (« lequel associe correctement X et Y ? ») afin qu’une seule option soit exacte dans son ensemble.
+- Si tu ne peux pas créer trois distracteurs proches sans inventer ou créer une deuxième réponse défendable, change la question. Ne conserve jamais une question facile simplement pour atteindre le nombre demandé.
+
+Test de difficulté obligatoire : une personne qui connaît seulement des notions bibliques générales, sans avoir lu le passage fourni, doit hésiter sérieusement entre plusieurs options et ne doit pas pouvoir trouver la bonne par élimination. Si la bonne réponse saute aux yeux, réécris la question et les quatre options.
+
 ==================================================
 6. QUESTIONS DE TYPE AFFIRMATION À ÉVALUER
 ==================================================
@@ -204,6 +237,7 @@ Le format obligatoire est :
     "category": "daily" ou "weekly",
     "title": "Titre rempli automatiquement selon les règles",
     "subtitle": "Sous-titre rempli automatiquement selon les règles",
+    "expiresAt": "Date ISO calculée automatiquement selon les règles de disponibilité",
     "lessonNumber": 7,
     "lessonTitle": "Titre général exact de la leçon",
     "durationSeconds": 240 ou 900,
@@ -234,6 +268,7 @@ Contraintes JSON :
 - "options" contient exactement 4 chaînes non vides.
 - "correctOption" vaut exactement 0, 1, 2 ou 3.
 - "justification" est toujours une chaîne non vide.
+- "expiresAt" est toujours une date ISO 8601 valide avec le fuseau "+01:00".
 - Le nombre de questions, la durée et les points correspondent au type de quiz.
 - N’ajoute aucun champ non demandé dans les objets de questions.
 

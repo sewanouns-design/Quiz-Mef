@@ -79,6 +79,7 @@ function parseImportMetadata(rawInput: unknown): QuizImportMetadata | undefined 
   const title = findField(rawMetadata, ["title", "quiztitle"]);
   const subtitle = findField(rawMetadata, ["subtitle", "sous titre", "soustitle"]);
   const category = findField(rawMetadata, ["category", "quizcategory"]);
+  const expiresAt = findField(rawMetadata, ["expiresat", "expiration", "expires"]);
   const duration = findField(rawMetadata, ["durationseconds", "duration", "duree"]);
   const lessonNumber = findField(rawMetadata, ["lessonnumber", "lesson", "lecon", "numero"]);
   const lessonTitle = findField(rawMetadata, ["lessontitle", "lecontitle"]);
@@ -88,6 +89,9 @@ function parseImportMetadata(rawInput: unknown): QuizImportMetadata | undefined 
   const parsed: QuizImportMetadata = {};
   if (typeof title === "string" && title.trim()) parsed.title = title.trim();
   if (typeof subtitle === "string" && subtitle.trim()) parsed.subtitle = subtitle.trim();
+  if (typeof expiresAt === "string" && !Number.isNaN(Date.parse(expiresAt))) {
+    parsed.expiresAt = expiresAt;
+  }
   if (typeof category === "string" && (category === "daily" || category === "weekly")) {
     parsed.category = category;
   }
@@ -289,6 +293,7 @@ export interface QuizImportMetadata {
   category?: "daily" | "weekly";
   title?: string;
   subtitle?: string;
+  expiresAt?: string;
   lessonNumber?: number;
   lessonTitle?: string;
   durationSeconds?: number;

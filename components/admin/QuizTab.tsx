@@ -247,13 +247,20 @@ export default function QuizTab() {
     if (metadata.title) setTitle(metadata.title);
     if (metadata.subtitle) setSubtitle(metadata.subtitle);
     if (metadata.category) setCategory(metadata.category);
+    if (metadata.expiresAt) setExpiresAt(toDatetimeLocalValue(metadata.expiresAt));
     if (metadata.durationSeconds) {
       const total = metadata.durationSeconds;
       setDurationHours(String(Math.floor(total / 3600)));
       setDurationMinutes(String(Math.floor((total % 3600) / 60)));
       setDurationSecondsPart(String(total % 60));
     }
-    return Boolean(metadata.title || metadata.subtitle || metadata.category || metadata.durationSeconds);
+    return Boolean(
+      metadata.title ||
+        metadata.subtitle ||
+        metadata.category ||
+        metadata.durationSeconds ||
+        metadata.expiresAt
+    );
   }
 
   function handleFileImport(e: React.ChangeEvent<HTMLInputElement>) {
@@ -286,7 +293,7 @@ export default function QuizTab() {
       setSuccess(
         `${result.questions.length} question(s) importée(s) avec succès${
           result.pointsAutoDistributed ? " (points manquants répartis automatiquement)" : ""
-        }${metadataApplied ? ". Titre, sous-titre, catégorie et durée remplis automatiquement." : "."}`
+        }${metadataApplied ? ". Paramètres du quiz remplis automatiquement, y compris l’échéance." : "."}`
       );
     };
     reader.onerror = () => setError("Impossible de lire le fichier.");
@@ -390,6 +397,11 @@ export default function QuizTab() {
     const effectiveTitle = importedMetadata?.title?.trim() || title.trim();
     const effectiveSubtitle = importedMetadata?.subtitle ?? subtitle;
     const effectiveCategory = importedMetadata?.category ?? category;
+    const effectiveExpiresAt = importedMetadata?.expiresAt
+      ? new Date(importedMetadata.expiresAt).toISOString()
+      : expiresAt
+        ? new Date(expiresAt).toISOString()
+        : null;
 
     const h = Number(durationHours) || 0;
     const m = Number(durationMinutes) || 0;
@@ -421,7 +433,7 @@ export default function QuizTab() {
             isActive,
             questions,
             durationSeconds: parsedDuration,
-            expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+            expiresAt: effectiveExpiresAt,
             quizMode,
             category: effectiveCategory,
           }),
@@ -808,7 +820,8 @@ export default function QuizTab() {
                   <p className="mb-2 text-xs text-gray-500">
                     Colle ce prompt dans un chat IA avec le texte (ou les pages) de la leçon, puis
                     importe le JSON obtenu. Le titre, le sous-titre, la catégorie et la durée sont
-                    remplis automatiquement lorsque le JSON contient le bloc metadata.
+                    remplis automatiquement lorsque le JSON contient le bloc metadata, y compris
+                    l&apos;échéance calculée selon la semaine.
                   </p>
                   <pre className="mb-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-md bg-white p-2 font-mono text-[11px] leading-relaxed text-gray-600">
                     {GENERATION_PROMPT}
