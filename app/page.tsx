@@ -24,7 +24,8 @@ const getCachedSiteSettings = unstable_cache(getSiteSettings, ["home-site-settin
 // Plusieurs quiz peuvent être actifs en même temps (quiz du jour + quiz
 // hebdomadaire, ou plusieurs quotidiens) : on récupère tous les quiz actifs
 // et HomePage() ci-dessous en dérive le quiz du jour le plus récent et,
-// séparément, un éventuel quiz hebdo à mettre en avant.
+// séparément, un éventuel quiz hebdo à mettre en avant. L'examen trimestriel
+// reste accessible depuis le sélecteur général /quiz.
 const getCachedActiveQuizzes = unstable_cache(
   async () => {
     const supabase = getSupabaseAdmin();
@@ -99,7 +100,7 @@ export default async function HomePage() {
     getCachedStats(),
   ]);
 
-  const activeQuiz = activeQuizzes.find((q) => q.category !== "weekly") ?? null;
+  const activeQuiz = activeQuizzes.find((q) => q.category === "daily") ?? null;
   const weeklyQuiz = activeQuizzes.find((q) => q.category === "weekly") ?? null;
 
   const todayStats = activeQuiz ? await getCachedTodayQuizStats(activeQuiz.id) : null;

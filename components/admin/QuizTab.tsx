@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import QuestionBuilder, { type EditableQuestion } from "./QuestionBuilder";
 import LessonQuestionsModal from "./LessonQuestionsModal";
 import { parseQuizQuestionsInput, type QuizImportMetadata } from "@/lib/quiz-import-parser";
-import { GENERATION_PROMPT } from "@/lib/quiz-generation-prompt";
+import { GENERATION_PROMPTS } from "@/lib/quiz-generation-prompts";
 import { useToast } from "@/components/Toast";
 
 interface QuizListItem {
@@ -14,7 +14,7 @@ interface QuizListItem {
   is_active: boolean;
   duration_seconds: number | null;
   expires_at: string | null;
-  category: "daily" | "weekly";
+  category: "daily" | "weekly" | "quarterly";
   created_at: string;
 }
 
@@ -162,12 +162,12 @@ const EXAMPLE_JSON = `[
 
 
 
-function CopyPromptButton() {
+function CopyPromptButton({ prompt }: { prompt: string }) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(GENERATION_PROMPT);
+      await navigator.clipboard.writeText(prompt);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -223,7 +223,7 @@ export default function QuizTab() {
   const [durationMinutes, setDurationMinutes] = useState("");
   const [durationSecondsPart, setDurationSecondsPart] = useState("");
   const [quizMode, setQuizMode] = useState<"overview" | "sequential">("overview");
-  const [category, setCategory] = useState<"daily" | "weekly">("daily");
+  const [category, setCategory] = useState<"daily" | "weekly" | "quarterly">("daily");
   const [questionsJson, setQuestionsJson] = useState("[]");
   const [editorMode, setEditorMode] = useState<"visual" | "json">("visual");
   const [submitting, setSubmitting] = useState(false);
@@ -353,7 +353,13 @@ export default function QuizTab() {
       setExpiresAt(data.quiz.expires_at ? toDatetimeLocalValue(data.quiz.expires_at) : "");
       setIsActive(data.quiz.is_active);
       setQuizMode(data.quiz.quiz_mode === "sequential" ? "sequential" : "overview");
-      setCategory(data.quiz.category === "weekly" ? "weekly" : "daily");
+      setCategory(
+        data.quiz.category === "quarterly"
+          ? "quarterly"
+          : data.quiz.category === "weekly"
+            ? "weekly"
+            : "daily"
+      );
       const totalSeconds: number = data.quiz.duration_seconds ?? 0;
       if (totalSeconds > 0) {
         setDurationHours(String(Math.floor(totalSeconds / 3600)));
@@ -618,6 +624,7 @@ export default function QuizTab() {
   }
 
   const isEdit = Boolean(editingQuizId);
+  const generationPrompt = GENERATION_PROMPTS[category];
   const parsedQuestionsForBuilder = tryParseQuestions(questionsJson);
 
   return (
@@ -787,9 +794,20 @@ export default function QuizTab() {
                 >
                   Quiz hebdomadaire
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setCategory("quarterly")}
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    category === "quarterly" ? "bg-navy text-white" : "text-gray-500"
+                  }`}
+                >
+                  Quiz trimestriel
+                </button>
               </div>
               <p className="mt-1 text-xs text-gray-400">
-                {category === "weekly"
+                {category === "quarterly"
+                  ? "Examen général du trimestre, avec 20 questions et 15 minutes."
+                  : category === "weekly"
                   ? "Mis en avant par une bannière dédiée, très visible, sur la page d'accueil."
                   : "Affiché normalement sur la page d'accueil."}
               </p>
@@ -814,19 +832,17 @@ export default function QuizTab() {
 
               <details className="mb-3 rounded-lg border border-gray-200 bg-gray-50 text-sm">
                 <summary className="cursor-pointer select-none px-3 py-2 font-semibold text-navy">
-                  📋 Prompt de génération par IA
+                  📋 Prompt de génération par IA — {category === "daily" ? "quotidien" : category === "weekly" ? "hebdomadaire" : "trimestriel"}
                 </summary>
                 <div className="border-t border-gray-200 px-3 py-2">
                   <p className="mb-2 text-xs text-gray-500">
-                    Colle ce prompt dans un chat IA avec le texte (ou les pages) de la leçon, puis
-                    importe le JSON obtenu. Le titre, le sous-titre, la catégorie et la durée sont
-                    remplis automatiquement lorsque le JSON contient le bloc metadata, y compris
-                    l&apos;échéance calculée selon la semaine.
+                    Colle ce prompt dans un chat IA avec le contenu autorisé, puis importe le JSON
+                    obtenu. Le prompt affiché correspond à la catégorie sélectionnée.
                   </p>
                   <pre className="mb-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-md bg-white p-2 font-mono text-[11px] leading-relaxed text-gray-600">
-                    {GENERATION_PROMPT}
+                    {generationPrompt}
                   </pre>
-                  <CopyPromptButton />
+                  <CopyPromptButton prompt={generationPrompt} />
                 </div>
               </details>
 
@@ -887,6 +903,7 @@ export default function QuizTab() {
                   <QuestionBuilder
                     questions={parsedQuestionsForBuilder}
                     onChange={(next) => setQuestionsJson(JSON.stringify(next, null, 2))}
+                    optionCount={category === "quarterly" ? 5 : 4}
                   />
                 ) : (
                   <div className="rounded-xl border-2 border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -955,7 +972,11 @@ export default function QuizTab() {
                       )}
                     </td>
                     <td className="py-3 pr-4">
-                      {quiz.category === "weekly" ? (
+                      {quiz.category === "quarterly" ? (
+                        <span className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-semibold text-purple-700">
+                          🏆 Trimestriel
+                        </span>
+                      ) : quiz.category === "weekly" ? (
                         <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
                           📅 Hebdo
                         </span>

@@ -24,16 +24,24 @@ const TYPE_LABELS: Record<string, string> = {
 
 const TYPE_OPTIONS = Object.entries(TYPE_LABELS);
 
-export function emptyQuestion(): EditableQuestion {
-  return { type: "mcq", question: "", options: ["", "", "", "", ""], correctOption: 0, points: 1 };
+export function emptyQuestion(optionCount: 4 | 5 = 4): EditableQuestion {
+  return {
+    type: "mcq",
+    question: "",
+    options: Array.from({ length: optionCount }, () => ""),
+    correctOption: 0,
+    points: 1,
+  };
 }
 
 export default function QuestionBuilder({
   questions,
   onChange,
+  optionCount = 4,
 }: {
   questions: EditableQuestion[];
   onChange: (next: EditableQuestion[]) => void;
+  optionCount?: 4 | 5;
 }) {
   function updateQuestion(index: number, patch: Partial<EditableQuestion>) {
     onChange(questions.map((q, i) => (i === index ? { ...q, ...patch } : q)));
@@ -52,7 +60,10 @@ export default function QuestionBuilder({
     } else if (type === "mcq") {
       patch = {
         type,
-        options: current.options && current.options.length >= 5 ? current.options : ["", "", "", "", ""],
+        options:
+          current.options && current.options.length >= optionCount
+            ? current.options
+            : Array.from({ length: optionCount }, () => ""),
         correctOption: current.correctOption ?? 0,
         correctText: undefined,
       };
@@ -90,7 +101,7 @@ export default function QuestionBuilder({
   }
 
   function addQuestion() {
-    onChange([...questions, emptyQuestion()]);
+    onChange([...questions, emptyQuestion(optionCount)]);
   }
 
   function removeQuestion(index: number) {
@@ -221,7 +232,7 @@ export default function QuestionBuilder({
                       onChange={(e) => updateOption(index, optIndex, e.target.value)}
                       placeholder={`Option ${optIndex + 1}`}
                     />
-                    {q.type === "mcq" && (q.options?.length ?? 0) > 5 && (
+                    {q.type === "mcq" && (q.options?.length ?? 0) > optionCount && (
                       <button
                         type="button"
                         onClick={() => removeOption(index, optIndex)}
@@ -234,7 +245,7 @@ export default function QuestionBuilder({
                   </div>
                 ))}
               </div>
-              {q.type === "mcq" && (q.options?.length ?? 0) < 5 && (
+              {q.type === "mcq" && (q.options?.length ?? 0) < optionCount && (
                 <button
                   type="button"
                   onClick={() => addOption(index)}

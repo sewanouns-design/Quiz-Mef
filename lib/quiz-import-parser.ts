@@ -92,7 +92,10 @@ function parseImportMetadata(rawInput: unknown): QuizImportMetadata | undefined 
   if (typeof expiresAt === "string" && !Number.isNaN(Date.parse(expiresAt))) {
     parsed.expiresAt = expiresAt;
   }
-  if (typeof category === "string" && (category === "daily" || category === "weekly")) {
+  if (
+    typeof category === "string" &&
+    (category === "daily" || category === "weekly" || category === "quarterly")
+  ) {
     parsed.category = category;
   }
   const numericFields: Array<[
@@ -229,8 +232,8 @@ function normalizeQuestion(raw: unknown, index: number): { question?: QuestionIm
   const justificationValue = typeof justification === "string" ? justification : undefined;
 
   if (type === "mcq" || type === "true_false") {
-    if (type === "mcq" && (!options || options.length !== 5)) {
-      return { error: `Question ${index + 1} : un QCM doit contenir exactement 5 options.` };
+    if (type === "mcq" && (!options || (options.length !== 4 && options.length !== 5))) {
+      return { error: `Question ${index + 1} : un QCM doit contenir 4 ou 5 options.` };
     }
     if (type === "true_false" && (!options || options.length < 2)) {
       return { error: `Question ${index + 1} : au moins 2 options sont requises.` };
@@ -296,7 +299,7 @@ export type QuizImportResult =
   | { success: false; error: string };
 
 export interface QuizImportMetadata {
-  category?: "daily" | "weekly";
+  category?: "daily" | "weekly" | "quarterly";
   title?: string;
   subtitle?: string;
   expiresAt?: string;
@@ -356,7 +359,8 @@ export function parseQuizQuestionsInput(rawInput: unknown): QuizImportResult {
     };
   }
 
-  const finalValidation = validateQuizQuestions(normalized);
+  const metadata = parseImportMetadata(rawInput);
+  const finalValidation = validateQuizQuestions(normalized, metadata?.category);
   if (!finalValidation.valid) {
     return { success: false, error: finalValidation.error ?? "Les questions ne sont pas valides." };
   }
@@ -365,6 +369,6 @@ export function parseQuizQuestionsInput(rawInput: unknown): QuizImportResult {
     success: true,
     questions: normalized,
     pointsAutoDistributed,
-    metadata: parseImportMetadata(rawInput),
+    metadata,
   };
 }

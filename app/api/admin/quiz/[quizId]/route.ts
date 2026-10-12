@@ -78,7 +78,8 @@ export async function PUT(
     updates.quiz_mode = quizMode === "sequential" ? "sequential" : "overview";
   }
   if (category !== undefined) {
-    updates.category = category === "weekly" ? "weekly" : "daily";
+    updates.category =
+      category === "quarterly" ? "quarterly" : category === "weekly" ? "weekly" : "daily";
   }
 
   if (Object.keys(updates).length > 0) {
@@ -96,7 +97,9 @@ export async function PUT(
     null;
 
   if (questions !== undefined) {
-    const validation = validateQuizQuestions(questions);
+    const validationCategory =
+      category === "quarterly" ? "quarterly" : category === "weekly" ? "weekly" : "daily";
+    const validation = validateQuizQuestions(questions, validationCategory);
     if (!validation.valid) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }

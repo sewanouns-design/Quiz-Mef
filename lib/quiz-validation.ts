@@ -1,3 +1,5 @@
+import type { QuizCategory } from "./types";
+
 export const REQUIRED_TOTAL_POINTS = 20;
 
 const VALID_TYPES = ["mcq", "true_false", "short", "fill_blank", "open"];
@@ -10,11 +12,15 @@ export interface QuizValidationResult {
 /**
  * Validation stricte des questions d'un quiz, utilisée à la fois à la
  * création et à la modification (client ET serveur) : chaque question doit
- * avoir un texte, un QCM doit avoir exactement 5 options et une bonne réponse valide,
+ * avoir un texte, un QCM doit avoir 4 options pour les quiz quotidiens et hebdomadaires
+ * ou 5 options pour un quiz trimestriel, avec une bonne réponse valide,
  * une réponse courte doit avoir un texte attendu non vide, et le total des
  * points de toutes les questions doit être exactement 20.
  */
-export function validateQuizQuestions(questions: unknown): QuizValidationResult {
+export function validateQuizQuestions(
+  questions: unknown,
+  category?: QuizCategory
+): QuizValidationResult {
   if (!Array.isArray(questions) || questions.length === 0) {
     return { valid: false, error: "Le quiz doit contenir au moins une question." };
   }
@@ -48,10 +54,19 @@ export function validateQuizQuestions(questions: unknown): QuizValidationResult 
       if (!Array.isArray(options)) {
         return { valid: false, error: `Question ${i + 1} : les options sont requises.` };
       }
-      if (question.type === "mcq" && options.length !== 5) {
+      const expectedMcqOptions = category === "quarterly" ? 5 : category ? 4 : null;
+      if (
+        question.type === "mcq" &&
+        (expectedMcqOptions !== null
+          ? options.length !== expectedMcqOptions
+          : options.length !== 4 && options.length !== 5)
+      ) {
         return {
           valid: false,
-          error: `Question ${i + 1} : un QCM doit contenir exactement 5 options.`,
+          error:
+            expectedMcqOptions === null
+              ? `Question ${i + 1} : un QCM doit contenir 4 ou 5 options.`
+              : `Question ${i + 1} : un quiz ${category === "quarterly" ? "trimestriel" : "quotidien ou hebdomadaire"} doit contenir exactement ${expectedMcqOptions} options par QCM.`,
         };
       }
       if (question.type === "true_false" && (!Array.isArray(options) || options.length < 2)) {

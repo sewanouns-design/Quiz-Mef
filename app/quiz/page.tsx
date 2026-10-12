@@ -17,7 +17,7 @@ interface ActiveQuizOption {
   id: string;
   title: string;
   subtitle: string | null;
-  category: "daily" | "weekly";
+  category: "daily" | "weekly" | "quarterly";
 }
 
 function QuizIdentificationForm() {
@@ -87,18 +87,16 @@ function QuizIdentificationForm() {
           return;
         }
 
-        // Sinon, seuls les quiz du jour sont proposés : le quiz hebdo n'est
-        // jamais accessible par ce flux normal, uniquement par son lien
-        // direct depuis la page d'accueil.
-        const daily = quizzes.filter((q) => q.category !== "weekly");
-        if (daily.length === 0) {
-          setError("Aucun quiz disponible aujourd'hui. Reviens bientôt.");
-        } else if (daily.length === 1) {
-          setSelectedQuizId(daily[0].id);
+        // Sinon, les quiz du jour et trimestriels sont proposés dans le flux
+        // normal. Le quiz hebdo reste accessible par son lien dédié.
+        const standard = quizzes.filter((q) => q.category !== "weekly");
+        if (standard.length === 0) {
+          setError("Aucun quiz disponible pour le moment. Reviens bientôt.");
+        } else if (standard.length === 1) {
+          setSelectedQuizId(standard[0].id);
         } else {
-          // Plusieurs quiz du jour actifs : on demande lequel commencer
-          // tout de suite, avant même de montrer le formulaire.
-          setQuizChoices(daily);
+          // Plusieurs quiz standards actifs : on demande lequel commencer.
+          setQuizChoices(standard);
         }
       })
       .catch(() => setError("Erreur lors du chargement des quiz disponibles."))
@@ -238,7 +236,7 @@ function QuizIdentificationForm() {
                 <span className="text-2xl">⁉️</span>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                    Quiz du jour
+                    {quiz.category === "quarterly" ? "Quiz trimestriel" : "Quiz du jour"}
                   </p>
                   <p className="truncate font-semibold text-navy">{quiz.title}</p>
                   {quiz.subtitle && (

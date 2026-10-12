@@ -26,7 +26,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Le titre est requis" }, { status: 400 });
   }
 
-  const validation = validateQuizQuestions(questions);
+  const parsedCategory =
+    category === "quarterly" ? "quarterly" : category === "weekly" ? "weekly" : "daily";
+  const validation = validateQuizQuestions(questions, parsedCategory);
   if (!validation.valid) {
     return NextResponse.json({ error: validation.error }, { status: 400 });
   }
@@ -34,7 +36,6 @@ export async function POST(request: NextRequest) {
   const parsedDuration =
     typeof durationSeconds === "number" && durationSeconds > 0 ? durationSeconds : null;
   const parsedMode = quizMode === "sequential" ? "sequential" : "overview";
-  const parsedCategory = category === "weekly" ? "weekly" : "daily";
   const parsedSubtitle = typeof subtitle === "string" && subtitle.trim() ? subtitle.trim() : null;
   const parsedExpiresAt = typeof expiresAt === "string" && expiresAt ? expiresAt : null;
 

@@ -29,7 +29,7 @@ interface OverviewData {
   passedCount: number;
   averageScorePercent: number | null;
   lessonQuestionsCount: number;
-  activeQuizzes: { title: string; category: "daily" | "weekly" }[];
+  activeQuizzes: { title: string; category: "daily" | "weekly" | "quarterly" }[];
   activity: ActivityEntry[];
 }
 
@@ -348,12 +348,18 @@ export default function OverviewTab() {
                     <div key={i} className="flex items-center gap-2">
                       <span
                         className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                          quiz.category === "weekly"
-                            ? "bg-amber-400/20 text-amber-200"
-                            : "bg-white/15 text-white/80"
+                          quiz.category === "quarterly"
+                            ? "bg-purple-400/20 text-purple-200"
+                            : quiz.category === "weekly"
+                              ? "bg-amber-400/20 text-amber-200"
+                              : "bg-white/15 text-white/80"
                         }`}
                       >
-                        {quiz.category === "weekly" ? "📅 Hebdo" : "Jour"}
+                        {quiz.category === "quarterly"
+                          ? "🏆 Trimestriel"
+                          : quiz.category === "weekly"
+                            ? "📅 Hebdo"
+                            : "Jour"}
                       </span>
                       <p className="truncate text-lg font-bold">{quiz.title}</p>
                     </div>
