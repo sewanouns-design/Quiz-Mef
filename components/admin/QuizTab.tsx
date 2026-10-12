@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import QuestionBuilder, { type EditableQuestion } from "./QuestionBuilder";
 import LessonQuestionsModal from "./LessonQuestionsModal";
-import { parseQuizQuestionsInput } from "@/lib/quiz-import-parser";
+import { parseQuizQuestionsInput, type QuizImportMetadata } from "@/lib/quiz-import-parser";
+import { GENERATION_PROMPT } from "@/lib/quiz-generation-prompt";
 import { useToast } from "@/components/Toast";
 
 interface QuizListItem {
@@ -159,52 +160,7 @@ const EXAMPLE_JSON = `[
   }
 ]`;
 
-const GENERATION_PROMPT = `Tu es un générateur de quiz bibliques pour le site "Quiz Biblique MEF".
-Je vais te fournir le texte d'une leçon (ou une image/photo de la leçon).
-Génère un quiz à partir de ce contenu, au format JSON strict ci-dessous.
 
-RÈGLES :
-- Réponds UNIQUEMENT avec le tableau JSON, sans texte avant/après, sans balises markdown \`\`\`.
-- Génère entre 10 et 20 questions.
-- Le total des "points" de toutes les questions doit être égal à 20.
-- Un SEUL type de question est autorisé : "mcq" (QCM à 4 options). N'utilise JAMAIS
-  les types "true_false", "short", "fill_blank" ou "open" : ils ne sont plus acceptés.
-- Chaque question a exactement 4 options dans "options", et une seule bonne réponse
-  ("correctOption", index 0 à 3). Varie la position de la bonne réponse d'une question
-  à l'autre plutôt que de toujours mettre la même position.
-- Deux styles de question "mcq" à alterner dans le quiz :
-  1. Question factuelle classique : 4 options plausibles et proches les unes des
-     autres (pas de bonne réponse trop évidente par élimination).
-  2. Question de type « affirmation à évaluer » (l'équivalent vrai/faux) : NE PROPOSE
-     JAMAIS seulement 2 options "Vrai"/"Faux". Formule plutôt 4 propositions complètes,
-     chacune combinant un verdict (Vrai/Faux) ET une justification courte, par exemple :
-       "Vrai, car le travail existait déjà avant la chute de l'homme."
-       "Faux, car Dieu a maudit le sol seulement après la chute de l'homme."
-       "Vrai, car Dieu lui-même a dit à l'homme qu'il mangerait à la sueur de son front."
-       "Faux, car la leçon ne mentionne jamais la malédiction du travail."
-     Une seule des 4 propositions doit être entièrement exacte (bon verdict ET bonne
-     justification) ; les trois autres doivent être fausses par le verdict, par la
-     justification, ou par les deux — tout en restant plausibles, jamais absurdes.
-  Inclue au moins 3 questions du style « affirmation à évaluer » décrit ci-dessus.
-- Les questions doivent porter UNIQUEMENT sur des faits présents dans le texte fourni —
-  n'invente rien et ne pioche pas dans des connaissances bibliques externes au texte.
-- Le champ "justification" est OBLIGATOIRE pour chaque question (ne le laisse jamais
-  vide) : il doit citer ou paraphraser précisément le passage de la leçon qui justifie
-  la bonne réponse. Un participant qui se trompe la verra affichée à côté de la bonne
-  réponse, donc elle doit se suffire à elle-même pour comprendre son erreur sans avoir
-  à relire toute la leçon.
-- Le champ "question" doit être rédigé en français clair, sans ambiguïté.
-- Ne mets JAMAIS le titre du test, la date/période ou une durée limite dans le JSON :
-  ces informations sont toujours saisies séparément par la personne qui importe.
-
-FORMAT JSON EXACT À RESPECTER (le tableau de questions, rien d'autre) :
-[
-  { "type": "mcq", "question": "Texte de la question ?", "options": ["Option A", "Option B", "Option C", "Option D"], "correctOption": 0, "justification": "Citation ou paraphrase du passage de la leçon.", "points": 2 },
-  { "type": "mcq", "question": "Le travail est-il présenté comme une malédiction dans la leçon ?", "options": ["Vrai, car le travail existait déjà avant la chute de l'homme.", "Faux, car Dieu a maudit le sol seulement après la chute de l'homme.", "Vrai, car Dieu lui-même a dit à l'homme qu'il mangerait à la sueur de son front.", "Faux, car la leçon ne mentionne jamais la malédiction du travail."], "correctOption": 3, "justification": "Le texte dit au contraire : « le travail n'est pas une malédiction, mais un devoir contractuel. »", "points": 2 }
-]
-
-Voici le contenu de la leçon :
-[COLLE ICI LE TEXTE DE LA LEÇON, OU DÉCRIS L'IMAGE JOINTE]`;
 
 function CopyPromptButton() {
   const [copied, setCopied] = useState(false);
@@ -286,6 +242,20 @@ export default function QuizTab() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
+  function applyImportedMetadata(metadata?: QuizImportMetadata): boolean {
+    if (!metadata) return false;
+    if (metadata.title) setTitle(metadata.title);
+    if (metadata.subtitle) setSubtitle(metadata.subtitle);
+    if (metadata.category) setCategory(metadata.category);
+    if (metadata.durationSeconds) {
+      const total = metadata.durationSeconds;
+      setDurationHours(String(Math.floor(total / 3600)));
+      setDurationMinutes(String(Math.floor((total % 3600) / 60)));
+      setDurationSecondsPart(String(total % 60));
+    }
+    return Boolean(metadata.title || metadata.subtitle || metadata.category || metadata.durationSeconds);
+  }
+
   function handleFileImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -310,12 +280,13 @@ export default function QuizTab() {
         return;
       }
 
+      const metadataApplied = applyImportedMetadata(result.metadata);
       setQuestionsJson(JSON.stringify(result.questions, null, 2));
       setEditorMode("visual");
       setSuccess(
         `${result.questions.length} question(s) importée(s) avec succès${
           result.pointsAutoDistributed ? " (points manquants répartis automatiquement)" : ""
-        }.`
+        }${metadataApplied ? ". Titre, sous-titre, catégorie et durée remplis automatiquement." : "."}`
       );
     };
     reader.onerror = () => setError("Impossible de lire le fichier.");
@@ -408,17 +379,17 @@ export default function QuizTab() {
       return;
     }
 
-    if (!title.trim()) {
-      setError("Le titre est requis.");
-      return;
-    }
-
     const importResult = parseQuizQuestionsInput(rawJson);
     if (!importResult.success) {
       setError(importResult.error);
       return;
     }
     const questions = importResult.questions;
+    const importedMetadata = importResult.metadata;
+    applyImportedMetadata(importedMetadata);
+    const effectiveTitle = importedMetadata?.title?.trim() || title.trim();
+    const effectiveSubtitle = importedMetadata?.subtitle ?? subtitle;
+    const effectiveCategory = importedMetadata?.category ?? category;
 
     const h = Number(durationHours) || 0;
     const m = Number(durationMinutes) || 0;
@@ -428,7 +399,12 @@ export default function QuizTab() {
       return;
     }
     const totalDurationSeconds = h * 3600 + m * 60 + s;
-    const parsedDuration = totalDurationSeconds > 0 ? totalDurationSeconds : null;
+    const parsedDuration =
+      importedMetadata?.durationSeconds ?? (totalDurationSeconds > 0 ? totalDurationSeconds : null);
+    if (!effectiveTitle) {
+      setError("Le titre est requis (saisis-le ou importe un JSON contenant metadata.title).");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -440,14 +416,14 @@ export default function QuizTab() {
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
           body: JSON.stringify({
-            title,
-            subtitle,
+            title: effectiveTitle,
+            subtitle: effectiveSubtitle,
             isActive,
             questions,
             durationSeconds: parsedDuration,
             expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
             quizMode,
-            category,
+            category: effectiveCategory,
           }),
         }
       );
@@ -830,8 +806,9 @@ export default function QuizTab() {
                 </summary>
                 <div className="border-t border-gray-200 px-3 py-2">
                   <p className="mb-2 text-xs text-gray-500">
-                    Colle ce prompt dans un chat IA avec le texte (ou une photo) de la leçon, puis
-                    importe le JSON obtenu ci-dessous.
+                    Colle ce prompt dans un chat IA avec le texte (ou les pages) de la leçon, puis
+                    importe le JSON obtenu. Le titre, le sous-titre, la catégorie et la durée sont
+                    remplis automatiquement lorsque le JSON contient le bloc metadata.
                   </p>
                   <pre className="mb-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-md bg-white p-2 font-mono text-[11px] leading-relaxed text-gray-600">
                     {GENERATION_PROMPT}

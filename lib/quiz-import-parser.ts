@@ -34,6 +34,7 @@ const TYPE_KEYS = ["type", "questiontype", "kind"];
 const POINTS_KEYS = ["points", "point", "score", "valeur"];
 const ID_KEYS = ["id", "_id", "uuid"];
 const JUSTIFICATION_KEYS = ["justification", "explanation", "explication", "raison"];
+const METADATA_PATHS = ["metadata", "quiz.metadata", "data.metadata"];
 
 /** Normalise une clé d'objet pour comparaison tolérante : accents, casse, séparateurs. */
 function normalizeKey(key: string): string {
@@ -52,6 +53,61 @@ function findField(obj: Record<string, unknown>, candidates: string[]): unknown 
     }
   }
   return undefined;
+}
+
+function locateMetadata(input: unknown): Record<string, unknown> | null {
+  if (typeof input !== "object" || input === null) return null;
+  for (const path of METADATA_PATHS) {
+    let current: unknown = input;
+    for (const part of path.split(".")) {
+      if (typeof current !== "object" || current === null) {
+        current = undefined;
+        break;
+      }
+      current = (current as Record<string, unknown>)[part];
+    }
+    if (typeof current === "object" && current !== null && !Array.isArray(current)) {
+      return current as Record<string, unknown>;
+    }
+  }
+  return null;
+}
+
+function parseImportMetadata(rawInput: unknown): QuizImportMetadata | undefined {
+  const rawMetadata = locateMetadata(rawInput);
+  if (!rawMetadata) return undefined;
+  const title = findField(rawMetadata, ["title", "quiztitle"]);
+  const subtitle = findField(rawMetadata, ["subtitle", "sous titre", "soustitle"]);
+  const category = findField(rawMetadata, ["category", "quizcategory"]);
+  const duration = findField(rawMetadata, ["durationseconds", "duration", "duree"]);
+  const lessonNumber = findField(rawMetadata, ["lessonnumber", "lesson", "lecon", "numero"]);
+  const lessonTitle = findField(rawMetadata, ["lessontitle", "lecontitle"]);
+  const questionCount = findField(rawMetadata, ["questioncount", "questionsnumber"]);
+  const totalPoints = findField(rawMetadata, ["totalpoints", "pointstotal"]);
+  const sourceScope = findField(rawMetadata, ["sourcescope", "source"]);
+  const parsed: QuizImportMetadata = {};
+  if (typeof title === "string" && title.trim()) parsed.title = title.trim();
+  if (typeof subtitle === "string" && subtitle.trim()) parsed.subtitle = subtitle.trim();
+  if (typeof category === "string" && (category === "daily" || category === "weekly")) {
+    parsed.category = category;
+  }
+  const numericFields: Array<[
+    unknown,
+    keyof Pick<QuizImportMetadata, "durationSeconds" | "lessonNumber" | "questionCount" | "totalPoints">
+  ]> = [
+    [duration, "durationSeconds"],
+    [lessonNumber, "lessonNumber"],
+    [questionCount, "questionCount"],
+    [totalPoints, "totalPoints"],
+  ];
+  for (const [value, key] of numericFields) {
+    const numberValue =
+      typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+    if (Number.isInteger(numberValue) && numberValue > 0) parsed[key] = numberValue;
+  }
+  if (typeof lessonTitle === "string" && lessonTitle.trim()) parsed.lessonTitle = lessonTitle.trim();
+  if (typeof sourceScope === "string" && sourceScope.trim()) parsed.sourceScope = sourceScope.trim();
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
 }
 
 /** Cherche le tableau de questions, quelle que soit la forme d'emballage du JSON fourni. */
@@ -221,8 +277,25 @@ function normalizeQuestion(raw: unknown, index: number): { question?: QuestionIm
 }
 
 export type QuizImportResult =
-  | { success: true; questions: QuestionImport[]; pointsAutoDistributed: boolean }
+  | {
+      success: true;
+      questions: QuestionImport[];
+      pointsAutoDistributed: boolean;
+      metadata?: QuizImportMetadata;
+    }
   | { success: false; error: string };
+
+export interface QuizImportMetadata {
+  category?: "daily" | "weekly";
+  title?: string;
+  subtitle?: string;
+  lessonNumber?: number;
+  lessonTitle?: string;
+  durationSeconds?: number;
+  questionCount?: number;
+  totalPoints?: number;
+  sourceScope?: string;
+}
 
 /**
  * Parseur tolérant : accepte un JSON généré par une IA ou collé/importé à la
@@ -277,5 +350,10 @@ export function parseQuizQuestionsInput(rawInput: unknown): QuizImportResult {
     return { success: false, error: finalValidation.error ?? "Les questions ne sont pas valides." };
   }
 
-  return { success: true, questions: normalized, pointsAutoDistributed };
+  return {
+    success: true,
+    questions: normalized,
+    pointsAutoDistributed,
+    metadata: parseImportMetadata(rawInput),
+  };
 }
