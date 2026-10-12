@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
 import { logAdminActivity } from "@/lib/admin-activity";
-import { PDFParse } from "pdf-parse";
+import pdfParse from "pdf-parse/lib/pdf-parse.js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,15 +39,10 @@ function parseOptionalDate(value: FormDataEntryValue | null, label: string): str
 }
 
 async function extractText(buffer: Buffer): Promise<string> {
-  const parser = new PDFParse({ data: new Uint8Array(buffer) });
-  try {
-    const result = await parser.getText();
-    const text = result.text.trim();
-    if (!text) throw new Error("Le PDF ne contient pas de texte exploitable.");
-    return text;
-  } finally {
-    await parser.destroy();
-  }
+  const result = await pdfParse(buffer);
+  const text = result.text.trim();
+  if (!text) throw new Error("Le PDF ne contient pas de texte exploitable.");
+  return text;
 }
 
 export async function GET(request: NextRequest) {
