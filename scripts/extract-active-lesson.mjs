@@ -5,6 +5,7 @@
  *
  * Usage :
  *   node scripts/extract-active-lesson.mjs --pdf ./livret.pdf --date 2026-10-13 --scope daily
+ *   node scripts/extract-active-lesson.mjs --text-file ./source.txt --date 2026-10-13 --scope daily
  *   node scripts/extract-active-lesson.mjs --pdf ./livret.pdf --date 2026-10-18 --scope weekly
  *   node scripts/extract-active-lesson.mjs --pdf ./livret.pdf --lesson 7 --scope all
  *
@@ -135,7 +136,12 @@ function dateInWeek(date, weekSunday) {
   return date >= monday && date <= sunday;
 }
 
-function readPdf(pdfPath) {
+function readSource({ pdfPath, textFile }) {
+  if (textFile) {
+    if (!existsSync(textFile)) fail(`fichier texte introuvable : ${textFile}`);
+    return readFileSync(textFile, "utf8");
+  }
+  if (!pdfPath) fail("indique --pdf ou --text-file");
   if (!existsSync(pdfPath)) fail(`PDF introuvable : ${pdfPath}`);
   try {
     return execFileSync("pdftotext", ["-layout", pdfPath, "-"], {
@@ -269,8 +275,8 @@ function chooseBlock(blocks, date, lessonNumber) {
 
 function main() {
   const args = argsFrom(process.argv);
-  if (args.help || !args.pdf) {
-    console.log("Usage: node scripts/extract-active-lesson.mjs --pdf <fichier.pdf> [--date YYYY-MM-DD] [--lesson N] [--scope daily|weekly|all]");
+  if (args.help || (!args.pdf && !args["text-file"])) {
+    console.log("Usage: node scripts/extract-active-lesson.mjs --pdf <fichier.pdf> | --text-file <fichier.txt> [--date YYYY-MM-DD] [--lesson N] [--scope daily|weekly|all]");
     process.exit(args.help ? 0 : 1);
   }
 
@@ -278,7 +284,9 @@ function main() {
   if (!["daily", "weekly", "all"].includes(scope)) fail(`scope invalide « ${scope} »`);
 
   const targetDate = parseInputDate(args.date);
-  const blocks = findLessonBlocks(readPdf(resolve(String(args.pdf))));
+  const pdfPath = args.pdf ? resolve(String(args.pdf)) : null;
+  const textFile = args["text-file"] ? resolve(String(args["text-file"])) : null;
+  const blocks = findLessonBlocks(readSource({ pdfPath, textFile }));
   if (blocks.length === 0) fail("aucun bloc de leçon exploitable n'a été trouvé");
 
   const block = chooseBlock(blocks, targetDate, args.lesson);
@@ -297,8 +305,8 @@ function main() {
   const output = {
     extractedAt: new Date().toISOString(),
     source: {
-      file: resolve(String(args.pdf)),
-      extraction: "pdftotext -layout",
+      file: pdfPath ?? textFile,
+      extraction: pdfPath ? "pdftotext -layout" : "stored-text",
     },
     lesson: {
       number: block.lessonNumber,

@@ -51,6 +51,36 @@ create index if not exists idx_participant_login_tokens_token on participant_log
 create index if not exists idx_participant_login_tokens_participant_id on participant_login_tokens (participant_id);
 
 -- ------------------------------------------------------------
+-- Sources trimestrielles utilisées par l'automatisation
+-- ------------------------------------------------------------
+create table if not exists lesson_sources (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  file_path text not null unique,
+  file_size_bytes integer not null,
+  mime_type text not null default 'application/pdf',
+  lesson_start integer not null default 7 check (lesson_start between 1 and 100),
+  quarter_start date,
+  quarter_end date,
+  -- Texte extrait du PDF, conservé pour que l'automatisation puisse lire la
+  -- source active sans télécharger le fichier binaire à chaque exécution.
+  source_text text not null,
+  is_active boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_lesson_sources_active on lesson_sources (is_active);
+create unique index if not exists one_active_lesson_source
+  on lesson_sources ((is_active)) where is_active;
+alter table lesson_sources enable row level security;
+
+-- Le PDF lui-même est conservé dans un bucket Supabase Storage privé.
+insert into storage.buckets (id, name, public)
+values ('quiz-sources', 'quiz-sources', false)
+on conflict (id) do update set public = excluded.public;
+
+-- ------------------------------------------------------------
 -- Quiz quotidiens
 -- ------------------------------------------------------------
 create table if not exists daily_quizzes (
