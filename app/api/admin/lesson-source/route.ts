@@ -176,3 +176,142 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+async function getSourceById(id: string) {
+  const supabase = getSupabaseAdmin();
+  return supabase
+    .from("lesson_sources")
+    .select("id,name,file_path,lesson_start,quarter_start,quarter_end,is_active,file_size_bytes")
+    .eq("id", id)
+    .maybeSingle();
+}
+
+function parseJsonDate(value: unknown, label: string): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return null;
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error(`${label} doit être au format AAAA-MM-JJ.`);
+  }
+  return value;
+}
+
+export async function PUT(request: NextRequest) {
+  if (!isAdminRequestAuthenticated(request)) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Requête refusée (origine invalide)" }, { status: 403 });
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const id = typeof body?.id === "string" ? body.id : "";
+  if (!id) return NextResponse.json({ error: "Identifiant de source manquant." }, { status: 400 });
+
+  let quarterStart: string | null | undefined;
+  let quarterEnd: string | null | undefined;
+  try {
+    quarterStart = parseJsonDate(body.quarterStart, "La date de début");
+    quarterEnd = parseJsonDate(body.quarterEnd, "La date de fin");
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Dates invalides." }, { status: 400 });
+  }
+  if (quarterStart && quarterEnd && quarterStart > quarterEnd) {
+    return NextResponse.json({ error: "La date de fin doit être après la date de début." }, { status: 400 });
+  }
+
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (body.name !== undefined) {
+    if (typeof body.name !== "string" || !body.name.trim() || body.name.length > 200) {
+      return NextResponse.json({ error: "Le nom doit contenir entre 1 et 200 caractères." }, { status: 400 });
+    }
+    updates.name = body.name.trim();
+  }
+  if (body.lessonStart !== undefined) {
+    const lessonStart = Number(body.lessonStart);
+    if (!Number.isInteger(lessonStart) || lessonStart < 1 || lessonStart > 100) {
+      return NextResponse.json({ error: "La première leçon doit être un entier entre 1 et 100." }, { status: 400 });
+    }
+    updates.lesson_start = lessonStart;
+  }
+  if (quarterStart !== undefined) updates.quarter_start = quarterStart;
+  if (quarterEnd !== undefined) updates.quarter_end = quarterEnd;
+
+  const supabase = getSupabaseAdmin();
+  const { data: current, error: currentError } = await getSourceById(id);
+  if (currentError) return NextResponse.json({ error: currentError.message }, { status: 500 });
+  if (!current) return NextResponse.json({ error: "Source introuvable." }, { status: 404 });
+
+  const wantsActive = body.isActive === true;
+  if (body.isActive === false && current.is_active) {
+    const { count, error: countError } = await supabase
+      .from("lesson_sources")
+      .select("id", { count: "exact", head: true })
+      .eq("is_active", true);
+    if (countError) return NextResponse.json({ error: countError.message }, { status: 500 });
+    if ((count ?? 0) <= 1) {
+      return NextResponse.json(
+        { error: "Impossible de désactiver la seule source active. Active d’abord une autre source." },
+        { status: 409 }
+      );
+    }
+    updates.is_active = false;
+  }
+
+  if (wantsActive) {
+    const { error: deactivateError } = await supabase
+      .from("lesson_sources")
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .neq("id", id);
+    if (deactivateError) return NextResponse.json({ error: deactivateError.message }, { status: 500 });
+    updates.is_active = true;
+  }
+
+  const { data, error } = await supabase
+    .from("lesson_sources")
+    .update(updates)
+    .eq("id", id)
+    .select("id,name,file_size_bytes,mime_type,lesson_start,quarter_start,quarter_end,is_active,created_at,updated_at")
+    .single();
+  if (error || !data) return NextResponse.json({ error: error?.message ?? "Modification impossible." }, { status: 500 });
+
+  await logAdminActivity("settings_updated", `Source trimestrielle modifiée : ${data.name}`, {
+    lessonSourceId: id,
+    isActive: data.is_active,
+  });
+  return NextResponse.json({ source: data });
+}
+
+export async function DELETE(request: NextRequest) {
+  if (!isAdminRequestAuthenticated(request)) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Requête refusée (origine invalide)" }, { status: 403 });
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const id = typeof body?.id === "string" ? body.id : "";
+  if (!id) return NextResponse.json({ error: "Identifiant de source manquant." }, { status: 400 });
+
+  const supabase = getSupabaseAdmin();
+  const { data: source, error: sourceError } = await getSourceById(id);
+  if (sourceError) return NextResponse.json({ error: sourceError.message }, { status: 500 });
+  if (!source) return NextResponse.json({ error: "Source introuvable." }, { status: 404 });
+  if (source.is_active) {
+    return NextResponse.json(
+      { error: "Cette source est active. Active d’abord une autre source avant de la supprimer." },
+      { status: 409 }
+    );
+  }
+
+  const { error: storageError } = await supabase.storage.from(BUCKET).remove([source.file_path]);
+  if (storageError) return NextResponse.json({ error: `Suppression du PDF impossible : ${storageError.message}` }, { status: 500 });
+
+  const { error: deleteError } = await supabase.from("lesson_sources").delete().eq("id", id);
+  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 });
+
+  await logAdminActivity("settings_updated", `Source trimestrielle supprimée : ${source.name}`, {
+    lessonSourceId: id,
+  });
+  return NextResponse.json({ deleted: true, id });
+}
