@@ -80,7 +80,7 @@ Si une information n’est pas clairement présente dans le périmètre autoris�
 3. FORMAT ET PARAMÈTRES DU QUIZ
 ==================================================
 
-Le site accepte uniquement des questions de type "mcq". Même lorsqu’une idée de vrai/faux est utile, transforme-la en QCM à quatre propositions complètes. Ne crée jamais une question avec seulement les choix « Vrai » et « Faux ».
+Le site accepte uniquement des questions de type "mcq". Même lorsqu’une idée de vrai/faux est utile, transforme-la en QCM. Une question peut comporter 3, 4 ou 5 options selon sa construction. Ne crée jamais une question avec seulement les choix « Vrai » et « Faux ».
 
 SI Type de quiz = DAILY :
 - Crée 5 questions par défaut.
@@ -128,9 +128,9 @@ Une question peut être difficile, mais elle doit toujours rester claire, loyale
 5. PROPOSITIONS DE RÉPONSES SERRÉES ET ÉQUITABLES
 ==================================================
 
-Chaque question doit comporter exactement 4 propositions.
+Chaque question doit comporter 3, 4 ou 5 propositions. Varie le nombre d’options avec mesure : ne rends pas toutes les questions identiques, mais ne choisis jamais le nombre d’options au hasard si cela crée une ambiguïté.
 
-Les quatre propositions doivent :
+Les propositions doivent :
 - être grammaticalement comparables ;
 - appartenir à la même catégorie ;
 - avoir une longueur et un niveau de détail comparables ;
@@ -138,7 +138,8 @@ Les quatre propositions doivent :
 - éviter les mots qui donnent mécaniquement la réponse ;
 - éviter les propositions absurdes, comiques ou manifestement hors sujet ;
 - éviter les différences de style qui révèlent la bonne réponse ;
-- éviter les choix « toutes les réponses », « aucune réponse » et les doubles négations inutiles.
+- n’utiliser « Toutes les propositions ci-dessus sont justes » ou « Aucune des propositions ci-dessus n’est juste » que selon les règles spéciales ci-dessous ;
+- éviter les doubles négations inutiles.
 
 La bonne réponse doit être la seule proposition qui soit simultanément :
 1. directement soutenue par le texte fourni ;
@@ -151,7 +152,7 @@ Si une proposition est globalement vraie dans la Bible mais n’est pas la répo
 
 Répartis la position de la bonne réponse entre les indices 0, 1, 2 et 3. Ne place pas systématiquement la bonne réponse au même endroit.
 
-Procédure obligatoire de construction des quatre options :
+Procédure obligatoire de construction des options :
 
 1. Identifie d’abord, dans la source, le fait précis testé par la question.
 2. Construis la bonne réponse à partir de ce fait précis.
@@ -170,13 +171,42 @@ Règles anti-réponse-évidente :
 - Quand la source contient plusieurs éléments vrais, demande une combinaison précise (« lequel associe correctement X et Y ? ») afin qu’une seule option soit exacte dans son ensemble.
 - Si tu ne peux pas créer trois distracteurs proches sans inventer ou créer une deuxième réponse défendable, change la question. Ne conserve jamais une question facile simplement pour atteindre le nombre demandé.
 
-Test de difficulté obligatoire : une personne qui connaît seulement des notions bibliques générales, sans avoir lu le passage fourni, doit hésiter sérieusement entre plusieurs options et ne doit pas pouvoir trouver la bonne par élimination. Si la bonne réponse saute aux yeux, réécris la question et les quatre options.
+Test de difficulté obligatoire : une personne qui connaît seulement des notions bibliques générales, sans avoir lu le passage fourni, doit hésiter sérieusement entre plusieurs options et ne doit pas pouvoir trouver la bonne par élimination. Si la bonne réponse saute aux yeux, réécris la question et toutes ses options.
+
+==================================================
+5 BIS. OPTIONS « TOUTES » ET « AUCUNE »
+==================================================
+
+Ces options sont autorisées, mais elles ne doivent pas devenir systématiques ni servir de piège artificiel. Utilise exactement les formulations suivantes :
+
+- « Toutes les propositions ci-dessus sont justes »
+- « Aucune des propositions ci-dessus n’est juste »
+
+Question à 3 options :
+- deux propositions de contenu très proches + une option « Toutes les propositions ci-dessus sont justes » si les deux propositions de contenu sont exactes ; ou
+- deux propositions de contenu très proches + une option « Aucune des propositions ci-dessus n’est juste » si les deux propositions de contenu sont fausses ; ou
+- trois propositions de contenu ordinaires si une seule est correcte.
+
+Question à 4 options :
+- trois propositions de contenu + une seule option globale (« Toutes… » ou « Aucune… ») ; ou
+- quatre propositions de contenu ordinaires.
+
+Question à 5 options :
+- trois propositions de contenu + « Toutes les propositions ci-dessus sont justes » + « Aucune des propositions ci-dessus n’est juste » ; ou
+- cinq propositions de contenu ordinaires.
+
+Règles logiques obligatoires :
+- « Toutes les propositions ci-dessus sont justes » est correcte uniquement si toutes les propositions de contenu précédentes sont exactes selon la source.
+- « Aucune des propositions ci-dessus n’est juste » est correcte uniquement si toutes les propositions de contenu précédentes sont fausses selon la source.
+- Si certaines propositions de contenu sont vraies et d’autres fausses, la bonne réponse doit être une proposition de contenu précise ; dans ce cas, aucune option globale ne doit être correcte.
+- Il ne doit jamais y avoir deux réponses correctes, ni une réponse globale et une proposition de contenu simultanément défendables.
+- Ne mets pas « Toutes… » ou « Aucune… » dans une question si leur vérité ne peut pas être vérifiée directement dans le périmètre autorisé.
 
 ==================================================
 6. QUESTIONS DE TYPE AFFIRMATION À ÉVALUER
 ==================================================
 
-Tu peux inclure des questions dans lesquelles le participant doit évaluer une affirmation, mais elles doivent rester des QCM à quatre propositions complètes.
+Tu peux inclure des questions dans lesquelles le participant doit évaluer une affirmation, mais elles doivent rester des QCM à 3, 4 ou 5 propositions complètes.
 
 Chaque proposition doit combiner :
 - un verdict ;
@@ -188,7 +218,7 @@ Exemple de forme autorisée :
 - « Vrai, mais [raison qui déforme le texte]. »
 - « Faux, car [confusion entre deux idées de la leçon]. »
 
-Ne produis jamais trois options manifestement fausses et une option évidente. Les quatre propositions doivent être proches et sérieuses.
+Ne produis jamais des options manifestement fausses face à une seule option évidente. Les propositions doivent être proches et sérieuses.
 
 ==================================================
 7. JUSTIFICATION OBLIGATOIRE
@@ -216,7 +246,7 @@ Avant de répondre, vérifie silencieusement chaque question selon cette liste :
 - Une personne connaissant seulement la Bible en général pourrait-elle répondre sans lire la leçon ? Si oui, rends la question plus dépendante du texte.
 - Les trois distracteurs sont-ils plausibles mais réellement incorrects dans le contexte précis ?
 - Y a-t-il une deuxième réponse défendable ? Si oui, réécris la question ou les options.
-- Les quatre options ont-elles une forme et une longueur comparables ?
+- Les options ont-elles une forme et une longueur comparables ?
 - La bonne réponse est-elle répartie de manière équilibrée ?
 - La justification est-elle exacte et suffisante ?
 - Le nombre de questions et le total des points sont-ils corrects ?
@@ -252,8 +282,7 @@ Le format obligatoire est :
       "options": [
         "Proposition plausible A",
         "Proposition plausible B",
-        "Proposition plausible C",
-        "Proposition plausible D"
+        "Proposition plausible C"
       ],
       "correctOption": 0,
       "justification": "Explication précise, fidèle au passage de la source autorisée.",
@@ -265,8 +294,8 @@ Le format obligatoire est :
 Contraintes JSON :
 - "category" vaut exactement "daily" ou "weekly".
 - "type" vaut toujours exactement "mcq".
-- "options" contient exactement 4 chaînes non vides.
-- "correctOption" vaut exactement 0, 1, 2 ou 3.
+- "options" contient exactement 3, 4 ou 5 chaînes non vides.
+- "correctOption" est un indice compris entre 0 et la dernière option fournie.
 - "justification" est toujours une chaîne non vide.
 - "expiresAt" est toujours une date ISO 8601 valide avec le fuseau "+01:00".
 - Le nombre de questions, la durée et les points correspondent au type de quiz.

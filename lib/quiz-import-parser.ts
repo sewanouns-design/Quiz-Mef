@@ -229,8 +229,14 @@ function normalizeQuestion(raw: unknown, index: number): { question?: QuestionIm
   const justificationValue = typeof justification === "string" ? justification : undefined;
 
   if (type === "mcq" || type === "true_false") {
-    if (!options || options.length < 2) {
-      return { error: `Question ${index + 1} : au moins 2 options sont requises pour un QCM.` };
+    if (type === "mcq" && (!options || options.length < 3 || options.length > 5)) {
+      return { error: `Question ${index + 1} : un QCM doit contenir entre 3 et 5 options.` };
+    }
+    if (type === "true_false" && (!options || options.length < 2)) {
+      return { error: `Question ${index + 1} : au moins 2 options sont requises.` };
+    }
+    if (!options) {
+      return { error: `Question ${index + 1} : les options sont requises.` };
     }
     const answerCandidate = correctAnswerRaw ?? correctTextRaw;
     const correctOption = resolveCorrectOption(answerCandidate, options);

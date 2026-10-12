@@ -10,9 +10,9 @@ export interface QuizValidationResult {
 /**
  * Validation stricte des questions d'un quiz, utilisée à la fois à la
  * création et à la modification (client ET serveur) : chaque question doit
- * avoir un texte, un QCM doit avoir au moins 2 options et une bonne réponse
- * valide, une réponse courte doit avoir un texte attendu non vide, et le
- * total des points de toutes les questions doit être exactement 20.
+ * avoir un texte, un QCM doit avoir 3 à 5 options et une bonne réponse valide,
+ * une réponse courte doit avoir un texte attendu non vide, et le total des
+ * points de toutes les questions doit être exactement 20.
  */
 export function validateQuizQuestions(questions: unknown): QuizValidationResult {
   if (!Array.isArray(questions) || questions.length === 0) {
@@ -45,7 +45,16 @@ export function validateQuizQuestions(questions: unknown): QuizValidationResult 
 
     if (question.type === "mcq" || question.type === "true_false") {
       const options = question.options;
-      if (!Array.isArray(options) || options.length < 2) {
+      if (!Array.isArray(options)) {
+        return { valid: false, error: `Question ${i + 1} : les options sont requises.` };
+      }
+      if (question.type === "mcq" && (!Array.isArray(options) || options.length < 3 || options.length > 5)) {
+        return {
+          valid: false,
+          error: `Question ${i + 1} : un QCM doit contenir entre 3 et 5 options.`,
+        };
+      }
+      if (question.type === "true_false" && (!Array.isArray(options) || options.length < 2)) {
         return { valid: false, error: `Question ${i + 1} : au moins 2 options sont requises.` };
       }
       const correctOption = question.correctOption;
