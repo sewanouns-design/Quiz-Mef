@@ -80,7 +80,7 @@ Si une information n’est pas clairement présente dans le périmètre autoris�
 3. FORMAT ET PARAMÈTRES DU QUIZ
 ==================================================
 
-Le site accepte uniquement des questions de type "mcq". Même lorsqu’une idée de vrai/faux est utile, transforme-la en QCM. Une question peut comporter 3, 4 ou 5 options selon sa construction. Ne crée jamais une question avec seulement les choix « Vrai » et « Faux ».
+Le site accepte uniquement des questions de type "mcq". Même lorsqu’une idée de vrai/faux est utile, transforme-la en QCM. Une question doit comporter 4 ou 5 options selon sa construction. Ne crée jamais une question avec seulement les choix « Vrai » et « Faux ».
 
 SI Type de quiz = DAILY :
 - Crée 5 questions par défaut.
@@ -128,7 +128,7 @@ Une question peut être difficile, mais elle doit toujours rester claire, loyale
 5. PROPOSITIONS DE RÉPONSES SERRÉES ET ÉQUITABLES
 ==================================================
 
-Chaque question doit comporter 3, 4 ou 5 propositions. Varie le nombre d’options avec mesure : ne rends pas toutes les questions identiques, mais ne choisis jamais le nombre d’options au hasard si cela crée une ambiguïté.
+Chaque question doit comporter 4 ou 5 propositions. Varie le nombre d’options avec mesure : ne rends pas toutes les questions identiques, mais ne choisis jamais le nombre d’options au hasard si cela crée une ambiguïté.
 
 Les propositions doivent :
 - être grammaticalement comparables ;
@@ -182,13 +182,18 @@ Ces options sont autorisées, mais elles ne doivent pas devenir systématiques n
 - « Toutes les propositions ci-dessus sont justes »
 - « Aucune des propositions ci-dessus n’est juste »
 
-Question à 3 options :
-- deux propositions de contenu très proches + une option « Toutes les propositions ci-dessus sont justes » si les deux propositions de contenu sont exactes ; ou
-- deux propositions de contenu très proches + une option « Aucune des propositions ci-dessus n’est juste » si les deux propositions de contenu sont fausses ; ou
-- trois propositions de contenu ordinaires si une seule est correcte.
-
 Question à 4 options :
-- trois propositions de contenu + une seule option globale (« Toutes… » ou « Aucune… ») ; ou
+- quatre propositions de contenu ordinaires ; ou
+- deux propositions de contenu très proches + « Toutes les propositions ci-dessus sont justes » + « Aucune des propositions ci-dessus n’est juste ».
+
+Dans le format à 4 options avec les deux options globales, la bonne réponse est :
+- « Toutes… » si les deux propositions de contenu sont justes ;
+- « Aucune… » si les deux propositions de contenu sont fausses ;
+- la proposition de contenu exacte si une seule des deux est juste.
+
+Ne produis pas deux propositions de contenu justes et deux options globales fausses dans ce format : cela créerait deux bonnes réponses possibles.
+
+Question classique à 4 options :
 - quatre propositions de contenu ordinaires.
 
 Question à 5 options :
@@ -199,6 +204,7 @@ Règles logiques obligatoires :
 - « Toutes les propositions ci-dessus sont justes » est correcte uniquement si toutes les propositions de contenu précédentes sont exactes selon la source.
 - « Aucune des propositions ci-dessus n’est juste » est correcte uniquement si toutes les propositions de contenu précédentes sont fausses selon la source.
 - Si certaines propositions de contenu sont vraies et d’autres fausses, la bonne réponse doit être une proposition de contenu précise ; dans ce cas, aucune option globale ne doit être correcte.
+- Dans le format à 4 options avec deux propositions de contenu, il doit y avoir zéro, une ou deux propositions de contenu exactes, selon la réponse globale ou la proposition de contenu attendue.
 - Il ne doit jamais y avoir deux réponses correctes, ni une réponse globale et une proposition de contenu simultanément défendables.
 - Ne mets pas « Toutes… » ou « Aucune… » dans une question si leur vérité ne peut pas être vérifiée directement dans le périmètre autorisé.
 
@@ -206,7 +212,7 @@ Règles logiques obligatoires :
 6. QUESTIONS DE TYPE AFFIRMATION À ÉVALUER
 ==================================================
 
-Tu peux inclure des questions dans lesquelles le participant doit évaluer une affirmation, mais elles doivent rester des QCM à 3, 4 ou 5 propositions complètes.
+Tu peux inclure des questions dans lesquelles le participant doit évaluer une affirmation, mais elles doivent rester des QCM à 4 ou 5 propositions complètes.
 
 Chaque proposition doit combiner :
 - un verdict ;
@@ -294,7 +300,7 @@ Le format obligatoire est :
 Contraintes JSON :
 - "category" vaut exactement "daily" ou "weekly".
 - "type" vaut toujours exactement "mcq".
-- "options" contient exactement 3, 4 ou 5 chaînes non vides.
+- "options" contient exactement 4 ou 5 chaînes non vides.
 - "correctOption" est un indice compris entre 0 et la dernière option fournie.
 - "justification" est toujours une chaîne non vide.
 - "expiresAt" est toujours une date ISO 8601 valide avec le fuseau "+01:00".

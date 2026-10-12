@@ -25,7 +25,7 @@ const TYPE_LABELS: Record<string, string> = {
 const TYPE_OPTIONS = Object.entries(TYPE_LABELS);
 
 export function emptyQuestion(): EditableQuestion {
-  return { type: "mcq", question: "", options: ["", "", ""], correctOption: 0, points: 1 };
+  return { type: "mcq", question: "", options: ["", "", "", ""], correctOption: 0, points: 1 };
 }
 
 export default function QuestionBuilder({
@@ -52,7 +52,7 @@ export default function QuestionBuilder({
     } else if (type === "mcq") {
       patch = {
         type,
-        options: current.options && current.options.length >= 3 ? current.options : ["", "", ""],
+        options: current.options && current.options.length >= 4 ? current.options : ["", "", "", ""],
         correctOption: current.correctOption ?? 0,
         correctText: undefined,
       };
@@ -221,7 +221,7 @@ export default function QuestionBuilder({
                       onChange={(e) => updateOption(index, optIndex, e.target.value)}
                       placeholder={`Option ${optIndex + 1}`}
                     />
-                    {q.type === "mcq" && (q.options?.length ?? 0) > 3 && (
+                    {q.type === "mcq" && (q.options?.length ?? 0) > 4 && (
                       <button
                         type="button"
                         onClick={() => removeOption(index, optIndex)}
