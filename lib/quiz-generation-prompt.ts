@@ -288,7 +288,8 @@ Le format obligatoire est :
       "options": [
         "Proposition plausible A",
         "Proposition plausible B",
-        "Proposition plausible C"
+        "Proposition plausible C",
+        "Proposition plausible D"
       ],
       "correctOption": 0,
       "justification": "Explication précise, fidèle au passage de la source autorisée.",
