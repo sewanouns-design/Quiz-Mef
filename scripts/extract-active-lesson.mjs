@@ -228,9 +228,27 @@ function findDaySections(block) {
     if (!normalized) continue;
     const header = findDayHeader(normalized, block.sunday.getUTCFullYear());
     if (header && header.date) {
+      // Dans le PDF, une référence peut être coupée juste après le deux-points
+      // ou le tiret final (ex. « Proverbes 6:12- » puis « 19) » à la ligne suivante).
+      // Réunir uniquement cette continuation de titre, jamais le début du texte.
+      let title = header.title;
+      for (let nextIndex = index + 1; nextIndex < lines.length && nextIndex <= index + 3; nextIndex += 1) {
+        const continuation = normalizeLine(lines[nextIndex]);
+        if (!continuation) continue;
+        if (findDayHeader(continuation, block.sunday.getUTCFullYear())?.date) break;
+        if (/^(INTRIGUE DU TEXTE DE REFERENCE|LES GRANDES ARTICULATIONS DU TEXTE DE REFERENCE|EVALUATION FORMATIVE|CONCLUSION)$/i.test(continuation)) break;
+        const hasOpenParenthesis = (title.match(/\(/g) ?? []).length > (title.match(/\)/g) ?? []).length;
+        const looksLikeReferenceContinuation = hasOpenParenthesis || /[-–—:]\s*$/.test(title);
+        if (!looksLikeReferenceContinuation) break;
+        title = `${title} ${continuation}`
+          .replace(/\s+([),.:;])/g, "$1")
+          .replace(/-\s+(?=\d)/g, "-");
+        if ((title.match(/\(/g) ?? []).length <= (title.match(/\)/g) ?? []).length) break;
+      }
       if (current) current.endLine = index;
       current = {
         ...header,
+        title,
         startLine: index,
         endLine: lines.length,
       };

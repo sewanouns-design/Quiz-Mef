@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "extract:active-lesson": "node scripts/extract-active-lesson.mjs"
+    "extract:active-lesson": "node scripts/extract-active-lesson.mjs",
+    "validate:quiz-generation": "node scripts/validate-quiz-generation.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

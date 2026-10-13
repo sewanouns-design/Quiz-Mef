@@ -107,6 +107,14 @@ create table if not exists daily_quizzes (
   created_at timestamptz default now()
 );
 
+-- Une génération automatique ne doit jamais publier un titre manifestement
+-- coupé au milieu d'une référence (ex. « Proverbes 6:12- » ou « (Romains »).
+-- La contrainte est appliquée aux nouvelles lignes et aux mises à jour ; les
+-- anciennes données restent vérifiables séparément avec une migration NOT VALID.
+alter table daily_quizzes drop constraint if exists daily_quizzes_title_not_truncated;
+alter table daily_quizzes add constraint daily_quizzes_title_not_truncated
+  check (title !~ '[-–—:(]$' and title !~ '\.\.\.$' and title !~ '\([^)]*$');
+
 create index if not exists idx_daily_quizzes_is_active on daily_quizzes (is_active);
 
 -- ------------------------------------------------------------
