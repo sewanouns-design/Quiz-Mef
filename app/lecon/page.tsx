@@ -40,6 +40,44 @@ function InfoCard({
   );
 }
 
+function ScriptureCard({
+  reference,
+  verses,
+}: {
+  reference: string;
+  verses: Array<{ reference: string; text: string }>;
+}) {
+  return (
+    <section className="mt-6 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
+      <div className="flex items-start gap-4">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-2xl" aria-hidden="true">
+          📖
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-extrabold uppercase tracking-[0.15em] text-amber-700">Parole de Dieu</p>
+          <h2 className="mt-2 text-2xl font-extrabold text-navy sm:text-3xl">{reference || "Référence du jour"}</h2>
+          <p className="mt-2 text-sm font-semibold text-gray-500">Version Louis Second</p>
+        </div>
+      </div>
+
+      {verses.length > 0 ? (
+        <blockquote className="mt-7 border-l-4 border-amber-400 pl-5 text-lg italic leading-9 text-slate-700 sm:text-xl sm:leading-10">
+          {verses.map((verse) => (
+            <p key={verse.reference} className="mb-3 last:mb-0">
+              <span className="mr-2 not-italic text-sm font-extrabold text-amber-700">{verse.reference.split(":").pop()}</span>
+              {verse.text}
+            </p>
+          ))}
+        </blockquote>
+      ) : (
+        <p className="mt-6 border-l-4 border-amber-400 pl-5 text-lg leading-9 text-slate-700">
+          Relis le passage <strong>{reference}</strong> dans ta Bible, en version Louis Second, avant de continuer la méditation.
+        </p>
+      )}
+    </section>
+  );
+}
+
 export default async function LessonPage() {
   const [lesson, settings] = await Promise.all([getTodayLesson(), getSiteSettings()]);
 
@@ -86,27 +124,20 @@ export default async function LessonPage() {
                   <h1 className="mt-2 max-w-2xl text-4xl font-black leading-tight sm:text-5xl">
                     {lesson.title.replace(/\s*\([^()]+\)\s*$/, "")}
                   </h1>
-                  <p className="mt-4 text-base font-semibold text-blue-100 sm:text-lg">
-                    {lesson.reference || "Lecture biblique du jour"}
-                  </p>
                 </div>
               </header>
 
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/quiz"
-                  className="order-1 inline-flex flex-1 items-center justify-center rounded-2xl px-6 py-4 text-base font-extrabold text-white shadow-lg transition-opacity hover:opacity-90 sm:order-2"
-                  style={{ backgroundColor: settings.color_accent }}
-                >
-                  Passer le quiz du jour <span className="ml-2" aria-hidden="true">→</span>
-                </Link>
-                <span className="order-2 inline-flex flex-1 items-center justify-center rounded-2xl border border-blue-200 bg-white px-6 py-4 text-center text-sm font-semibold text-blue-800 sm:order-1">
-                  Lis d&apos;abord attentivement la leçon
-                </span>
+              <ScriptureCard reference={lesson.reference} verses={lesson.scriptureVerses} />
+
+              <div className="mt-12">
+                <SectionHeading icon="▌">Développement</SectionHeading>
+                <p className="mt-6 whitespace-pre-line text-lg leading-9 text-slate-700 sm:text-xl sm:leading-10">
+                  {lesson.body}
+                </p>
               </div>
 
               {lesson.essential && (
-                <section className="mt-8 rounded-3xl border border-blue-100 bg-blue-50/80 p-6 shadow-sm sm:p-8">
+                <section className="mt-12 rounded-3xl border border-blue-100 bg-blue-50/80 p-6 shadow-sm sm:p-8">
                   <div className="flex items-start gap-4">
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-2xl" aria-hidden="true">✦</span>
                     <div>
@@ -117,42 +148,20 @@ export default async function LessonPage() {
                 </section>
               )}
 
-              <div className="mt-12">
-                <SectionHeading icon="▌">Développement</SectionHeading>
-                <p className="mt-6 whitespace-pre-line text-lg leading-9 text-slate-700 sm:text-xl sm:leading-10">
-                  {lesson.body}
-                </p>
-              </div>
-
-              <div className="my-12 border-t border-gray-200" />
-
-              <InfoCard icon="📖" title="Références bibliques">
-                <p className="font-bold text-navy">{lesson.reference || lesson.title}</p>
-                <p className="mt-3 text-base leading-8 text-slate-600">
-                  Relis attentivement le passage indiqué avant de commencer le quiz. Les questions portent sur la compréhension précise de la leçon et de son contenu.
-                </p>
-              </InfoCard>
-
               {lesson.prayer && (
                 <InfoCard icon="🛡" title="Prière" className="mt-6">
                   <p className="border-l-4 border-purple-500 pl-5 italic text-slate-700">{lesson.prayer}</p>
                 </InfoCard>
               )}
 
-              {lesson.annualReading && (
-                <section className="mt-6 rounded-3xl border border-amber-100 bg-amber-50/70 p-6 sm:p-8">
-                  <p className="text-sm font-extrabold uppercase tracking-[0.15em] text-amber-700">Lecture biblique annuelle</p>
-                  <p className="mt-3 text-base font-semibold leading-8 text-slate-700">{lesson.annualReading}</p>
-                </section>
-              )}
-
-              <div className="mt-12 border-t border-gray-200 pt-8 text-center">
-                <p className="text-base font-semibold text-slate-600">Que cette méditation vous bénisse.</p>
+              <div className="mt-12 rounded-3xl border border-blue-100 bg-white p-6 text-center shadow-sm sm:p-8">
+                <p className="text-lg font-semibold text-slate-700">Tu peux maintenant passer au quiz du jour.</p>
                 <Link
                   href="/quiz"
-                  className="mt-5 inline-flex items-center justify-center rounded-full bg-amber-100 px-7 py-3.5 font-extrabold text-amber-800 transition-colors hover:bg-amber-200"
+                  className="mt-5 inline-flex w-full items-center justify-center rounded-2xl px-6 py-4 text-base font-extrabold text-white shadow-lg transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: settings.color_accent }}
                 >
-                  Compris, je passe au quiz <span className="ml-2" aria-hidden="true">↓</span>
+                  Passer le quiz du jour maintenant <span className="ml-2" aria-hidden="true">→</span>
                 </Link>
               </div>
             </>

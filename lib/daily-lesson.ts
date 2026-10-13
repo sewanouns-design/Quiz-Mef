@@ -42,12 +42,32 @@ export interface DailyLesson {
   lessonTitle: string;
   title: string;
   reference: string;
+  scriptureVerses: Array<{ reference: string; text: string }>;
   body: string;
   essential: string;
   prayer: string;
   annualReading: string;
   sourceUpdatedAt: string | null;
 }
+
+const BOOK_ALIASES: Record<string, string> = {
+  "prov.": "Proverbes",
+  prov: "Proverbes",
+  "ps.": "Psaume",
+  ps: "Psaume",
+  "rom.": "Romains",
+  rom: "Romains",
+  jn: "Jean",
+  jean: "Jean",
+  gen: "Genèse",
+  "gen.": "Genèse",
+  es: "Ésaïe",
+  "es.": "Ésaïe",
+  mat: "Matthieu",
+  "mat.": "Matthieu",
+  mc: "Marc",
+  "mc.": "Marc",
+};
 
 interface DaySection {
   date: Date;
@@ -204,6 +224,27 @@ function compact(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
+function normalizeBookName(value: string): string {
+  const cleaned = value.replace(/\s+/g, " ").trim();
+  const alias = BOOK_ALIASES[cleaned.toLowerCase()];
+  return alias ?? cleaned;
+}
+
+function expandReference(reference: string): string[] {
+  const refs: string[] = [];
+  const pattern = /((?:[1-3]\s+)?[A-Za-zÀ-ÿ.]+(?:\s+[A-Za-zÀ-ÿ.]+)?)\s+(\d+)\s*:\s*(\d+)(?:\s*[-–—]\s*(\d+))?/g;
+  for (const match of reference.replace(/[;]/g, ",").matchAll(pattern)) {
+    const book = normalizeBookName(match[1]);
+    const chapter = Number(match[2]);
+    const firstVerse = Number(match[3]);
+    const lastVerse = Math.min(Number(match[4] ?? firstVerse), firstVerse + 30);
+    for (let verse = firstVerse; verse <= lastVerse; verse += 1) {
+      refs.push(`${book} ${chapter}:${verse}`);
+    }
+  }
+  return [...new Set(refs)];
+}
+
 export function getLocalLessonDate(timeZone = "Africa/Porto-Novo"): string {
   return dateKey(dateForTimezone(timeZone));
 }
@@ -247,6 +288,7 @@ export function extractDailyLesson(
     lessonTitle: block.title,
     title: section.title,
     reference,
+    scriptureVerses: [],
     body,
     essential: compact(essential),
     prayer: compact(prayer),
@@ -270,10 +312,30 @@ export async function getTodayLesson(): Promise<DailyLesson | null> {
     return null;
   }
   if (!data?.source_text) return null;
-  return extractDailyLesson(
+  const lesson = extractDailyLesson(
     data.source_text,
     getLocalLessonDate(),
     data.lesson_start ?? 1,
     data.updated_at ?? null
   );
+  if (!lesson || !lesson.reference) return lesson;
+
+  const references = expandReference(lesson.reference);
+  if (references.length === 0) return lesson;
+
+  const { data: verses, error: versesError } = await supabase
+    .from("bible_verses")
+    .select("reference, text")
+    .in("reference", references);
+
+  if (versesError) {
+    console.error("Erreur récupération du texte biblique :", versesError.message);
+    return lesson;
+  }
+
+  const byReference = new Map((verses ?? []).map((verse) => [verse.reference, verse.text]));
+  lesson.scriptureVerses = references
+    .filter((reference) => byReference.has(reference))
+    .map((reference) => ({ reference, text: byReference.get(reference) as string }));
+  return lesson;
 }
