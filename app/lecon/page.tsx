@@ -1,7 +1,8 @@
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import { getSiteSettings } from "@/lib/site-settings";
-import { getTodayLesson } from "@/lib/daily-lesson";
+import { getLessonForDate, getLocalLessonDate } from "@/lib/daily-lesson";
+import { isAdminAuthenticated } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -101,8 +102,16 @@ function ScriptureCard({
   );
 }
 
-export default async function LessonPage() {
-  const [lesson, settings] = await Promise.all([getTodayLesson(), getSiteSettings()]);
+export default async function LessonPage({
+  searchParams,
+}: {
+  searchParams?: { date?: string; preview?: string };
+}) {
+  const previewDate = searchParams?.date?.match(/^\d{4}-\d{2}-\d{2}$/)?.[0];
+  const requestedDate = searchParams?.preview === "1" && previewDate && isAdminAuthenticated()
+    ? previewDate
+    : getLocalLessonDate();
+  const [lesson, settings] = await Promise.all([getLessonForDate(requestedDate), getSiteSettings()]);
 
   return (
     <>

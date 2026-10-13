@@ -33,6 +33,9 @@ type FormState = {
   title: string;
   reference: string;
   scriptureText: string;
+  scriptureVerses: ScriptureVerse[];
+  originalReference: string;
+  originalScriptureText: string;
   body: string;
   essential: string;
   prayer: string;
@@ -56,6 +59,9 @@ function emptyForm(): FormState {
     title: "",
     reference: "",
     scriptureText: "",
+    scriptureVerses: [],
+    originalReference: "",
+    originalScriptureText: "",
     body: "",
     essential: "",
     prayer: "",
@@ -66,11 +72,16 @@ function emptyForm(): FormState {
 function formFromLesson(lesson: DailyLesson | null, override: Override | null): FormState {
   const value = override ?? lesson;
   if (!value) return emptyForm();
+  const scriptureVerses = value.scriptureVerses ?? [];
+  const scriptureText = scriptureVerses.map((verse) => verse.text).join("\n\n");
   return {
     lessonNumber: String(value.lessonNumber),
     title: value.title,
     reference: value.reference,
-    scriptureText: value.scriptureVerses.map((verse) => verse.text).join("\n\n"),
+    scriptureText,
+    scriptureVerses,
+    originalReference: value.reference,
+    originalScriptureText: scriptureText,
     body: value.body,
     essential: value.essential,
     prayer: value.prayer,
@@ -153,9 +164,12 @@ export default function DailyLessonTab() {
           lessonNumber: form.lessonNumber,
           title: form.title,
           reference: form.reference,
-          scriptureVerses: form.scriptureText.trim()
-            ? [{ reference: form.reference, text: form.scriptureText }]
-            : [],
+          scriptureVerses:
+            form.reference === form.originalReference && form.scriptureText === form.originalScriptureText
+              ? form.scriptureVerses
+              : form.scriptureText.trim()
+                ? [{ reference: form.reference, text: form.scriptureText }]
+                : [],
           body: form.body,
           essential: form.essential,
           prayer: form.prayer,
@@ -244,7 +258,19 @@ export default function DailyLessonTab() {
           <button type="button" onClick={() => loadDate()} disabled={loading} className="btn-secondary">
             {loading ? "Chargement..." : "Charger cette date"}
           </button>
+          <a
+            href={`/lecon?date=${encodeURIComponent(lessonDate)}&preview=1`}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-xl border border-blue-200 px-5 py-3 font-semibold text-blue-700 hover:bg-blue-50"
+          >
+            Prévisualiser sur le site
+          </a>
         </div>
+        <p className="mt-3 text-xs leading-5 text-gray-500">
+          « Charger cette date » remplit seulement l’éditeur. Cela ne remplace pas la date du jour publique.
+          Pour publier une correction, enregistre la leçon ; pour contrôler une date future, utilise l’aperçu.
+        </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold">
           <span className={`rounded-full px-3 py-1 ${override ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"}`}>
