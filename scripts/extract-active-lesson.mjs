@@ -224,6 +224,30 @@ function findLessonBlocks(rawText) {
       lessonTitle = fallback ?? `Leçon ${matches[index][1]}`;
     }
 
+    // Le titre général est parfois placé juste avant « Leçon : » dans le PDF,
+    // donc en dehors de rawBlock. Exemple :
+    // « THEME TRIMESTRIEL: » puis « CRÉÉ POUR ÊTRE SAGES ET PRUDENTS ».
+    // Sans ce rattrapage, le découpage de « 7ème » pouvait devenir le faux titre
+    // « ème », ce qui produisait un mauvais sous-titre dans les quiz automatiques.
+    const precedingLines = text
+      .slice(Math.max(0, start - 700), start)
+      .split("\n")
+      .map(normalizeLine)
+      .filter(Boolean);
+    for (let priorIndex = precedingLines.length - 1; priorIndex >= 0; priorIndex -= 1) {
+      if (!/^TRIMESTRIEL\s*:?$/i.test(precedingLines[priorIndex]) && !/^THEME\s+TRIMESTRIEL\s*:?$/i.test(precedingLines[priorIndex])) continue;
+      const candidate = precedingLines[priorIndex + 1] ?? "";
+      if (
+        candidate &&
+        candidate.length >= 8 &&
+        !/^Leçon|^DIMANCHE|^MOIS|^CANTIQUES|^UNIT[ÉE]/i.test(candidate) &&
+        !/^\d/.test(candidate)
+      ) {
+        lessonTitle = candidate;
+      }
+      break;
+    }
+
     blocks.push({
       lessonNumber: Number(matches[index][1]),
       sunday,
