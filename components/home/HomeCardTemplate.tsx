@@ -94,9 +94,17 @@ export default function HomeCardTemplate({
                 </Link>
               </>
             ) : (
-              <p className="text-sm text-gray-400">
-                Aucun quiz disponible aujourd&apos;hui. Reviens bientôt.
-              </p>
+              <>
+                <p className="text-sm text-gray-400">
+                  Aucun quiz disponible aujourd&apos;hui. Reviens bientôt.
+                </p>
+                <Link
+                  href="/lecon"
+                  className="mt-5 inline-flex w-full items-center justify-center rounded-xl border-2 border-blue-200 px-6 py-3 font-semibold text-blue-700 transition-colors hover:border-blue-400 hover:bg-blue-50"
+                >
+                  📖 Lire la leçon du jour
+                </Link>
+              </>
             )}
           </div>
 
