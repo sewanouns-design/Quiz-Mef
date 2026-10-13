@@ -18,6 +18,7 @@ import VerseGamePlayersTab from "./VerseGamePlayersTab";
 import VerseGameSettingsTab from "./VerseGameSettingsTab";
 import UpdatesTab from "./UpdatesTab";
 import LessonSourceTab from "./LessonSourceTab";
+import DailyLessonTab from "./DailyLessonTab";
 
 // Navigation à deux niveaux : catégories, puis sous-onglets (éventuellement
 // regroupés sous un sous-titre, ex. "Trouve le verset" dans Jeux — pensé
@@ -63,9 +64,10 @@ const CATEGORIES: Category[] = [
     groups: [
       {
         label: null,
-        tabs: [
-          { id: "quiz", label: "Quiz du jour", render: () => <QuizTab /> },
-          { id: "lesson-source", label: "Source du trimestre", render: () => <LessonSourceTab /> },
+          tabs: [
+            { id: "quiz", label: "Quiz du jour", render: () => <QuizTab /> },
+            { id: "daily-lesson", label: "Leçon du jour", render: () => <DailyLessonTab /> },
+            { id: "lesson-source", label: "Source du trimestre", render: () => <LessonSourceTab /> },
           { id: "questions", label: "Questions", render: () => <LessonQuestionsTab /> },
           { id: "suggestions", label: "Suggestions", render: () => <SuggestionsTab /> },
           { id: "results", label: "Résultats", render: () => <ResultsTab /> },

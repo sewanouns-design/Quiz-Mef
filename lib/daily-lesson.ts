@@ -297,8 +297,50 @@ export function extractDailyLesson(
   };
 }
 
-export async function getTodayLesson(): Promise<DailyLesson | null> {
+function parseScriptureVerses(value: unknown): Array<{ reference: string; text: string }> {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const reference = "reference" in item && typeof item.reference === "string" ? item.reference.trim() : "";
+    const text = "text" in item && typeof item.text === "string" ? item.text.trim() : "";
+    return reference && text ? [{ reference, text }] : [];
+  });
+}
+
+export async function getLessonForDate(
+  requestedDate: string,
+  options: { ignoreOverride?: boolean } = {}
+): Promise<DailyLesson | null> {
   const supabase = getSupabaseAdmin();
+  if (!options.ignoreOverride) {
+    const { data: override, error: overrideError } = await supabase
+      .from("daily_lesson_overrides")
+      .select("id, lesson_date, lesson_number, title, reference, scripture_verses, body, essential, prayer, is_visible, updated_at")
+      .eq("lesson_date", requestedDate)
+      .maybeSingle();
+
+    if (overrideError) {
+      console.error("Erreur récupération de la personnalisation de leçon :", overrideError.message);
+    }
+    if (override) {
+      if (!override.is_visible) return null;
+      return {
+        date: requestedDate,
+        weekday: new Intl.DateTimeFormat("fr-FR", { weekday: "long", timeZone: "Africa/Porto-Novo" }).format(new Date(`${requestedDate}T12:00:00Z`)),
+        lessonNumber: override.lesson_number,
+        lessonTitle: `Leçon ${override.lesson_number}`,
+        title: override.title,
+        reference: override.reference ?? "",
+        scriptureVerses: parseScriptureVerses(override.scripture_verses),
+        body: override.body ?? "",
+        essential: override.essential ?? "",
+        prayer: override.prayer ?? "",
+        annualReading: "",
+        sourceUpdatedAt: override.updated_at ?? null,
+      };
+    }
+  }
+
   const { data, error } = await supabase
     .from("lesson_sources")
     .select("source_text, lesson_start, updated_at")
@@ -314,7 +356,7 @@ export async function getTodayLesson(): Promise<DailyLesson | null> {
   if (!data?.source_text) return null;
   const lesson = extractDailyLesson(
     data.source_text,
-    getLocalLessonDate(),
+    requestedDate,
     data.lesson_start ?? 1,
     data.updated_at ?? null
   );
@@ -338,4 +380,8 @@ export async function getTodayLesson(): Promise<DailyLesson | null> {
     .filter((reference) => byReference.has(reference))
     .map((reference) => ({ reference, text: byReference.get(reference) as string }));
   return lesson;
+}
+
+export async function getTodayLesson(): Promise<DailyLesson | null> {
+  return getLessonForDate(getLocalLessonDate());
 }

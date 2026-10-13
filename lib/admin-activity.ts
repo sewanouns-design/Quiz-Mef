@@ -14,7 +14,10 @@ export type AdminActivityAction =
   | "settings_updated"
   | "data_restored"
   | "verse_game_player_updated"
-  | "verse_game_player_reset";
+  | "verse_game_player_reset"
+  | "daily_lesson_updated"
+  | "daily_lesson_visibility_changed"
+  | "daily_lesson_deleted";
 
 /**
  * Journalise une action du super-admin dans admin_activity_log, affichée

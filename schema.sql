@@ -76,6 +76,26 @@ create unique index if not exists one_active_lesson_source
   on lesson_sources ((is_active)) where is_active;
 alter table lesson_sources enable row level security;
 
+-- Personnalisation admin d'une journée de leçon. Une suppression restaure
+-- automatiquement le contenu issu de la source trimestrielle active.
+create table if not exists daily_lesson_overrides (
+  id uuid primary key default gen_random_uuid(),
+  lesson_date date not null unique,
+  lesson_number integer not null check (lesson_number between 1 and 100),
+  title text not null,
+  reference text not null default '',
+  scripture_verses jsonb not null default '[]'::jsonb,
+  body text not null default '',
+  essential text not null default '',
+  prayer text not null default '',
+  is_visible boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_daily_lesson_overrides_date
+  on daily_lesson_overrides (lesson_date desc);
+alter table daily_lesson_overrides enable row level security;
+
 -- Le PDF lui-même est conservé dans un bucket Supabase Storage privé.
 insert into storage.buckets (id, name, public)
 values ('quiz-sources', 'quiz-sources', false)
