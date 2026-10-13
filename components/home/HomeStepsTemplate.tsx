@@ -112,8 +112,14 @@ export default function HomeStepsTemplate({
                   <p className="mt-1 text-sm text-gray-500">{activeQuiz.subtitle}</p>
                 )}
                 <Link
+                  href="/lecon"
+                  className="mt-6 inline-flex w-full items-center justify-center rounded-xl border-2 border-blue-200 px-6 py-3 font-semibold text-blue-700 transition-colors hover:border-blue-400 hover:bg-blue-50"
+                >
+                  📖 Lire la leçon du jour
+                </Link>
+                <Link
                   href="/quiz"
-                  className="mt-6 inline-flex w-full items-center justify-center rounded-xl px-6 py-3 font-semibold text-white transition-opacity hover:opacity-90"
+                  className="mt-3 inline-flex w-full items-center justify-center rounded-xl px-6 py-3 font-semibold text-white transition-opacity hover:opacity-90"
                   style={{ backgroundColor: settings.color_accent }}
                 >
                   {settings.start_button_text}

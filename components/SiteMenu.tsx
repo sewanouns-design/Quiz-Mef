@@ -16,6 +16,7 @@ interface MenuLink {
 const MENU_GROUPS: MenuLink[][] = [
   [{ href: "/", icon: "🏠", label: "Accueil" }],
   [
+    { href: "/lecon", icon: "📖", label: "Leçon du jour" },
     { href: "/jeux", icon: "🎮", label: "Jeux" },
     { href: "/a-propos", icon: "ℹ️", label: "À propos" },
     { href: "/contact", icon: "✉️", label: "Contact" },

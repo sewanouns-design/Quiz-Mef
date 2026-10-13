@@ -68,10 +68,16 @@ export default function HomeMinimalTemplate({ settings, activeQuiz, weeklyQuiz, 
         </p>
 
         <div className="mt-10">
-          {activeQuiz ? (
-            <>
-              <Link
-                href="/quiz"
+            {activeQuiz ? (
+              <>
+                <Link
+                  href="/lecon"
+                  className="mb-3 inline-flex w-full items-center justify-center rounded-full border-2 border-blue-200 px-8 py-3.5 font-semibold text-blue-700 transition-colors hover:border-blue-400 hover:bg-blue-50"
+                >
+                  📖 Lire la leçon du jour
+                </Link>
+                <Link
+                  href="/quiz"
                 className="inline-flex w-full items-center justify-center rounded-full px-8 py-4 font-semibold text-white shadow-md transition-opacity hover:opacity-90"
                 style={{ backgroundColor: settings.color_accent }}
               >
