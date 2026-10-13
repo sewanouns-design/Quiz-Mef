@@ -35,6 +35,19 @@ export function validateQuizQuestions(
     return { valid: false, error: "Le quiz doit contenir au moins une question." };
   }
 
+  if (category === "daily" && questions.length !== 5 && questions.length !== 6) {
+    return {
+      valid: false,
+      error: `Un quiz quotidien doit contenir 5 ou 6 questions (actuellement ${questions.length}).`,
+    };
+  }
+  if (category === "weekly" && questions.length !== 20) {
+    return {
+      valid: false,
+      error: `Un quiz hebdomadaire doit contenir exactement 20 questions (actuellement ${questions.length}).`,
+    };
+  }
+
   let totalPoints = 0;
   let advancedTrueFalseCount = 0;
 
