@@ -221,8 +221,14 @@ export function extractDailyLesson(
   const section = findDaySections(block).find((item) => dateKey(item.date) === requestedDate);
   if (!section) return null;
 
-  const titleLine = section.text.split("\n")[0] ?? section.title;
-  const content = section.text.startsWith(titleLine) ? section.text.slice(titleLine.length).trim() : section.text;
+  const sectionLines = section.text.split("\n");
+  const titleLine = sectionLines.shift() ?? section.title;
+  let titleIsOpen = (titleLine.match(/\(/g) ?? []).length > (titleLine.match(/\)/g) ?? []).length;
+  while (titleIsOpen && sectionLines.length > 0) {
+    const continuation = sectionLines.shift() ?? "";
+    titleIsOpen = (continuation.match(/\(/g) ?? []).length > (continuation.match(/\)/g) ?? []).length;
+  }
+  const content = sectionLines.join("\n").trim();
   const essential = valueBetween(content, /Point Essentiel\s*:/i, /Axe de prière\s*:/i);
   const prayer = valueBetween(content, /Axe de prière\s*:/i, /Lire la Bible en entier en un an\s*:/i);
   const annualReading = compact(content.match(/Lire la Bible en entier en un an\s*:\s*([\s\S]*)$/i)?.[1] ?? "");
