@@ -19,6 +19,15 @@ function isAdvancedTrueFalseOptions(options: unknown[]): boolean {
   );
 }
 
+function containsEvidenceLeak(option: unknown): boolean {
+  return (
+    typeof option === "string" &&
+    /\b(?:la bible|la leçon|le texte|le passage|explicitement|selon|genèse|proverbes|romains|michée|verset)\b/i.test(
+      option
+    )
+  );
+}
+
 /**
  * Validation stricte des questions d'un quiz, utilisée à la fois à la
  * création et à la modification (client ET serveur) : chaque question doit
@@ -101,6 +110,12 @@ export function validateQuizQuestions(
         };
       }
       if (question.type === "mcq" && category !== "quarterly" && options.length === 4) {
+        if (options.some(containsEvidenceLeak)) {
+          return {
+            valid: false,
+            error: `Question ${i + 1} : une proposition révèle directement la preuve par une citation, une référence ou une mention du texte.`,
+          };
+        }
         const isAdvancedTrueFalse = isAdvancedTrueFalseOptions(options);
         if (isAdvancedTrueFalse) advancedTrueFalseCount += 1;
         else if (
@@ -158,16 +173,16 @@ export function validateQuizQuestions(
     };
   }
 
-  if (category === "daily" && questions.length >= 5 && advancedTrueFalseCount < 3) {
+  if (category === "daily" && advancedTrueFalseCount > 2) {
     return {
       valid: false,
-      error: `Un quiz quotidien doit contenir au moins 3 questions Vrai/Faux avancées (actuellement ${advancedTrueFalseCount}).`,
+      error: `Un quiz quotidien doit contenir au maximum 2 questions Vrai/Faux avancées (actuellement ${advancedTrueFalseCount}).`,
     };
   }
-  if (category === "weekly" && advancedTrueFalseCount < 8) {
+  if (category === "weekly" && advancedTrueFalseCount > 5) {
     return {
       valid: false,
-      error: `Un quiz hebdomadaire doit contenir au moins 8 questions Vrai/Faux avancées (actuellement ${advancedTrueFalseCount}).`,
+      error: `Un quiz hebdomadaire doit contenir au maximum 5 questions Vrai/Faux avancées (actuellement ${advancedTrueFalseCount}).`,
     };
   }
 

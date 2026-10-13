@@ -64,7 +64,7 @@ RÈGLE ABSOLUE CONTRE LES RÉPONSES ÉVIDENTES :
 - Il est interdit de proposer un distracteur absurde, comique, moralement caricatural, hors sujet ou manifestement contraire à la Bible.
 - Il est interdit d’écrire des distracteurs comme « le mensonge est un signe d’humilité », « les méchants prospéreront toujours » ou « acquérir des richesses frauduleusement ne présente aucun risque », sauf si la source les traite réellement et précisément. Ces propositions permettent de répondre sans lire la leçon.
 - Une proposition fausse doit pouvoir sembler possible à quelqu’un qui a seulement une compréhension superficielle du texte. Elle doit être construite à partir du même passage ou d’une idée proche, mais comporter une modification précise : acteur, lieu, moment, cause, conséquence, condition, objectif, degré, ordre ou relation entre deux idées.
-- Une proposition peut être bibliquement vraie en général, mais elle doit être refusée si elle n’est pas soutenue par le texte fourni pour cette question. La justification doit expliquer cette différence sans faire appel à une information extérieure.
+- La question et la bonne réponse doivent être vérifiables dans le contenu fourni. Les distracteurs ne doivent pas forcément reprendre mot pour mot le livret : ils peuvent être des formulations générales, des conséquences possibles ou des rapprochements qui semblent raisonnables, mais qui ne correspondent pas à la nuance, à la portée ou à la relation présentée dans cette leçon. Ils doivent rester pertinents et crédibles, jamais absurdes.
 - Les 4 options doivent avoir une longueur, une structure grammaticale et un niveau de détail comparables. La bonne réponse ne doit jamais être la plus longue, la plus nuancée ou la plus précise.
 - Si les 3 distracteurs ne peuvent pas être rendus réellement plausibles et proches, abandonne la question et choisis un autre détail précis du texte.
 - Répartis les bonnes réponses entre les indices 0, 1, 2 et 3. Ne mets jamais toutes les bonnes réponses à A.
@@ -73,7 +73,7 @@ RÈGLE ABSOLUE CONTRE LES RÉPONSES ÉVIDENTES :
 4. FORMAT VRAI/FAUX À QUATRE PROPOSITIONS
 ==================================================
 
-Pour les questions de type « affirmation à évaluer », la question doit présenter une affirmation précise issue du contenu fourni, puis proposer exactement 4 réponses complètes. Chaque réponse doit combiner un verdict et une justification courte :
+Pour les questions de type « affirmation à évaluer », la question doit présenter une affirmation précise issue du contenu fourni, puis proposer exactement 4 réponses complètes. Chaque réponse doit combiner un verdict et une suite naturelle, sans révéler la preuve :
 
 - « Vrai, car … »
 - « Faux, car … »
@@ -87,15 +87,17 @@ Les trois mauvaises propositions doivent respecter toutes ces règles :
 - elles reprennent un détail, une relation ou une nuance réellement présente ou très proche dans le texte ;
 - elles ne sont pas réfutables par le simple bon sens ou par une morale générale ;
 - elles ne contiennent pas une affirmation grotesque ou manifestement contraire à la Bible ;
-- elles ne deviennent pas fausses uniquement parce que la leçon ne parle pas du sujet, sauf si la question porte précisément sur ce silence.
+- elles ne deviennent pas fausses uniquement parce que la leçon ne parle pas du sujet, sauf si la question porte précisément sur cette limite ; elles doivent plutôt déplacer une nuance, une portée ou une relation du passage ;
+- elles ne citent jamais « la Bible dit explicitement », « la leçon dit », « le texte affirme », un numéro de verset ou une référence biblique ;
+- elles ne transforment jamais la suite de « Vrai » ou « Faux » en démonstration scolaire évidente. Les quatre options doivent avoir une construction et une plausibilité comparables.
 
 Exemple de structure difficile (à adapter uniquement au texte fourni) :
-« Le texte met-il sur le même plan l’augmentation des richesses et l’attachement du cœur ? »
+« L’augmentation des richesses suffit-elle à rendre l’attachement du cœur acceptable ? »
 Options :
-A. « Vrai, car le texte présente l’augmentation des richesses comme la preuve que le cœur s’y attache. »
-B. « Faux, car le texte distingue l’augmentation des richesses de l’attachement du cœur à ces richesses. »
-C. « Vrai, car le texte demande de détacher le cœur uniquement lorsque les richesses diminuent. »
-D. « Faux, car le texte attribue l’attachement du cœur à la manière dont les richesses sont obtenues, et non à leur augmentation. »
+A. « Vrai, car un gain important montre généralement que le cœur reste libre à l’égard de ce gain. »
+B. « Faux, car l’augmentation des richesses ne rend pas à elle seule l’attachement du cœur acceptable. »
+C. « Vrai, car le cœur ne peut être attaché qu’à des richesses obtenues par le travail. »
+D. « Faux, car l’attachement du cœur devient acceptable dès lors que les richesses sont utilisées pour aider les autres. »
 
 Dans cet exemple, B ne doit être retenue que si elle correspond exactement au texte autorisé. Les autres options doivent être remplacées par des variantes réellement proches du passage, jamais par des absurdités.
 
@@ -103,7 +105,7 @@ Dans cet exemple, B ne doit être retenue que si elle correspond exactement au t
 5. JUSTIFICATION ET CONTRÔLE ADVERSARIAL
 ==================================================
 
-Chaque question doit contenir une justification obligatoire. Elle doit expliquer précisément pourquoi la bonne proposition est correcte, citer ou paraphraser fidèlement la source autorisée et ne rien ajouter qui soit absent du contenu fourni.
+Chaque question doit contenir une justification obligatoire. Elle sert à corriger après la réponse ; elle peut expliquer la nuance exacte de la leçon, mais elle ne doit pas être copiée dans les options et ne doit pas rendre la bonne réponse évidente avant le choix.
 
 Avant de répondre, effectue silencieusement deux contrôles :
 
@@ -194,7 +196,7 @@ export const DAILY_GENERATION_PROMPT = createStandardPrompt({
   expiryRule:
     "pour un quiz DAILY, expiresAt est le dimanche de la même semaine à 17:00:00+01:00, calculé à partir de la date fournie.",
   affirmationRule:
-    "Au moins 3 questions sur 5 ou 6 doivent être des questions « affirmation à évaluer » avec 4 propositions complètes Vrai/Faux, chacune accompagnée d’une justification plausible liée à la leçon. Les autres questions sont des QCM classiques à 4 distracteurs plausibles.",
+    "Au maximum 2 questions sur 5 ou 6 doivent être des questions « affirmation à évaluer » avec 4 propositions complètes Vrai/Faux. Toutes les autres questions sont des QCM classiques à 4 distracteurs plausibles.",
 });
 
 export const WEEKLY_GENERATION_PROMPT = createStandardPrompt({
@@ -211,7 +213,7 @@ export const WEEKLY_GENERATION_PROMPT = createStandardPrompt({
   expiryRule:
     "pour un quiz WEEKLY, expiresAt est le lundi suivant à 09:00:00+01:00, calculé à partir de la période fournie.",
   affirmationRule:
-    "Au moins 8 questions sur 20 doivent être des questions « affirmation à évaluer » avec 4 propositions complètes Vrai/Faux, chacune rattachée uniquement aux articulations fournies. Les autres questions sont des QCM classiques dont les distracteurs restent tous proches et liés aux articulations.",
+    "Au maximum 5 questions sur 20 doivent être des questions « affirmation à évaluer » avec 4 propositions complètes Vrai/Faux, chacune rattachée uniquement aux articulations fournies. Les autres questions sont des QCM classiques dont les distracteurs restent tous proches et liés aux articulations.",
 });
 
 export const QUARTERLY_GENERATION_PROMPT = String.raw`Tu es le générateur officiel de l’examen trimestriel biblique de la Mission Évangélique de la Foi (MEF).
@@ -242,6 +244,9 @@ Règles de titre et de sous-titre :
 - Privilégie les distinctions entre idées proches, les relations cause-conséquence, les conditions, les priorités, les applications et les combinaisons d’informations présentes dans le livret.
 - Une personne qui n’a pas étudié le livret ne doit pas pouvoir répondre facilement par élimination ou grâce à des connaissances générales.
 - Les trois propositions normales A, B et C doivent être proches, de longueur comparable et construites à partir du même contexte.
+- Les propositions normales ne doivent pas forcément reprendre mot pour mot le livret : elles peuvent être des formulations générales ou des rapprochements plausibles, mais une seule doit correspondre exactement à la portée de la leçon.
+- N’utilise aucune proposition absurde, moralement caricaturale ou manifestement contraire à la Bible.
+- Ne mets pas dans les options « la Bible dit explicitement », « la leçon dit », « le texte affirme », un numéro de verset ou une référence biblique : cela révélerait la réponse.
 
 ==================================================
 3. FORMAT OBLIGATOIRE À CINQ OPTIONS
@@ -266,7 +271,7 @@ Règles de titre et de sous-titre :
 4. JUSTIFICATION ET CONTRÔLE QUALITÉ
 ==================================================
 
-Chaque question contient une justification obligatoire, précise et fidèle au livret. Elle doit expliquer pourquoi la bonne réponse est correcte sans introduire d’information extérieure.
+Chaque question contient une justification obligatoire, précise et fidèle au livret. Elle sert à corriger après la réponse ; elle ne doit pas être recopiée dans les options ni rendre la bonne réponse évidente avant le choix.
 
 Avant de répondre, vérifie silencieusement :
 - le périmètre trimestriel ;

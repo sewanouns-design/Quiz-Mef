@@ -127,6 +127,10 @@ if (Array.isArray(questions)) {
 
     const normalizedOptions = options.map(normalize);
     if (new Set(normalizedOptions).size !== normalizedOptions.length) errors.push(`${prefix} : options dupliquées.`);
+    const evidenceLeakPattern = /\b(?:la bible|la lecon|le texte|le passage|explicitement|selon|genese|proverbes|romains|michee|verset)\b/;
+    if (normalizedOptions.some((option) => evidenceLeakPattern.test(option))) {
+      errors.push(`${prefix} : une option révèle directement la preuve par une citation, une référence ou une mention du texte.`);
+    }
     if (category !== "quarterly" && normalizedOptions.some((option) =>
       option.includes("toutes les propositions") || option.includes("aucune des propositions")
     )) {
@@ -157,11 +161,11 @@ if (Array.isArray(questions)) {
     }
   }
   if (total !== 20) errors.push(`total de points incorrect : ${total}, attendu 20.`);
-  if (category === "daily" && questions.length >= 5 && advancedTrueFalseCount < 3) {
-    errors.push(`un quiz quotidien doit contenir au moins 3 questions Vrai/Faux avancées (trouvées : ${advancedTrueFalseCount}).`);
+  if (category === "daily" && advancedTrueFalseCount > 2) {
+    errors.push(`un quiz quotidien doit contenir au maximum 2 questions Vrai/Faux avancées (trouvées : ${advancedTrueFalseCount}).`);
   }
-  if (category === "weekly" && advancedTrueFalseCount < 8) {
-    errors.push(`un quiz hebdomadaire doit contenir au moins 8 questions Vrai/Faux avancées (trouvées : ${advancedTrueFalseCount}).`);
+  if (category === "weekly" && advancedTrueFalseCount > 5) {
+    errors.push(`un quiz hebdomadaire doit contenir au maximum 5 questions Vrai/Faux avancées (trouvées : ${advancedTrueFalseCount}).`);
   }
   if (category !== "quarterly" && correctOptionIndexes.length === questions.length) {
     const counts = [0, 0, 0, 0];

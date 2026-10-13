@@ -30,13 +30,18 @@ RÈGLES :
      Les trois autres doivent rester plausibles, liées au texte et fausses par une nuance,
      un acteur, un moment, une cause, une conséquence ou une condition — jamais par une
      affirmation absurde ou moralement caricaturale.
-  Inclue au moins 3 questions Vrai/Faux avancées dans un quiz quotidien et au moins
-  8 dans un quiz hebdomadaire.
+  Inclue au maximum 2 questions Vrai/Faux avancées dans un quiz quotidien et au maximum
+  5 dans un quiz hebdomadaire. Toutes les autres questions doivent être des QCM classiques.
 - Les questions doivent porter UNIQUEMENT sur des faits présents dans le texte fourni — 
   n'invente rien et ne pioche pas dans des connaissances bibliques externes au texte.
 - Interdis les distracteurs du type « le mensonge est un signe d'humilité », « les méchants
   prospéreront toujours » ou « acquérir des richesses frauduleusement ne présente aucun
   risque » : quelqu'un pourrait les éliminer sans avoir lu la leçon.
+- Les propositions ne doivent pas forcément reprendre mot pour mot le livret : elles peuvent
+  être des formulations générales ou des rapprochements plausibles, mais la bonne réponse
+  doit rester vérifiable dans le contenu fourni et les autres doivent déplacer une nuance,
+  une portée ou une relation. N'écris jamais dans une option « la Bible dit explicitement »,
+  « la leçon dit », « le texte affirme », « selon Genèse » ou une référence de verset.
 - Pour chaque distracteur, vérifie mentalement pourquoi il peut sembler plausible à un
   lecteur superficiel et quel détail précis de la source le rend faux. Si tu ne peux pas
   le défendre, réécris l'option.
