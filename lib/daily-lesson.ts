@@ -35,6 +35,22 @@ const WEEKDAYS = [
   ["dimanche", 0],
 ] as const;
 
+const PRAYER_MARKER = /(?:Axe|Astre)\s*(?:de\s*)?prière\s*:/i;
+const ANNUAL_MARKER = /Lire\s+la\s+Bible(?:\s+en\s+entier)?\s+en\s+un\s+an\s*:/i;
+
+function isPdfNoiseLine(line: string): boolean {
+  return (
+    /^SEPTEMBRE\s*[-–—]\s*NOVEMBRE\s+2026$/i.test(line) ||
+    /^LA TH[ÉE]OLOGIE DU DUR LABEUR$/i.test(line) ||
+    /^(?:ADULTES|ADOLESCENTS|ENFANTS)$/i.test(line) ||
+    /^Disponible dans les bureaux Mission Evangélique de la Foi/i.test(line) ||
+    /^\d{2,3}\s+BP\s+\d+/i.test(line) ||
+    /^(?:T[ée]l(?:\/Fax)?|Email)\b/i.test(line) ||
+    /^Page\s*\d+$/i.test(line) ||
+    /^\d{1,3}$/.test(line)
+  );
+}
+
 export interface DailyLesson {
   date: string;
   weekday: string;
@@ -90,8 +106,7 @@ function cleanText(value: string): string {
     .replace(/\f/g, "\n")
     .split("\n")
     .map(normalizeLine)
-    .filter(Boolean)
-    .filter((line) => !/^\d{1,3}$/.test(line))
+    .filter((line) => line && !isPdfNoiseLine(line))
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
@@ -297,14 +312,13 @@ export function extractDailyLesson(
     titleIsOpen = (continuation.match(/\(/g) ?? []).length > (continuation.match(/\)/g) ?? []).length;
   }
   const content = sectionLines.join("\n").trim();
-  const essential = valueBetween(content, /Point Essentiel\s*:/i, /Axe de prière\s*:/i);
-  const prayer = valueBetween(content, /Axe de prière\s*:/i, /Lire la Bible en entier en un an\s*:/i);
-  const annualReading = compact(content.match(/Lire la Bible en entier en un an\s*:\s*([\s\S]*)$/i)?.[1] ?? "");
+  const essential = valueBetween(content, /Point Essentiel\s*:/i, PRAYER_MARKER);
+  const prayer = valueBetween(content, PRAYER_MARKER, ANNUAL_MARKER);
   const body = compact(
     content
-      .replace(/Point Essentiel\s*:[\s\S]*?(?=Axe de prière\s*:|$)/i, "")
-      .replace(/Axe de prière\s*:[\s\S]*?(?=Lire la Bible en entier en un an\s*:|$)/i, "")
-      .replace(/Lire la Bible en entier en un an\s*:[\s\S]*$/i, "")
+      .replace(/Point Essentiel\s*:[\s\S]*?(?=(?:Axe|Astre)\s*(?:de\s*)?prière\s*:|$)/i, "")
+      .replace(/(?:Axe|Astre)\s*(?:de\s*)?prière\s*:[\s\S]*?(?=Lire\s+la\s+Bible(?:\s+en\s+entier)?\s+en\s+un\s+an\s*:|$)/i, "")
+      .replace(/Lire\s+la\s+Bible(?:\s+en\s+entier)?\s+en\s+un\s+an\s*:[\s\S]*$/i, "")
   );
   const reference = section.title.match(/\(([^()]+)\)\s*$/)?.[1]?.trim() ?? "";
 
@@ -320,7 +334,7 @@ export function extractDailyLesson(
     body,
     essential: compact(essential),
     prayer: compact(prayer),
-    annualReading,
+    annualReading: "",
     sourceUpdatedAt,
   };
 }

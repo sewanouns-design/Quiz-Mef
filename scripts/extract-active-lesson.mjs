@@ -82,18 +82,56 @@ function normalizeLine(line) {
     .trim();
 }
 
+const PRAYER_MARKER = /(?:Axe|Astre)\s*(?:de\s*)?prière\s*:/i;
+const ESSENTIAL_MARKER = /Point\s+Essentiel\s*:/i;
+const ANNUAL_MARKER = /Lire\s+la\s+Bible(?:\s+en\s+entier)?\s+en\s+un\s+an\s*:/i;
+
+function isPdfNoiseLine(line) {
+  return (
+    /^SEPTEMBRE\s*[-–—]\s*NOVEMBRE\s+2026$/i.test(line) ||
+    /^LA TH[ÉE]OLOGIE DU DUR LABEUR$/i.test(line) ||
+    /^(?:ADULTES|ADOLESCENTS|ENFANTS)$/i.test(line) ||
+    /^Disponible dans les bureaux Mission Evangélique de la Foi/i.test(line) ||
+    /^\d{2,3}\s+BP\s+\d+/i.test(line) ||
+    /^(?:T[ée]l(?:\/Fax)?|Email)\b/i.test(line) ||
+    /^Page\s*\d+$/i.test(line) ||
+    /^\d{1,3}$/.test(line)
+  );
+}
+
 function cleanText(value) {
   return value
     .replace(/\r/g, "")
     .replace(/\f/g, "\n")
     .split("\n")
     .map(normalizeLine)
-    .filter((line) => line && !/^SEPTEMBRE\s*-\s*NOVEMBRE\s+2026$/i.test(line))
-    .filter((line) => !/^LA TH[ÉE]OLOGIE DU (DUR LABEUR|TRAVAIL ACHARN[ÉE])$/i.test(line))
-    .filter((line) => !/^\d{1,3}$/.test(line))
+    .filter((line) => line && !isPdfNoiseLine(line))
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+function removeAnnualReading(value) {
+  return value
+    .split("\n")
+    .filter((line) => !ANNUAL_MARKER.test(line))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function extractDailyParts(value) {
+  const text = removeAnnualReading(value);
+  const essentialMatch = text.match(new RegExp(`${ESSENTIAL_MARKER.source}([\\s\\S]*?)(?=${PRAYER_MARKER.source}|$)`, "i"));
+  const prayerMatch = text.match(new RegExp(`${PRAYER_MARKER.source}([\\s\\S]*?)$`, "i"));
+  const essential = essentialMatch?.[1]?.replace(/\s+/g, " ").trim() ?? "";
+  const prayer = prayerMatch?.[1]?.replace(/\s+/g, " ").trim() ?? "";
+  const body = text
+    .replace(new RegExp(`${ESSENTIAL_MARKER.source}[\\s\\S]*?(?=${PRAYER_MARKER.source}|$)`, "i"), "")
+    .replace(new RegExp(`${PRAYER_MARKER.source}[\\s\\S]*$`, "i"), "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return { text, body, essential, prayer };
 }
 
 function parseDate(day, month, year) {
@@ -311,7 +349,8 @@ function main() {
   const sections = findDaySections(block);
   const activeDay = sections.find((section) => section.date && formatDate(section.date) === formatDate(targetDate)) ?? null;
   const articulations = extractArticulations(block);
-  const lessonText = cleanText(block.rawText);
+  const lessonText = removeAnnualReading(cleanText(block.rawText));
+  const dailyParts = activeDay ? extractDailyParts(activeDay.text) : null;
 
   if (scope === "daily" && !activeDay) {
     fail(`aucune lecture quotidienne ne correspond à ${formatDate(targetDate)} dans la leçon ${block.lessonNumber}`);
@@ -342,7 +381,10 @@ function main() {
           date: formatDate(activeDay.date),
           weekday: activeDay.weekday,
           title: activeDay.title,
-          text: activeDay.text,
+          text: dailyParts.text,
+          body: dailyParts.body,
+          essential: dailyParts.essential,
+          prayer: dailyParts.prayer,
         }
       : null,
     articulations: scope === "daily" ? null : articulations,
