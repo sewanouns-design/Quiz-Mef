@@ -235,6 +235,7 @@ export default function QuizTab() {
   const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null);
   const [deactivatingQuizId, setDeactivatingQuizId] = useState<string | null>(null);
   const [exportingQuizId, setExportingQuizId] = useState<string | null>(null);
+  const [manualAutomationRunning, setManualAutomationRunning] = useState(false);
   const [lessonQuestionsQuiz, setLessonQuestionsQuiz] = useState<{
     id: string;
     title: string;
@@ -308,6 +309,32 @@ export default function QuizTab() {
       .then((res) => res.json())
       .then((data) => setQuizzes(data.quizzes ?? []))
       .finally(() => setLoadingList(false));
+  }
+
+  async function handleManualAutomation() {
+    setManualAutomationRunning(true);
+    setError("");
+    setSuccess("");
+    try {
+      const response = await fetch("/api/admin/automation/run", {
+        method: "POST",
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Impossible de lancer l’automatisation.");
+      const message = data.message || "La génération a été lancée en arrière-plan.";
+      setSuccess(message);
+      toast.success("Génération lancée.");
+      // L’agent travaille en arrière-plan : on rafraîchit la liste après un court délai,
+      // sans prétendre que les quiz sont déjà terminés à l’instant du clic.
+      window.setTimeout(loadQuizzes, 5000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setManualAutomationRunning(false);
+    }
   }
 
   useEffect(() => {
@@ -629,6 +656,25 @@ export default function QuizTab() {
 
   return (
     <div className="space-y-8">
+      <section className="card border-accent-light bg-accent-light/10">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-navy">Automatisation des quiz</h2>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-600">
+              Si le passage horaire n’a pas fonctionné, lance ici une vérification immédiate.
+              Le système recherche les quiz manquants, évite les doublons et travaille en arrière-plan.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleManualAutomation}
+            disabled={manualAutomationRunning}
+            className="btn-primary shrink-0"
+          >
+            {manualAutomationRunning ? "Lancement..." : "Générer les quiz maintenant"}
+          </button>
+        </div>
+      </section>
       <section className="card" ref={formRef}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-navy">
