@@ -54,8 +54,7 @@ function ScriptureCard({
           📖
         </span>
         <div className="min-w-0">
-          <p className="text-sm font-extrabold uppercase tracking-[0.15em] text-amber-700">Parole de Dieu</p>
-          <h2 className="mt-2 text-2xl font-extrabold text-navy sm:text-3xl">{reference || "Référence du jour"}</h2>
+          <h2 className="text-2xl font-extrabold text-navy sm:text-3xl">{reference || "Référence du jour"}</h2>
           <p className="mt-2 text-sm font-semibold text-gray-500">Version Louis Second</p>
         </div>
       </div>
