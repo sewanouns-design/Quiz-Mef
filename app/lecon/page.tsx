@@ -61,12 +61,14 @@ function ScriptureCard({
 
       {verses.length > 0 ? (
         <blockquote className="mt-7 border-l-4 border-amber-400 pl-5 text-lg italic leading-9 text-slate-700 sm:text-xl sm:leading-10">
-          {verses.map((verse) => (
-            <p key={verse.reference} className="mb-3 last:mb-0">
-              <span className="mr-2 not-italic text-sm font-extrabold text-amber-700">{verse.reference.split(":").pop()}</span>
-              {verse.text}
-            </p>
-          ))}
+          <p>
+            {verses.map((verse) => (
+              <span key={verse.reference} className="mr-1">
+                <sup className="mr-1 align-super text-xs font-extrabold not-italic text-amber-700">{verse.reference.split(":").pop()}</sup>
+                {verse.text}{" "}
+              </span>
+            ))}
+          </p>
         </blockquote>
       ) : (
         <p className="mt-6 border-l-4 border-amber-400 pl-5 text-lg leading-9 text-slate-700">
