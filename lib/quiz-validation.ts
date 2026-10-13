@@ -9,6 +9,16 @@ export interface QuizValidationResult {
   error?: string;
 }
 
+function isAdvancedTrueFalseOptions(options: unknown[]): boolean {
+  return (
+    options.length === 4 &&
+    options.every(
+      (option) =>
+        typeof option === "string" && /^(vrai|faux)\s*,?\s+car\b/i.test(option.trim())
+    )
+  );
+}
+
 /**
  * Validation stricte des questions d'un quiz, utilisée à la fois à la
  * création et à la modification (client ET serveur) : chaque question doit
@@ -26,6 +36,7 @@ export function validateQuizQuestions(
   }
 
   let totalPoints = 0;
+  let advancedTrueFalseCount = 0;
 
   for (let i = 0; i < questions.length; i++) {
     const raw = questions[i];
@@ -40,6 +51,13 @@ export function validateQuizQuestions(
 
     if (typeof question.question !== "string" || question.question.trim().length === 0) {
       return { valid: false, error: `Question ${i + 1} : le texte de la question est requis.` };
+    }
+
+    if ((category === "daily" || category === "weekly") && question.type !== "mcq") {
+      return {
+        valid: false,
+        error: `Question ${i + 1} : les quiz quotidiens et hebdomadaires utilisent uniquement des QCM à 4 propositions, y compris pour le Vrai/Faux avancé.`,
+      };
     }
 
     if (typeof question.points !== "number" || question.points <= 0) {
@@ -68,6 +86,20 @@ export function validateQuizQuestions(
               ? `Question ${i + 1} : un QCM doit contenir 4 ou 5 options.`
               : `Question ${i + 1} : un quiz ${category === "quarterly" ? "trimestriel" : "quotidien ou hebdomadaire"} doit contenir exactement ${expectedMcqOptions} options par QCM.`,
         };
+      }
+      if (question.type === "mcq" && category !== "quarterly" && options.length === 4) {
+        const isAdvancedTrueFalse = isAdvancedTrueFalseOptions(options);
+        if (isAdvancedTrueFalse) advancedTrueFalseCount += 1;
+        else if (
+          options.some(
+            (option) => typeof option === "string" && /^(vrai|faux)\b/i.test(option.trim())
+          )
+        ) {
+          return {
+            valid: false,
+            error: `Question ${i + 1} : une question Vrai/Faux doit contenir 4 propositions complètes commençant par « Vrai, car » ou « Faux, car ».`,
+          };
+        }
       }
       if (question.type === "true_false" && (!Array.isArray(options) || options.length < 2)) {
         return { valid: false, error: `Question ${i + 1} : au moins 2 options sont requises.` };
@@ -110,6 +142,19 @@ export function validateQuizQuestions(
     return {
       valid: false,
       error: `Le total des points doit être exactement ${REQUIRED_TOTAL_POINTS} (actuellement ${totalPoints}).`,
+    };
+  }
+
+  if (category === "daily" && questions.length >= 5 && advancedTrueFalseCount < 3) {
+    return {
+      valid: false,
+      error: `Un quiz quotidien doit contenir au moins 3 questions Vrai/Faux avancées (actuellement ${advancedTrueFalseCount}).`,
+    };
+  }
+  if (category === "weekly" && advancedTrueFalseCount < 8) {
+    return {
+      valid: false,
+      error: `Un quiz hebdomadaire doit contenir au moins 8 questions Vrai/Faux avancées (actuellement ${advancedTrueFalseCount}).`,
     };
   }
 

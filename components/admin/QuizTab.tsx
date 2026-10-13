@@ -60,103 +60,68 @@ interface StoredQuestion {
 const EXAMPLE_JSON = `[
   {
     "type": "mcq",
-    "question": "Qui a construit l'arche ?",
-    "options": ["Moïse", "Noé", "Abraham", "David"],
-    "correctOption": 1,
-    "justification": "Selon la leçon, Dieu a demandé à Noé de construire l'arche.",
-    "points": 2
-  },
-  {
-    "type": "mcq",
-    "question": "L'arche a-t-elle flotté pendant 40 jours et 40 nuits ?",
+    "question": "Le texte relie-t-il l’orgueil à la dynamique des autres fautes décrites ?",
     "options": [
-      "Vrai, car la pluie est tombée 40 jours et 40 nuits.",
-      "Faux, car la pluie n'a duré que 7 jours.",
-      "Vrai, car les eaux ont mis 40 jours à se retirer.",
-      "Faux, car la leçon ne donne aucune durée."
+      "Vrai, car il le présente comme une motivation première dans la série étudiée.",
+      "Faux, car il présente l’orgueil comme une conséquence sans lien avec les autres fautes.",
+      "Vrai, car il affirme que l’orgueil rend toute faute automatiquement juste.",
+      "Faux, car il réserve ce rôle uniquement à la pauvreté mentionnée dans le texte."
     ],
     "correctOption": 0,
-    "justification": "La pluie est tombée 40 jours et 40 nuits.",
-    "points": 2
+    "justification": "La leçon établit précisément cette relation.",
+    "points": 4
   },
   {
     "type": "mcq",
-    "question": "Combien de temps l'arche a-t-elle flotté avant que les eaux ne se retirent ?",
-    "options": ["7 jours", "40 jours", "150 jours", "1 an"],
+    "question": "Le passage associe-t-il le mensonge à un effet précis sur les relations ?",
+    "options": [
+      "Faux, car il le limite à une erreur sans portée relationnelle.",
+      "Vrai, car il le décrit comme une force qui sème division et destruction.",
+      "Vrai, car il le présente comme un moyen acceptable de préserver toute relation.",
+      "Faux, car il attribue cet effet uniquement à l’épargne familiale."
+    ],
+    "correctOption": 1,
+    "justification": "La description du passage associe le mensonge à la division et à la destruction.",
+    "points": 4
+  },
+  {
+    "type": "mcq",
+    "question": "La leçon présente-t-elle les pratiques financières comme moralement neutres dès qu’elles produisent un gain ?",
+    "options": [
+      "Vrai, car le texte dit que tout gain efface la manière dont il est obtenu.",
+      "Faux, car le texte interdit tout travail rémunéré sans exception.",
+      "Faux, car le texte relie la conduite financière à des pratiques précises qui doivent être rejetées.",
+      "Vrai, car le texte affirme que seule la pauvreté est condamnable."
+    ],
     "correctOption": 2,
-    "justification": "Les eaux ont dominé la terre pendant 150 jours.",
-    "points": 2
+    "justification": "Le passage lie la conduite financière à des pratiques précises, et non au seul résultat.",
+    "points": 4
   },
   {
     "type": "mcq",
-    "question": "Quel oiseau Noé a-t-il envoyé en premier pour voir si les eaux avaient baissé ?",
-    "options": ["Un corbeau", "Une colombe", "Un aigle", "Un moineau"],
-    "correctOption": 0,
-    "justification": "Noé envoya d'abord un corbeau, puis une colombe.",
-    "points": 2
-  },
-  {
-    "type": "mcq",
-    "question": "Dieu a-t-il promis de ne plus jamais détruire la terre par un déluge ?",
+    "question": "Quelle relation la leçon établit-elle entre la piété et le contentement ?",
     "options": [
-      "Vrai, c'est le sens de l'alliance de l'arc-en-ciel.",
-      "Faux, Dieu n'a fait aucune promesse à ce sujet.",
-      "Vrai, mais seulement pour la durée de la vie de Noé.",
-      "Faux, l'alliance de l'arc-en-ciel concerne autre chose."
+      "La piété rend le contentement inutile dès que les richesses augmentent.",
+      "Le contentement est présenté comme une conséquence réservée aux dirigeants.",
+      "La piété et le contentement sont opposés dans la conclusion de la leçon.",
+      "La piété accompagnée de contentement est présentée comme profitable."
     ],
-    "correctOption": 0,
-    "justification": "C'est le sens de l'alliance de l'arc-en-ciel.",
-    "points": 2
+    "correctOption": 3,
+    "justification": "C’est la relation formulée dans la conclusion fournie.",
+    "points": 4
   },
   {
     "type": "mcq",
-    "question": "Combien de membres de la famille de Noé sont entrés dans l'arche ?",
-    "options": ["4", "6", "8", "10"],
+    "question": "Le texte traite-t-il les richesses sans mettre en cause l’attachement du cœur ?",
+    "options": [
+      "Vrai, car il affirme que l’augmentation des richesses suffit à orienter le cœur.",
+      "Faux, car il recommande de mesurer la valeur d’une personne uniquement à ses biens.",
+      "Faux, car il avertit de ne pas attacher son cœur à l’augmentation des richesses.",
+      "Vrai, car il présente l’attachement aux richesses comme une preuve de sagesse."
+    ],
     "correctOption": 2,
-    "justification": "Noé, sa femme, ses trois fils et leurs femmes : 8 personnes.",
-    "points": 2
-  },
-  {
-    "type": "mcq",
-    "question": "Quel signe Dieu a-t-il donné comme symbole de son alliance ?",
-    "options": ["Une colombe", "Un arc-en-ciel", "Une étoile", "Un feu"],
-    "correctOption": 1,
-    "justification": "L'arc-en-ciel est le signe de l'alliance entre Dieu et la terre.",
-    "points": 2
-  },
-  {
-    "type": "mcq",
-    "question": "Noé a-t-il planté une vigne après le déluge ?",
-    "options": [
-      "Vrai, Genèse rapporte que Noé devint cultivateur et planta une vigne.",
-      "Faux, Noé n'a jamais cultivé la terre.",
-      "Vrai, mais c'est l'un de ses fils qui l'a plantée.",
-      "Faux, il a planté un olivier, pas une vigne."
-    ],
-    "correctOption": 0,
-    "justification": "Genèse rapporte que Noé devint cultivateur et planta une vigne.",
-    "points": 2
-  },
-  {
-    "type": "mcq",
-    "question": "Sur quelle montagne l'arche s'est-elle posée ?",
-    "options": ["Le Sinaï", "L'Ararat", "Le Carmel", "L'Horeb"],
-    "correctOption": 1,
-    "justification": "L'arche se posa sur les montagnes d'Ararat.",
-    "points": 2
-  },
-  {
-    "type": "mcq",
-    "question": "Pourquoi Dieu a-t-il choisi de sauver Noé ?",
-    "options": [
-      "Il était riche",
-      "Il trouva grâce aux yeux de l'Éternel",
-      "Il était roi",
-      "Il était le plus âgé"
-    ],
-    "correctOption": 1,
-    "justification": "« Noé trouva grâce aux yeux de l'Éternel » (Genèse 6:8).",
-    "points": 2
+    "justification": "Le texte distingue l’augmentation des richesses de l’attachement du cœur à celles-ci.",
+    "points": 4
   }
 ]`;
 

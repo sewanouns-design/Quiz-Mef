@@ -90,12 +90,12 @@ Les trois mauvaises propositions doivent respecter toutes ces règles :
 - elles ne deviennent pas fausses uniquement parce que la leçon ne parle pas du sujet, sauf si la question porte précisément sur ce silence.
 
 Exemple de structure difficile (à adapter uniquement au texte fourni) :
-« Le texte présente-t-il la richesse comme une garantie de sagesse ? »
+« Le texte met-il sur le même plan l’augmentation des richesses et l’attachement du cœur ? »
 Options :
-A. « Vrai, car le texte affirme que toute richesse produit nécessairement la sagesse. »
+A. « Vrai, car le texte présente l’augmentation des richesses comme la preuve que le cœur s’y attache. »
 B. « Faux, car le texte distingue l’augmentation des richesses de l’attachement du cœur à ces richesses. »
-C. « Vrai, car le texte enseigne que les riches sont toujours plus prudents que les pauvres. »
-D. « Faux, car le texte interdit toute forme de richesse et tout travail rémunéré. »
+C. « Vrai, car le texte demande de détacher le cœur uniquement lorsque les richesses diminuent. »
+D. « Faux, car le texte attribue l’attachement du cœur à la manière dont les richesses sont obtenues, et non à leur augmentation. »
 
 Dans cet exemple, B ne doit être retenue que si elle correspond exactement au texte autorisé. Les autres options doivent être remplacées par des variantes réellement proches du passage, jamais par des absurdités.
 
