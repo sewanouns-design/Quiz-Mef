@@ -7,6 +7,7 @@ type StandardPromptConfig = {
   titleRule: string;
   subtitleRule: string;
   expiryRule: string;
+  affirmationRule: string;
 };
 
 function createStandardPrompt(config: StandardPromptConfig): string {
@@ -21,13 +22,11 @@ Ta mission est de créer un quiz qui oblige réellement le participant à lire e
 Type de quiz : ${config.typeLabel}
 Numéro de la leçon : [ex. 7]
 Titre général exact de la leçon : [ex. Créé pour être sage et prudent]
-
 Titre exact de la journée ou période : [à remplir précisément]
 Référence biblique ou périmètre exact : [à remplir précisément]
 Date ou période : [à remplir précisément]
 
 Règles automatiques de titre et de sous-titre :
-
 - ${config.titleRule}
 - ${config.subtitleRule}
 - Ne remplace jamais un titre fourni par un résumé inventé.
@@ -41,49 +40,81 @@ Règle de disponibilité :
 2. PÉRIMÈTRE OBLIGATOIRE
 ==================================================
 
-- Utilise prioritairement et uniquement le contenu autorisé fourni avec ce prompt.
+- Utilise uniquement le contenu autorisé fourni avec ce prompt.
+- Pour DAILY, utilise uniquement le texte de la journée fournie dans daily.text.
+- Pour WEEKLY, utilise uniquement la section articulations fournie. Ne mentionne jamais « articulation », « partie », « lundi », « mardi » ou le jour d’origine dans la question ou les options.
 - N’utilise pas des informations d’autres journées, d’autres leçons ou d’autres trimestres.
 - N’ajoute aucune connaissance biblique extérieure lorsque l’information n’est pas présente dans la source.
-- Une personne qui n’a pas lu attentivement le contenu fourni ne doit pas pouvoir obtenir facilement 20/20 grâce à des connaissances bibliques générales.
-- Les questions doivent vérifier la compréhension précise du texte : distinctions entre idées proches, causes et conséquences, conditions, priorités, ordre logique, portée exacte d’une affirmation et application fidèle.
+- Une personne qui n’a pas lu attentivement le contenu fourni ne doit pas pouvoir obtenir facilement 20/20 grâce à des connaissances bibliques générales, au bon sens ou à l’élimination.
+- Les questions doivent vérifier la compréhension précise du texte : distinctions entre idées proches, acteurs, lieux, moments, causes, conséquences, conditions, priorités, ordre logique, portée exacte d’une affirmation et application fidèle.
 
 ==================================================
-3. FORMAT ET PARAMÈTRES
+3. FORMAT OBLIGATOIRE ET DIFFICULTÉ
 ==================================================
 
-- Le site accepte uniquement le type de question mcq.
+- Le site accepte ici uniquement le type de question « mcq ».
 - ${config.questionRule}
 - Le total des points doit être exactement égal à 20.
 - La durée est exactement de ${config.durationSeconds} secondes, soit ${config.durationLabel}.
-- Chaque question doit contenir exactement 4 options normales : A, B, C et D.
-- N’ajoute jamais « Toutes les propositions ci-dessus sont justes » ni « Aucune des propositions ci-dessus n’est juste » dans ces quiz quotidien ou hebdomadaire.
-- Les 4 options doivent être grammaticalement comparables, de longueur et de niveau de détail proches.
-- Les 3 distracteurs doivent être construits à partir du même contexte que la bonne réponse, en modifiant une seule dimension précise : acteur, lieu, moment, cause, conséquence, condition, objectif, degré ou relation entre deux idées.
-- Ne rends jamais la bonne réponse plus longue, plus nuancée ou plus précise que les distracteurs.
-- N’utilise jamais d’option absurde, comique, hors sujet ou facilement éliminable.
-- Si tu ne peux pas produire 3 distracteurs proches sans ambiguïté, réécris la question.
-- Répartis la bonne réponse entre les indices 0, 1, 2 et 3.
+- Chaque question contient exactement 4 propositions, A, B, C et D.
+- N’ajoute jamais « Toutes les propositions ci-dessus sont justes » ni « Aucune des propositions ci-dessus n’est juste ».
+- ${config.affirmationRule}
+
+RÈGLE ABSOLUE CONTRE LES RÉPONSES ÉVIDENTES :
+- Il est interdit de proposer un distracteur absurde, comique, moralement caricatural, hors sujet ou manifestement contraire à la Bible.
+- Il est interdit d’écrire des distracteurs comme « le mensonge est un signe d’humilité », « les méchants prospéreront toujours » ou « acquérir des richesses frauduleusement ne présente aucun risque », sauf si la source les traite réellement et précisément. Ces propositions permettent de répondre sans lire la leçon.
+- Une proposition fausse doit pouvoir sembler possible à quelqu’un qui a seulement une compréhension superficielle du texte. Elle doit être construite à partir du même passage ou d’une idée proche, mais comporter une modification précise : acteur, lieu, moment, cause, conséquence, condition, objectif, degré, ordre ou relation entre deux idées.
+- Une proposition peut être bibliquement vraie en général, mais elle doit être refusée si elle n’est pas soutenue par le texte fourni pour cette question. La justification doit expliquer cette différence sans faire appel à une information extérieure.
+- Les 4 options doivent avoir une longueur, une structure grammaticale et un niveau de détail comparables. La bonne réponse ne doit jamais être la plus longue, la plus nuancée ou la plus précise.
+- Si les 3 distracteurs ne peuvent pas être rendus réellement plausibles et proches, abandonne la question et choisis un autre détail précis du texte.
+- Répartis les bonnes réponses entre les indices 0, 1, 2 et 3. Ne mets jamais toutes les bonnes réponses à A.
 
 ==================================================
-4. JUSTIFICATION
+4. FORMAT VRAI/FAUX À QUATRE PROPOSITIONS
 ==================================================
 
-Chaque question doit contenir une justification obligatoire. Elle doit expliquer précisément pourquoi la bonne réponse est correcte, citer ou paraphraser fidèlement la source autorisée et ne rien ajouter qui soit absent du contenu fourni.
+Pour les questions de type « affirmation à évaluer », la question doit présenter une affirmation précise issue du contenu fourni, puis proposer exactement 4 réponses complètes. Chaque réponse doit combiner un verdict et une justification courte :
+
+- « Vrai, car … »
+- « Faux, car … »
+- « Vrai, car … »
+- « Faux, car … »
+
+Une seule proposition doit être entièrement exacte : le verdict ET sa justification doivent être corrects selon le texte fourni. Les trois autres doivent rester plausibles et être fausses par le verdict, par la justification ou par les deux.
+
+Les trois mauvaises propositions doivent respecter toutes ces règles :
+- elles restent directement liées à la leçon ;
+- elles reprennent un détail, une relation ou une nuance réellement présente ou très proche dans le texte ;
+- elles ne sont pas réfutables par le simple bon sens ou par une morale générale ;
+- elles ne contiennent pas une affirmation grotesque ou manifestement contraire à la Bible ;
+- elles ne deviennent pas fausses uniquement parce que la leçon ne parle pas du sujet, sauf si la question porte précisément sur ce silence.
+
+Exemple de structure difficile (à adapter uniquement au texte fourni) :
+« Le texte présente-t-il la richesse comme une garantie de sagesse ? »
+Options :
+A. « Vrai, car le texte affirme que toute richesse produit nécessairement la sagesse. »
+B. « Faux, car le texte distingue l’augmentation des richesses de l’attachement du cœur à ces richesses. »
+C. « Vrai, car le texte enseigne que les riches sont toujours plus prudents que les pauvres. »
+D. « Faux, car le texte interdit toute forme de richesse et tout travail rémunéré. »
+
+Dans cet exemple, B ne doit être retenue que si elle correspond exactement au texte autorisé. Les autres options doivent être remplacées par des variantes réellement proches du passage, jamais par des absurdités.
 
 ==================================================
-5. CONTRÔLE QUALITÉ SILENCIEUX
+5. JUSTIFICATION ET CONTRÔLE ADVERSARIAL
 ==================================================
 
-Avant de répondre, vérifie pour chaque question :
-- la question appartient au périmètre autorisé ;
-- la bonne réponse est directement soutenue par le texte ;
-- les trois distracteurs sont proches mais réellement incorrects dans ce contexte ;
-- aucune deuxième option n’est défendable ;
-- la bonne réponse n’est pas devinable par la longueur, le style ou l’élimination ;
-- les 4 options ont une forme comparable ;
-- la bonne réponse est répartie entre les indices ;
-- le nombre de questions, la durée et les points sont exacts.
-Ne montre pas ce contrôle dans la réponse finale.
+Chaque question doit contenir une justification obligatoire. Elle doit expliquer précisément pourquoi la bonne proposition est correcte, citer ou paraphraser fidèlement la source autorisée et ne rien ajouter qui soit absent du contenu fourni.
+
+Avant de répondre, effectue silencieusement deux contrôles :
+
+CONTRÔLE 1 — LECTEUR SANS LEÇON :
+« Une personne qui n’a pas lu le texte peut-elle répondre correctement par culture biblique générale, bon sens, intuition morale, longueur de la réponse ou élimination d’une option absurde ? »
+Si oui, réécris entièrement la question et ses options.
+
+CONTRÔLE 2 — DÉFENSE DES DISTRACTEURS :
+Pour chacune des 3 mauvaises options, explique mentalement pourquoi elle peut sembler plausible à un lecteur superficiel et quel détail exact de la source la rend fausse. Si tu ne peux pas fournir cette explication, remplace-la.
+
+Ne montre pas ces contrôles dans la réponse finale.
 
 ==================================================
 6. FORMAT JSON STRICT
@@ -107,15 +138,28 @@ Réponds uniquement avec un objet JSON valide, sans texte avant ou après, sans 
   "questions": [
     {
       "type": "mcq",
-      "question": "Question exigeant la compréhension du contenu ?",
+      "question": "Question exigeant la compréhension précise du contenu ?",
       "options": [
-        "Proposition normale A",
-        "Proposition normale B",
-        "Proposition normale C",
-        "Proposition normale D"
+        "Proposition A, plausible et liée au même passage",
+        "Proposition B, plausible et liée au même passage",
+        "Proposition C, plausible et liée au même passage",
+        "Proposition D, plausible et liée au même passage"
       ],
       "correctOption": 0,
       "justification": "Explication précise et fidèle à la source autorisée.",
+      "points": 4
+    },
+    {
+      "type": "mcq",
+      "question": "Affirmation précise à évaluer selon le texte fourni ?",
+      "options": [
+        "Vrai, car justification directement soutenue par la source.",
+        "Faux, car justification proche mais contredite par une nuance du texte.",
+        "Vrai, car justification plausible mais non conforme au passage.",
+        "Faux, car justification modifie un acteur, une cause ou une conséquence du texte."
+      ],
+      "correctOption": 0,
+      "justification": "La source autorisée confirme exactement le verdict et la justification de la proposition correcte.",
       "points": 4
     }
   ]
@@ -125,6 +169,7 @@ Contraintes JSON :
 - category vaut exactement ${config.category}.
 - type vaut toujours exactement mcq.
 - options contient exactement 4 chaînes non vides.
+- Pour chaque question Vrai/Faux, les 4 chaînes commencent par « Vrai » ou « Faux » et contiennent une justification ; il n’y a jamais seulement deux options « Vrai » et « Faux ».
 - correctOption vaut exactement 0, 1, 2 ou 3.
 - justification est toujours une chaîne non vide.
 - expiresAt est une date ISO 8601 valide avec le fuseau +01:00.
@@ -143,18 +188,20 @@ export const DAILY_GENERATION_PROMPT = createStandardPrompt({
   durationSeconds: 240,
   durationLabel: "4 minutes",
   titleRule:
-    'Le champ title doit être exactement construit ainsi : « [Titre exact de la journée] — [Référence biblique exacte de la journée] ».',
+    'Le champ title doit être exactement copié depuis le titre de la journée fourni par l’extracteur, avec la référence biblique complète : « [Titre exact de la journée] ([Référence biblique exacte]) ». Ne coupe jamais une référence.',
   subtitleRule:
     'Le champ subtitle doit être exactement construit ainsi : « Leçon [Numéro] — [Titre général exact de la leçon] ».',
   expiryRule:
     "pour un quiz DAILY, expiresAt est le dimanche de la même semaine à 17:00:00+01:00, calculé à partir de la date fournie.",
+  affirmationRule:
+    "Au moins 3 questions sur 5 ou 6 doivent être des questions « affirmation à évaluer » avec 4 propositions complètes Vrai/Faux, chacune accompagnée d’une justification plausible liée à la leçon. Les autres questions sont des QCM classiques à 4 distracteurs plausibles.",
 });
 
 export const WEEKLY_GENERATION_PROMPT = createStandardPrompt({
   category: "weekly",
   typeLabel: "WEEKLY",
   questionRule:
-    "Crée exactement 20 questions et attribue 1 point à chaque question. Utilise le même niveau d’exigence et le même format que le quiz quotidien ; seule la quantité de questions et la durée changent.",
+    "Crée exactement 20 questions et attribue 1 point à chaque question. Utilise le même niveau d’exigence que le quiz quotidien ; seule la quantité de questions et la durée changent.",
   durationSeconds: 900,
   durationLabel: "15 minutes",
   titleRule:
@@ -163,6 +210,8 @@ export const WEEKLY_GENERATION_PROMPT = createStandardPrompt({
     'Le champ subtitle doit être exactement le titre général de la leçon.',
   expiryRule:
     "pour un quiz WEEKLY, expiresAt est le lundi suivant à 09:00:00+01:00, calculé à partir de la période fournie.",
+  affirmationRule:
+    "Au moins 8 questions sur 20 doivent être des questions « affirmation à évaluer » avec 4 propositions complètes Vrai/Faux, chacune rattachée uniquement aux articulations fournies. Les autres questions sont des QCM classiques dont les distracteurs restent tous proches et liés aux articulations.",
 });
 
 export const QUARTERLY_GENERATION_PROMPT = String.raw`Tu es le générateur officiel de l’examen trimestriel biblique de la Mission Évangélique de la Foi (MEF).

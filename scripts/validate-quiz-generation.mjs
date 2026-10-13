@@ -37,6 +37,13 @@ function words(value) {
   return normalize(value).split(" ").filter((word) => word.length >= 3);
 }
 
+function isAdvancedTrueFalse(options) {
+  return (
+    options.length === 4 &&
+    options.every((option) => /^(vrai|faux)\s*,?\s+car\b/i.test(String(option).trim()))
+  );
+}
+
 function fail(message) {
   console.error(JSON.stringify({ valid: false, errors: [message] }, null, 2));
   process.exit(1);
@@ -90,6 +97,7 @@ if (Array.isArray(questions)) {
 
   let total = 0;
   const correctOptionIndexes = [];
+  let advancedTrueFalseCount = 0;
   for (let index = 0; index < questions.length; index += 1) {
     const question = questions[index];
     const prefix = `question ${index + 1}`;
@@ -102,6 +110,14 @@ if (Array.isArray(questions)) {
     const options = Array.isArray(question.options) ? question.options : [];
     const expectedOptions = category === "quarterly" ? 5 : 4;
     if (options.length !== expectedOptions) errors.push(`${prefix} : ${expectedOptions} options attendues, reçu ${options.length}.`);
+    const isAffirmationQuestion = category !== "quarterly" && isAdvancedTrueFalse(options);
+    if (isAffirmationQuestion) advancedTrueFalseCount += 1;
+    if (category !== "quarterly" && options.length === 4 && !isAffirmationQuestion) {
+      const verdictOptions = options.filter((option) => /^(vrai|faux)\b/i.test(String(option).trim()));
+      if (verdictOptions.length > 0 && verdictOptions.length < 4) {
+        errors.push(`${prefix} : une question Vrai/Faux doit avoir 4 propositions complètes commençant par « Vrai, car » ou « Faux, car ».`);
+      }
+    }
     if (typeof question.correctOption !== "number" || question.correctOption < 0 || question.correctOption >= options.length) {
       errors.push(`${prefix} : correctOption invalide.`);
     } else if (category !== "quarterly") {
@@ -141,6 +157,12 @@ if (Array.isArray(questions)) {
     }
   }
   if (total !== 20) errors.push(`total de points incorrect : ${total}, attendu 20.`);
+  if (category === "daily" && questions.length >= 5 && advancedTrueFalseCount < 3) {
+    errors.push(`un quiz quotidien doit contenir au moins 3 questions Vrai/Faux avancées (trouvées : ${advancedTrueFalseCount}).`);
+  }
+  if (category === "weekly" && advancedTrueFalseCount < 8) {
+    errors.push(`un quiz hebdomadaire doit contenir au moins 8 questions Vrai/Faux avancées (trouvées : ${advancedTrueFalseCount}).`);
+  }
   if (category !== "quarterly" && correctOptionIndexes.length === questions.length) {
     const counts = [0, 0, 0, 0];
     for (const optionIndex of correctOptionIndexes) counts[optionIndex] += 1;

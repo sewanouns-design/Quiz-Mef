@@ -11,29 +11,35 @@ Génère un quiz à partir de ce contenu, au format JSON strict ci-dessous.
 
 RÈGLES :
 - Réponds UNIQUEMENT avec le tableau JSON, sans texte avant/après, sans balises markdown ```.
-- Génère entre 10 et 20 questions.
+- Génère 5 ou 6 questions pour un quiz quotidien ; pour un quiz hebdomadaire, génère exactement 20 questions.
 - Le total des "points" de toutes les questions doit être égal à 20.
-- Un SEUL type de question est autorisé : "mcq" (QCM à 4 options). N'utilise JAMAIS 
-  les types "true_false", "short", "fill_blank" ou "open" : ils ne sont plus acceptés.
+- Un SEUL type de question est autorisé : "mcq" (QCM à 4 propositions). N'utilise pas
+  le type technique "true_false" : le Vrai/Faux demandé est un QCM à 4 propositions
+  complètes, afin que les réponses restent difficiles et comparables.
 - Chaque question a exactement 4 options dans "options", et une seule bonne réponse 
-  ("correctOption", index 0 à 3). Varie la position de la bonne réponse d'une question 
+  ("correctOption", index 0 à 3). Varie la position de la bonne réponse d'une question
   à l'autre plutôt que de toujours mettre la même position.
-- Deux styles de question "mcq" à alterner dans le quiz :
-  1. Question factuelle classique : 4 options plausibles et proches les unes des 
-     autres (pas de bonne réponse trop évidente par élimination).
-  2. Question de type « affirmation à évaluer » (l'équivalent vrai/faux) : NE PROPOSE 
-     JAMAIS seulement 2 options "Vrai"/"Faux". Formule plutôt 4 propositions complètes, 
-     chacune combinant un verdict (Vrai/Faux) ET une justification courte, par exemple :
-       "Vrai, car le travail existait déjà avant la chute de l'homme."
-       "Faux, car Dieu a maudit le sol seulement après la chute de l'homme."
-       "Vrai, car Dieu lui-même a dit à l'homme qu'il mangerait à la sueur de son front."
-       "Faux, car la leçon ne mentionne jamais la malédiction du travail."
-     Une seule des 4 propositions doit être entièrement exacte (bon verdict ET bonne 
-     justification) ; les trois autres doivent être fausses par le verdict, par la 
-     justification, ou par les deux — tout en restant plausibles, jamais absurdes.
-  Inclue au moins 3 questions du style « affirmation à évaluer » décrit ci-dessus.
+- Alterne deux styles de question "mcq" :
+  1. Question factuelle ou de compréhension : 4 options plausibles, étroitement liées
+     au même passage. Une option peut être vraie dans la Bible en général, mais elle
+     est fausse pour le quiz si elle n'est pas soutenue par la leçon fournie.
+  2. Question « affirmation à évaluer » (Vrai/Faux avancé) : ne propose JAMAIS seulement
+     2 options "Vrai"/"Faux". Formule 4 propositions complètes, chacune combinant un
+     verdict et une justification courte : « Vrai, car ... » ou « Faux, car ... ».
+     Une seule proposition doit être entièrement exacte : verdict ET justification.
+     Les trois autres doivent rester plausibles, liées au texte et fausses par une nuance,
+     un acteur, un moment, une cause, une conséquence ou une condition — jamais par une
+     affirmation absurde ou moralement caricaturale.
+  Inclue au moins 3 questions Vrai/Faux avancées dans un quiz quotidien et au moins
+  8 dans un quiz hebdomadaire.
 - Les questions doivent porter UNIQUEMENT sur des faits présents dans le texte fourni — 
   n'invente rien et ne pioche pas dans des connaissances bibliques externes au texte.
+- Interdis les distracteurs du type « le mensonge est un signe d'humilité », « les méchants
+  prospéreront toujours » ou « acquérir des richesses frauduleusement ne présente aucun
+  risque » : quelqu'un pourrait les éliminer sans avoir lu la leçon.
+- Pour chaque distracteur, vérifie mentalement pourquoi il peut sembler plausible à un
+  lecteur superficiel et quel détail précis de la source le rend faux. Si tu ne peux pas
+  le défendre, réécris l'option.
 - Le champ "justification" est OBLIGATOIRE pour chaque question (ne le laisse jamais 
   vide) : il doit citer ou paraphraser précisément le passage de la leçon qui justifie 
   la bonne réponse. Un participant qui se trompe la verra affichée à côté de la bonne 
