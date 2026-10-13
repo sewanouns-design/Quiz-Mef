@@ -12,31 +12,35 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
   const { deviceKey, endpoint, keys } = body ?? {};
 
-  if (!deviceKey || !endpoint || !keys?.p256dh || !keys?.auth) {
+  if (!endpoint || !keys?.p256dh || !keys?.auth) {
     return NextResponse.json(
-      { error: "deviceKey, endpoint et keys (p256dh, auth) sont requis" },
+      { error: "endpoint et keys (p256dh, auth) sont requis" },
       { status: 400 }
     );
   }
 
   const supabase = getSupabaseAdmin();
 
-  const { data: participant, error: participantError } = await supabase
-    .from("participants")
-    .select("id")
-    .eq("device_key", deviceKey)
-    .maybeSingle();
+  let participantId: string | null = null;
+  if (typeof deviceKey === "string" && deviceKey.trim()) {
+    const { data: participant, error: participantError } = await supabase
+      .from("participants")
+      .select("id")
+      .eq("device_key", deviceKey)
+      .maybeSingle();
 
-  if (participantError) {
-    return NextResponse.json({ error: participantError.message }, { status: 500 });
-  }
-  if (!participant) {
-    return NextResponse.json({ error: "Participant introuvable" }, { status: 404 });
+    if (participantError) {
+      return NextResponse.json({ error: participantError.message }, { status: 500 });
+    }
+    if (!participant) {
+      return NextResponse.json({ error: "Participant introuvable" }, { status: 404 });
+    }
+    participantId = participant.id;
   }
 
   const { error } = await supabase.from("push_subscriptions").upsert(
     {
-      participant_id: participant.id,
+      participant_id: participantId,
       endpoint,
       p256dh: keys.p256dh,
       auth: keys.auth,

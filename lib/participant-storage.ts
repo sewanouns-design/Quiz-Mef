@@ -8,7 +8,6 @@ export interface StoredParticipant {
   address: string;
   email: string;
   whatsapp: string;
-  showInLeaderboard?: boolean;
 }
 
 export function getStoredParticipant(): StoredParticipant | null {
@@ -40,7 +39,7 @@ const ANON_DEVICE_KEY_STORAGE_KEY = "mef_anon_device_key";
 /**
  * Identifiant d'appareil pour les fonctionnalités qui ne nécessitent aucune
  * identification (ex : "Trouve le verset"). Réutilise le device_key du
- * participant s'il existe déjà (pour relier au même classement opt-in),
+ * participant s'il existe déjà (pour relier le même appareil au profil),
  * sinon génère et persiste un identifiant anonyme dédié — contrairement à
  * getOrCreateDeviceKey() ci-dessus, qui ne persiste qu'après identification
  * complète, celui-ci est utilisable immédiatement sans jamais demander de

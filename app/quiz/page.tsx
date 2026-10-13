@@ -166,7 +166,7 @@ function QuizIdentificationForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ deviceKey, name, address, email, whatsapp, showInLeaderboard: true }),
+        body: JSON.stringify({ deviceKey, name, address, email, whatsapp }),
       });
 
       if (!participantRes.ok) {
@@ -184,7 +184,6 @@ function QuizIdentificationForm() {
         address: participant?.address ?? address,
         email: participant?.email ?? email,
         whatsapp: participant?.whatsapp ?? whatsapp,
-        showInLeaderboard: true,
       });
 
       // Demande d'autorisation dès l'identification (nouveau participant) ;

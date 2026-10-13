@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { deviceKey, name, address, email, whatsapp, showInLeaderboard } = body ?? {};
+  const { deviceKey, name, address, email, whatsapp } = body ?? {};
 
   if (!deviceKey || !name || !email) {
     return NextResponse.json(
@@ -110,7 +110,9 @@ export async function POST(request: NextRequest) {
     address: address || null,
     email: normalizedEmail,
     whatsapp: whatsapp || null,
-    show_in_leaderboard: Boolean(showInLeaderboard),
+    // L’affichage public est désormais la règle commune : prénom + initiale
+    // du nom dans les classements, jamais le nom complet.
+    show_in_leaderboard: true,
   };
 
   const { data, error } = targetId

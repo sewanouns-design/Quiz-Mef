@@ -10,6 +10,7 @@ export type AdminActivityAction =
   | "quiz_activated"
   | "quiz_deactivated"
   | "quiz_regraded"
+  | "quiz_notification_sent"
   | "settings_updated"
   | "data_restored"
   | "verse_game_player_updated"

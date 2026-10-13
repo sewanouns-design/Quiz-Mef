@@ -291,7 +291,7 @@ function IdentificationGate({ onIdentified }: { onIdentified: () => void }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ deviceKey, name, email, whatsapp, showInLeaderboard: true }),
+        body: JSON.stringify({ deviceKey, name, email, whatsapp }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -303,7 +303,6 @@ function IdentificationGate({ onIdentified }: { onIdentified: () => void }) {
         address: data.participant?.address ?? "",
         email: data.participant?.email ?? email,
         whatsapp: data.participant?.whatsapp ?? whatsapp,
-        showInLeaderboard: true,
       });
       onIdentified();
     } catch (err) {

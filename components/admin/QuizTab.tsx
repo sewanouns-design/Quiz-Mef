@@ -200,6 +200,7 @@ export default function QuizTab() {
   const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null);
   const [deactivatingQuizId, setDeactivatingQuizId] = useState<string | null>(null);
   const [exportingQuizId, setExportingQuizId] = useState<string | null>(null);
+  const [notifyingQuizId, setNotifyingQuizId] = useState<string | null>(null);
   const [manualAutomationRunning, setManualAutomationRunning] = useState(false);
   const [lessonQuestionsQuiz, setLessonQuestionsQuiz] = useState<{
     id: string;
@@ -612,6 +613,34 @@ export default function QuizTab() {
       toast.error(message);
     } finally {
       setExportingQuizId(null);
+    }
+  }
+
+  async function handleNotify(quiz: QuizListItem) {
+    const confirmed = window.confirm(
+      `Envoyer maintenant une notification à tous les appareils abonnés pour « ${quiz.title} » ?`
+    );
+    if (!confirmed) return;
+
+    setError("");
+    setSuccess("");
+    setNotifyingQuizId(quiz.id);
+    try {
+      const res = await fetch(`/api/admin/quiz/${quiz.id}/notify`, {
+        method: "POST",
+        cache: "no-store",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Erreur lors de l’envoi de la notification.");
+      const message = data.message || "Notification envoyée.";
+      setSuccess(message);
+      toast.success(message);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Une erreur est survenue.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setNotifyingQuizId(null);
     }
   }
 
@@ -1064,6 +1093,14 @@ export default function QuizTab() {
                           title="Télécharge les questions de ce quiz au format JSON"
                         >
                           {exportingQuizId === quiz.id ? "Export..." : "⬇️ Exporter"}
+                        </button>
+                        <button
+                          onClick={() => handleNotify(quiz)}
+                          disabled={notifyingQuizId === quiz.id || !quiz.is_active}
+                          className="text-sm font-semibold text-accent-dark hover:underline disabled:opacity-50"
+                          title="Envoie la notification à tous les appareils abonnés"
+                        >
+                          {notifyingQuizId === quiz.id ? "Envoi..." : "🔔 Notifier"}
                         </button>
                         <button
                           onClick={() => setLessonQuestionsQuiz({ id: quiz.id, title: quiz.title })}

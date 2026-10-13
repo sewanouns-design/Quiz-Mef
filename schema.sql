@@ -19,9 +19,10 @@ create table if not exists participants (
   email text,
   whatsapp text,
   device_key text unique not null,
-  -- Opt-in explicite : n'apparaît dans le classement public (prénom +
-  -- initiale seulement) que si activé au moment de l'identification.
-  show_in_leaderboard boolean not null default false,
+  -- Conservé pour compatibilité avec les sauvegardes anciennes. L'option
+  -- n'est plus proposée : tout participant identifié apparaît publiquement
+  -- sous la forme prénom + initiale du nom, jamais le nom complet.
+  show_in_leaderboard boolean not null default true,
   created_at timestamptz default now()
 );
 
@@ -644,8 +645,7 @@ create index if not exists idx_verse_game_progress_points on verse_game_progress
 -- Fil d'évènements "niveau débloqué", pour des notifications flottantes
 -- façon likes de live TikTok/Facebook (voir /api/verse-game/activity et
 -- components du jeu). Une ligne par passage de niveau ; le nom n'est
--- résolu qu'à la lecture, et seulement pour les participants ayant activé
--- "Afficher mon prénom dans le classement".
+-- résolu qu'à la lecture, sous la forme prénom + initiale du nom.
 -- ------------------------------------------------------------
 create table if not exists verse_game_activity (
   id uuid primary key default gen_random_uuid(),

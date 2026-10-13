@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
   const { data: participant, error: participantError } = await supabase
     .from("participants")
-    .select("device_key, name, address, email, whatsapp, show_in_leaderboard")
+    .select("device_key, name, address, email, whatsapp")
     .eq("id", tokenRow.participant_id)
     .maybeSingle();
 
@@ -71,7 +71,6 @@ export async function POST(request: NextRequest) {
       address: participant.address,
       email: participant.email ?? "",
       whatsapp: participant.whatsapp ?? "",
-      showInLeaderboard: Boolean(participant.show_in_leaderboard),
     },
   });
 }

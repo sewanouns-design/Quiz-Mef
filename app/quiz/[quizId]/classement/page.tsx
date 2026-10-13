@@ -41,7 +41,7 @@ export default function ClassementPage() {
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold text-navy">🏆 Classement</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Uniquement les participants ayant choisi d&apos;apparaître ici.
+            Les participants sont affichés sous la forme « Prénom I. ».
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export default function ClassementPage() {
 
         {entries && entries.length === 0 && (
           <p className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-400">
-            Personne n&apos;a encore choisi d&apos;apparaître dans ce classement.
+            Personne n&apos;a encore participé à ce quiz.
           </p>
         )}
 

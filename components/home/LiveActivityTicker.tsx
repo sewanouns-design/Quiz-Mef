@@ -20,8 +20,8 @@ function formatRelativeTime(iso: string): string {
 }
 
 /**
- * Bandeau défilant : les participants (ayant opté dans le classement) qui
- * viennent de passer le quiz du jour, un par un, avec le temps écoulé.
+ * Bandeau défilant : les participants qui viennent de passer le quiz du jour,
+ * affichés sous la forme prénom + initiale, avec le temps écoulé.
  * Rafraîchi périodiquement pour intégrer les nouvelles soumissions sans
  * recharger la page.
  */

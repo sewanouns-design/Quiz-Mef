@@ -8,13 +8,11 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 export type PushSubscribeResult = "subscribed" | "denied" | "unsupported" | "error";
 
 /**
- * Demande la permission de notifications et abonne l'appareil, en une seule
- * fois, pour un participant donné. Appelé automatiquement juste après
- * l'identification (plus de bouton "Activer" à cliquer en plus) : la seule
- * fenêtre qui reste incontournable est celle, native, du navigateur/téléphone
- * ("Autoriser les notifications ?"), qu'aucun site ne peut supprimer.
+ * Demande la permission de notifications et abonne l'appareil. Le deviceKey
+ * est facultatif : un visiteur peut s'abonner avant de s'identifier ; son
+ * abonnement recevra alors les notifications générales du site.
  */
-export async function requestPushSubscription(deviceKey: string): Promise<PushSubscribeResult> {
+export async function requestPushSubscription(deviceKey?: string): Promise<PushSubscribeResult> {
   if (
     typeof window === "undefined" ||
     !("serviceWorker" in navigator) ||
@@ -45,7 +43,11 @@ export async function requestPushSubscription(deviceKey: string): Promise<PushSu
       method: "POST",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
-      body: JSON.stringify({ deviceKey, endpoint: json.endpoint, keys: json.keys }),
+      body: JSON.stringify({
+        ...(deviceKey ? { deviceKey } : {}),
+        endpoint: json.endpoint,
+        keys: json.keys,
+      }),
     });
     if (!res.ok) return "error";
 

@@ -6,7 +6,6 @@ import Link from "next/link";
 import { generateResultsImage } from "@/lib/generate-results-image";
 import { isPassingScore } from "@/lib/scoring";
 import { clearQuizProgress, getStoredParticipant } from "@/lib/participant-storage";
-import PushOptIn from "@/components/PushOptIn";
 import SiteHeader from "@/components/SiteHeader";
 import type { CorrectedAnswer } from "@/lib/types";
 
@@ -710,10 +709,6 @@ export default function ResultsPage() {
             )}
           </div>
         )}
-
-        <div className="mb-8 flex justify-center">
-          <PushOptIn />
-        </div>
 
         <div className="space-y-4">
           {data.answers.map((answer, index) => (
