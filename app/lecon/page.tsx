@@ -73,15 +73,15 @@ function ScriptureCard({
               </summary>
               <div className="border-t border-amber-100 bg-white px-5 py-5">
                 {passage.verses.length > 0 ? (
-                  <blockquote className="border-l-4 border-amber-400 pl-5 text-lg italic leading-9 text-slate-700 sm:text-xl sm:leading-10">
-                    <p>
+                  <blockquote className="border-l-4 border-amber-400 pl-5 text-base italic leading-7 text-slate-700 sm:text-lg sm:leading-8">
+                    <div className="space-y-1">
                       {passage.verses.map((verse) => (
-                        <span key={verse.reference} className="mr-1">
-                          <sup className="mr-1 align-super text-xs font-extrabold not-italic text-amber-700">{verse.reference.split(":").pop()}</sup>
-                          {verse.text}{" "}
-                        </span>
+                        <p key={verse.reference} className="flex items-start gap-2">
+                          <sup className="mt-0.5 min-w-5 text-right text-xs font-extrabold not-italic text-amber-700">{verse.reference.split(":").pop()}</sup>
+                          <span>{verse.text}</span>
+                        </p>
                       ))}
-                    </p>
+                    </div>
                   </blockquote>
                 ) : (
                   <p className="text-base leading-8 text-slate-700">
