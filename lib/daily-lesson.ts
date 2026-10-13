@@ -43,6 +43,10 @@ export interface DailyLesson {
   title: string;
   reference: string;
   scriptureVerses: Array<{ reference: string; text: string }>;
+  scripturePassages: Array<{
+    reference: string;
+    verses: Array<{ reference: string; text: string }>;
+  }>;
   body: string;
   essential: string;
   prayer: string;
@@ -245,6 +249,29 @@ function expandReference(reference: string): string[] {
   return [...new Set(refs)];
 }
 
+function splitReferenceGroups(reference: string): string[] {
+  const pattern = /((?:[1-3]\s+)?[A-Za-zÀ-ÿ.]+(?:\s+[A-Za-zÀ-ÿ.]+)?)\s+\d+\s*:\s*\d+(?:\s*[-–—]\s*\d+)?/g;
+  return [...reference.matchAll(pattern)].map((match) => match[0].replace(/\s+/g, " ").trim());
+}
+
+function buildScripturePassages(
+  reference: string,
+  verses: Array<{ reference: string; text: string }>
+): Array<{ reference: string; verses: Array<{ reference: string; text: string }> }> {
+  const groups = splitReferenceGroups(reference);
+  if (groups.length === 0) return verses.length > 0 ? [{ reference, verses }] : [];
+  if (groups.length === 1) return [{ reference: groups[0], verses }];
+
+  return groups.map((group, index) => {
+    const groupReferences = new Set(expandReference(group));
+    const matching = verses.filter((verse) => groupReferences.has(verse.reference) || verse.reference === group);
+    return {
+      reference: group,
+      verses: matching.length > 0 || index > 0 ? matching : verses,
+    };
+  });
+}
+
 export function getLocalLessonDate(timeZone = "Africa/Porto-Novo"): string {
   return dateKey(dateForTimezone(timeZone));
 }
@@ -289,6 +316,7 @@ export function extractDailyLesson(
     title: section.title,
     reference,
     scriptureVerses: [],
+    scripturePassages: [],
     body,
     essential: compact(essential),
     prayer: compact(prayer),
@@ -332,6 +360,7 @@ export async function getLessonForDate(
         title: override.title,
         reference: override.reference ?? "",
         scriptureVerses: parseScriptureVerses(override.scripture_verses),
+        scripturePassages: buildScripturePassages(override.reference ?? "", parseScriptureVerses(override.scripture_verses)),
         body: override.body ?? "",
         essential: override.essential ?? "",
         prayer: override.prayer ?? "",
@@ -379,6 +408,7 @@ export async function getLessonForDate(
   lesson.scriptureVerses = references
     .filter((reference) => byReference.has(reference))
     .map((reference) => ({ reference, text: byReference.get(reference) as string }));
+  lesson.scripturePassages = buildScripturePassages(lesson.reference, lesson.scriptureVerses);
   return lesson;
 }
 

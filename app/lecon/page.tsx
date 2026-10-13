@@ -42,11 +42,15 @@ function InfoCard({
 
 function ScriptureCard({
   reference,
-  verses,
+  passages,
 }: {
   reference: string;
-  verses: Array<{ reference: string; text: string }>;
+  passages: Array<{
+    reference: string;
+    verses: Array<{ reference: string; text: string }>;
+  }>;
 }) {
+  const heading = passages.length > 1 ? "Références bibliques" : passages[0]?.reference || reference || "Référence du jour";
   return (
     <section className="mt-6 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
       <div className="flex items-start gap-4">
@@ -54,22 +58,40 @@ function ScriptureCard({
           📖
         </span>
         <div className="min-w-0">
-          <h2 className="text-2xl font-extrabold text-navy sm:text-3xl">{reference || "Référence du jour"}</h2>
+          <h2 className="text-2xl font-extrabold text-navy sm:text-3xl">{heading}</h2>
           <p className="mt-2 text-sm font-semibold text-gray-500">Version Louis Second</p>
         </div>
       </div>
 
-      {verses.length > 0 ? (
-        <blockquote className="mt-7 border-l-4 border-amber-400 pl-5 text-lg italic leading-9 text-slate-700 sm:text-xl sm:leading-10">
-          <p>
-            {verses.map((verse) => (
-              <span key={verse.reference} className="mr-1">
-                <sup className="mr-1 align-super text-xs font-extrabold not-italic text-amber-700">{verse.reference.split(":").pop()}</sup>
-                {verse.text}{" "}
-              </span>
-            ))}
-          </p>
-        </blockquote>
+      {passages.length > 0 ? (
+        <div className="mt-6 space-y-3">
+          {passages.map((passage) => (
+            <details key={passage.reference} className="group overflow-hidden rounded-2xl border border-amber-100 bg-amber-50/40">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-lg font-extrabold text-navy marker:hidden [&::-webkit-details-marker]:hidden">
+                <span>{passage.reference}</span>
+                <span className="text-amber-700 transition-transform group-open:rotate-180" aria-hidden="true">⌄</span>
+              </summary>
+              <div className="border-t border-amber-100 bg-white px-5 py-5">
+                {passage.verses.length > 0 ? (
+                  <blockquote className="border-l-4 border-amber-400 pl-5 text-lg italic leading-9 text-slate-700 sm:text-xl sm:leading-10">
+                    <p>
+                      {passage.verses.map((verse) => (
+                        <span key={verse.reference} className="mr-1">
+                          <sup className="mr-1 align-super text-xs font-extrabold not-italic text-amber-700">{verse.reference.split(":").pop()}</sup>
+                          {verse.text}{" "}
+                        </span>
+                      ))}
+                    </p>
+                  </blockquote>
+                ) : (
+                  <p className="text-base leading-8 text-slate-700">
+                    Relis ce passage dans ta Bible, en version Louis Second.
+                  </p>
+                )}
+              </div>
+            </details>
+          ))}
+        </div>
       ) : (
         <p className="mt-6 border-l-4 border-amber-400 pl-5 text-lg leading-9 text-slate-700">
           Relis le passage <strong>{reference}</strong> dans ta Bible, en version Louis Second, avant de continuer la méditation.
@@ -128,7 +150,7 @@ export default async function LessonPage() {
                 </div>
               </header>
 
-              <ScriptureCard reference={lesson.reference} verses={lesson.scriptureVerses} />
+              <ScriptureCard reference={lesson.reference} passages={lesson.scripturePassages} />
 
               <div className="mt-12">
                 <SectionHeading icon="▌">Développement</SectionHeading>
