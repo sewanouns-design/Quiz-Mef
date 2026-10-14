@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 type CountRow = { key: string; count: number };
 type TimeRow = { key: string; views: number; sessions: number };
 type JourneyRow = { key: string; count: number; pages: number };
+type AnalyticsFilter = { dimension: string; key: string };
 
 interface AnalyticsData {
   metrics?: {
@@ -60,6 +61,7 @@ function ListCard({
   title,
   icon,
   rows,
+  dimension,
   active,
   onSelect,
   empty = "Aucune donnée sur cette période.",
@@ -67,27 +69,29 @@ function ListCard({
   title: string;
   icon: string;
   rows: CountRow[];
-  active: string | null;
-  onSelect: (key: string) => void;
+  dimension: string;
+  active: AnalyticsFilter | null;
+  onSelect: (dimension: string, key: string) => void;
   empty?: string;
 }) {
-  const max = Math.max(...rows.map((row) => row.count), 1);
+  const visibleRows = active?.dimension === dimension ? rows.filter((row) => row.key === active.key) : rows;
+  const max = Math.max(...visibleRows.map((row) => row.count), 1);
   return (
     <section className="card !p-0 overflow-hidden">
       <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
         <h3 className="flex items-center gap-2 font-bold text-navy"><span>{icon}</span>{title}</h3>
-        <span className="text-xs text-gray-400">Cliquer pour filtrer</span>
+        <span className="text-xs text-gray-400">Cliquer pour isoler</span>
       </div>
-      {rows.length === 0 ? (
+      {visibleRows.length === 0 ? (
         <p className="p-5 text-sm text-gray-400">{empty}</p>
       ) : (
         <div className="divide-y divide-gray-100">
-          {rows.slice(0, 10).map((row) => (
+          {visibleRows.slice(0, 10).map((row) => (
             <button
               type="button"
               key={row.key}
-              onClick={() => onSelect(row.key)}
-              className={`w-full px-5 py-3 text-left transition-colors hover:bg-accent/5 ${active === row.key ? "bg-accent/10" : ""}`}
+              onClick={() => onSelect(dimension, row.key)}
+              className={`w-full px-5 py-3 text-left transition-colors hover:bg-accent/5 ${active?.dimension === dimension && active.key === row.key ? "bg-accent/10" : ""}`}
             >
               <div className="mb-1 flex items-center justify-between gap-3 text-sm">
                 <span className="min-w-0 truncate font-medium text-gray-700">{row.key}</span>
@@ -110,7 +114,7 @@ export default function AnalyticsTab() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<AnalyticsFilter | null>(null);
 
   useEffect(() => {
     if (!from || !to || from > to) return;
@@ -130,11 +134,6 @@ export default function AnalyticsTab() {
   const metrics = data?.metrics ?? {};
   const timeseries = data?.timeseries ?? [];
   const maxViews = Math.max(...timeseries.map((row) => row.views), 1);
-  const filteredPages = useMemo(
-    () => (data?.pages ?? []).filter((row) => !activeFilter || row.key === activeFilter),
-    [data?.pages, activeFilter]
-  );
-
   if (error) {
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-4">
@@ -161,7 +160,7 @@ export default function AnalyticsTab() {
 
       {activeFilter && (
         <div className="flex items-center justify-between rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-sm">
-          <span className="text-accent-dark">Filtre actif : <strong>{activeFilter}</strong></span>
+          <span className="text-accent-dark">Focus actif ({activeFilter.dimension}) : <strong>{activeFilter.key}</strong></span>
           <button type="button" onClick={() => setActiveFilter(null)} className="font-semibold text-accent-dark hover:underline">Réinitialiser</button>
         </div>
       )}
@@ -192,16 +191,16 @@ export default function AnalyticsTab() {
           </section>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <ListCard title="Pays des visiteurs" icon="🌍" rows={data?.countries ?? []} active={activeFilter} onSelect={setActiveFilter} />
-            <ListCard title="Pages les plus consultées" icon="📄" rows={filteredPages} active={activeFilter} onSelect={setActiveFilter} />
-            <ListCard title="Type d’appareil" icon="📱" rows={data?.devices ?? []} active={activeFilter} onSelect={setActiveFilter} />
-            <ListCard title="Navigateurs" icon="🌐" rows={data?.browsers ?? []} active={activeFilter} onSelect={setActiveFilter} />
-            <ListCard title="Systèmes d’exploitation" icon="💻" rows={data?.operatingSystems ?? []} active={activeFilter} onSelect={setActiveFilter} />
-            <ListCard title="Origines des visites" icon="🔗" rows={data?.referrers ?? []} active={activeFilter} onSelect={setActiveFilter} />
+            <ListCard title="Pays des visiteurs" dimension="pays" icon="🌍" rows={data?.countries ?? []} active={activeFilter} onSelect={(dimension, key) => setActiveFilter({ dimension, key })} />
+            <ListCard title="Pages les plus consultées" dimension="pages" icon="📄" rows={data?.pages ?? []} active={activeFilter} onSelect={(dimension, key) => setActiveFilter({ dimension, key })} />
+            <ListCard title="Type d’appareil" dimension="appareils" icon="📱" rows={data?.devices ?? []} active={activeFilter} onSelect={(dimension, key) => setActiveFilter({ dimension, key })} />
+            <ListCard title="Navigateurs" dimension="navigateurs" icon="🌐" rows={data?.browsers ?? []} active={activeFilter} onSelect={(dimension, key) => setActiveFilter({ dimension, key })} />
+            <ListCard title="Systèmes d’exploitation" dimension="systèmes" icon="💻" rows={data?.operatingSystems ?? []} active={activeFilter} onSelect={(dimension, key) => setActiveFilter({ dimension, key })} />
+            <ListCard title="Origines des visites" dimension="origines" icon="🔗" rows={data?.referrers ?? []} active={activeFilter} onSelect={(dimension, key) => setActiveFilter({ dimension, key })} />
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <ListCard title="Interactions les plus fréquentes" icon="🖱️" rows={data?.clicks ?? []} active={activeFilter} onSelect={setActiveFilter} />
+            <ListCard title="Interactions les plus fréquentes" dimension="interactions" icon="🖱️" rows={data?.clicks ?? []} active={activeFilter} onSelect={(dimension, key) => setActiveFilter({ dimension, key })} />
             <section className="card !p-0 overflow-hidden">
               <div className="border-b border-gray-100 px-5 py-4"><h3 className="font-bold text-navy">🧭 Parcours les plus fréquents</h3></div>
               {(data?.journeys ?? []).length === 0 ? <p className="p-5 text-sm text-gray-400">Les parcours apparaîtront après les premières visites.</p> : (
