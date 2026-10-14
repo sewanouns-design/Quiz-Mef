@@ -30,3 +30,10 @@
 - L’administration affiche les abonnements récents avec un endpoint masqué et l’historique des diffusions avec ciblés, envoyés, échecs et suppressions automatiques.
 - Les diffusions de quiz, nouveautés, réouverture du jeu et relances individuelles sont journalisées sans bloquer l’envoi si l’écriture du journal échoue.
 - Le bloc de réglages push n’est plus dupliqué dans l’onglet Apparence.
+
+
+## Visuels de résultats partagés
+
+- Dans Apparence, permettre de choisir entre le modèle classique, le modèle chic « Célébration » inspiré de la capture, ou un modèle personnalisé.
+- Permettre d’importer une image PNG/JPG/WebP de moins de 1,5 Mo comme fond, puis de régler séparément la position du titre, du nom et du bloc de note.
+- Lors du partage WhatsApp ou natif, superposer automatiquement le nom, la note et le titre du quiz au modèle sélectionné, sans changer le parcours de partage existant.

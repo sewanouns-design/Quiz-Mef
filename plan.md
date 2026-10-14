@@ -45,3 +45,9 @@ Permettre au super-administrateur de réorganiser entièrement la navigation d�
 - `lib/push.ts` journalise chaque diffusion avec le nombre ciblé, envoyé, en échec et retiré automatiquement lorsqu’un abonnement est expiré.
 - Le tableau de bord est ajouté à la navigation persistée sous « Édition > Notifications push » ; les réglages ne sont plus dupliqués dans « Apparence ».
 - Les données d’abonnement restent limitées à l’administration et les endpoints sont masqués dans l’interface par une forme abrégée.
+
+## Visuels de résultats partagés
+
+- Le partage WhatsApp conserve le modèle classique et ajoute un modèle « célébration » inspiré de la capture fournie.
+- L’administrateur choisit le modèle dans Apparence, importe un fond personnalisé et règle la position verticale du titre, du nom et du score afin de laisser des espaces propres dans son visuel.
+- Le générateur Canvas superpose automatiquement les données réelles du résultat au modèle choisi ; si le fond personnalisé est absent ou invalide, le modèle célébration sert de repli.

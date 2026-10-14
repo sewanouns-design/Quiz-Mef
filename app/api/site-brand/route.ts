@@ -19,5 +19,11 @@ export async function GET() {
     logoIcon: settings.logo_icon,
     siteName: settings.site_name,
     quizShareDirectLinkEnabled: settings.quiz_share_direct_link_enabled,
+    resultShareTemplate: settings.result_share_template,
+    resultShareCustomBackground: settings.result_share_custom_background,
+    resultShareCustomTextColor: settings.result_share_custom_text_color,
+    resultShareCustomTitleY: settings.result_share_custom_title_y,
+    resultShareCustomNameY: settings.result_share_custom_name_y,
+    resultShareCustomScoreY: settings.result_share_custom_score_y,
   });
 }

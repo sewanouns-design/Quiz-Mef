@@ -350,6 +350,15 @@ create table if not exists site_settings (
   -- ce champ pour revenir au lien direct vers le quiz.
   quiz_share_direct_link_enabled boolean not null default false,
 
+  -- Modèle de visuel partagé : classique, célébration ou fond importé.
+  result_share_template text not null default 'celebration'
+    check (result_share_template in ('classic', 'celebration', 'custom')),
+  result_share_custom_background text,
+  result_share_custom_text_color text not null default '#ffffff',
+  result_share_custom_title_y integer not null default 30 check (result_share_custom_title_y between 8 and 90),
+  result_share_custom_name_y integer not null default 48 check (result_share_custom_name_y between 8 and 90),
+  result_share_custom_score_y integer not null default 69 check (result_share_custom_score_y between 8 and 92),
+
   -- Notifications push diffusées à tous les abonnés (voir push_subscriptions) :
   -- chaque case détermine si cet événement envoie une notification.
   notify_push_new_quiz boolean not null default true,

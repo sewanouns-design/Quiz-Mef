@@ -219,6 +219,7 @@ export default function ResultsPage() {
     setSharing(true);
 
     let shareLink = "https://quiz.mefzogbadje.org/";
+    let resultVisual: Parameters<typeof generateResultsImage>[0]["visual"];
     try {
       const brandRes = await fetch("/api/site-brand");
       if (brandRes.ok) {
@@ -226,6 +227,14 @@ export default function ResultsPage() {
         if (brand.quizShareDirectLinkEnabled) {
           shareLink = `https://quiz.mefzogbadje.org/quiz?quiz=${encodeURIComponent(data.quiz.id)}`;
         }
+        resultVisual = {
+          template: brand.resultShareTemplate,
+          customBackground: brand.resultShareCustomBackground,
+          customTextColor: brand.resultShareCustomTextColor,
+          customTitleY: brand.resultShareCustomTitleY,
+          customNameY: brand.resultShareCustomNameY,
+          customScoreY: brand.resultShareCustomScoreY,
+        };
       }
     } catch {
       // Lien par défaut (accueil) conservé en cas d'échec de la requête.
@@ -239,6 +248,7 @@ export default function ResultsPage() {
         maxScore: data.maxScore,
         quizTitle: data.quiz.title,
         attemptNumber: data.attemptNumber,
+        visual: resultVisual,
       });
       const file = new File([blob], "quiz-biblique.png", { type: "image/png" });
 

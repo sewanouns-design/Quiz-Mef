@@ -188,6 +188,12 @@ export interface SiteSettings {
   verse_game_timer_enabled: boolean;
   verse_game_timer_seconds: number;
   quiz_share_direct_link_enabled: boolean;
+  result_share_template: "classic" | "celebration" | "custom";
+  result_share_custom_background: string | null;
+  result_share_custom_text_color: string;
+  result_share_custom_title_y: number;
+  result_share_custom_name_y: number;
+  result_share_custom_score_y: number;
   notify_push_new_quiz: boolean;
   notify_push_new_update: boolean;
   notify_push_verse_game_reopened: boolean;

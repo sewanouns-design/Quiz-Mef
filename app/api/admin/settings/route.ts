@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 const VALID_TEMPLATES: HomeTemplate[] = ["steps", "minimal", "card"];
 const VALID_TEXT_SIZES = ["normal", "large", "xlarge"];
+const VALID_RESULT_SHARE_TEMPLATES = ["classic", "celebration", "custom"];
 
 export async function GET(request: NextRequest) {
   if (!isAdminRequestAuthenticated(request)) {
@@ -69,6 +70,12 @@ export async function PUT(request: NextRequest) {
     verse_game_timer_enabled,
     verse_game_timer_seconds,
     quiz_share_direct_link_enabled,
+    result_share_template,
+    result_share_custom_background,
+    result_share_custom_text_color,
+    result_share_custom_title_y,
+    result_share_custom_name_y,
+    result_share_custom_score_y,
     notify_push_new_quiz,
     notify_push_new_update,
     notify_push_verse_game_reopened,
@@ -80,6 +87,35 @@ export async function PUT(request: NextRequest) {
 
   if (text_size && !VALID_TEXT_SIZES.includes(text_size)) {
     return NextResponse.json({ error: "Taille de texte invalide" }, { status: 400 });
+  }
+
+  if (result_share_template && !VALID_RESULT_SHARE_TEMPLATES.includes(result_share_template)) {
+    return NextResponse.json({ error: "Modèle de visuel invalide" }, { status: 400 });
+  }
+
+  const parseVisualPosition = (value: unknown, min: number, max: number): number | undefined => {
+    if (value === undefined) return undefined;
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed < min || parsed > max) return NaN;
+    return parsed;
+  };
+  const visualTitleY = parseVisualPosition(result_share_custom_title_y, 8, 90);
+  const visualNameY = parseVisualPosition(result_share_custom_name_y, 8, 90);
+  const visualScoreY = parseVisualPosition(result_share_custom_score_y, 8, 92);
+  if ([visualTitleY, visualNameY, visualScoreY].some((value) => Number.isNaN(value))) {
+    return NextResponse.json({ error: "Position du visuel invalide" }, { status: 400 });
+  }
+  if (result_share_custom_background !== undefined && result_share_custom_background !== null) {
+    if (typeof result_share_custom_background !== "string" || result_share_custom_background.length > 2_200_000) {
+      return NextResponse.json({ error: "Le modèle importé est trop volumineux." }, { status: 400 });
+    }
+  }
+  if (
+    result_share_custom_text_color !== undefined &&
+    (typeof result_share_custom_text_color !== "string" ||
+      !/^#[0-9a-fA-F]{6}$/.test(result_share_custom_text_color))
+  ) {
+    return NextResponse.json({ error: "Couleur du texte du visuel invalide" }, { status: 400 });
   }
 
   if (steps !== undefined) {
@@ -179,6 +215,14 @@ export async function PUT(request: NextRequest) {
   if (parsedTimerSeconds !== undefined) updates.verse_game_timer_seconds = parsedTimerSeconds;
   if (quiz_share_direct_link_enabled !== undefined)
     updates.quiz_share_direct_link_enabled = Boolean(quiz_share_direct_link_enabled);
+  if (result_share_template !== undefined) updates.result_share_template = result_share_template;
+  if (result_share_custom_background !== undefined)
+    updates.result_share_custom_background = result_share_custom_background || null;
+  if (result_share_custom_text_color !== undefined)
+    updates.result_share_custom_text_color = result_share_custom_text_color;
+  if (visualTitleY !== undefined) updates.result_share_custom_title_y = visualTitleY;
+  if (visualNameY !== undefined) updates.result_share_custom_name_y = visualNameY;
+  if (visualScoreY !== undefined) updates.result_share_custom_score_y = visualScoreY;
   if (notify_push_new_quiz !== undefined)
     updates.notify_push_new_quiz = Boolean(notify_push_new_quiz);
   if (notify_push_new_update !== undefined)
