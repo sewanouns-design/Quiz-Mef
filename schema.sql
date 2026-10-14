@@ -425,6 +425,25 @@ create table if not exists push_subscriptions (
 
 create index if not exists idx_push_subscriptions_participant_id on push_subscriptions (participant_id);
 
+create index if not exists idx_push_subscriptions_created_at on push_subscriptions (created_at desc);
+
+-- Historique des diffusions push : appareils ciblés, envois réussis,
+-- échecs et abonnements retirés automatiquement.
+create table if not exists push_notification_logs (
+  id uuid primary key default gen_random_uuid(),
+  notification_type text not null default 'general',
+  title text not null,
+  body text not null,
+  url text not null default '/',
+  target_count integer not null default 0,
+  sent_count integer not null default 0,
+  failed_count integer not null default 0,
+  removed_count integer not null default 0,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_push_notification_logs_created_at on push_notification_logs (created_at desc);
+create index if not exists idx_push_notification_logs_type on push_notification_logs (notification_type, created_at desc);
+
 -- ------------------------------------------------------------
 -- Journal d'activité admin : trace des actions destructrices/notables du
 -- super-admin (suppression de résultat/participant, fusion, quiz
@@ -762,6 +781,7 @@ alter table rate_limit_events enable row level security;
 alter table reengagement_reminders enable row level security;
 alter table admin_activity_log enable row level security;
 alter table push_subscriptions enable row level security;
+alter table push_notification_logs enable row level security;
 alter table bible_verses enable row level security;
 alter table verse_game_scores enable row level security;
 alter table verse_game_progress enable row level security;

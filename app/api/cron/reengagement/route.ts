@@ -126,6 +126,7 @@ export async function GET(request: NextRequest) {
       try {
         const { subject } = REENGAGEMENT_COPY[milestone];
         const pushSent = await sendPushToParticipant(participant.id, {
+          notificationType: "reengagement",
           title: subject,
           body: "Reviens répondre au quiz du jour — ça prend moins de 2 minutes.",
           url: `${SITE_URL}/quiz/${activeQuiz.id}`,

@@ -37,3 +37,11 @@ Permettre au super-administrateur de réorganiser entièrement la navigation d�
 - Les événements publics sont limités en taille et ne stockent pas l’adresse IP.
 - L’API Analytics ne retourne que des agrégats ou des parcours anonymisés.
 - Le suivi exclut les pages `/admin` afin de mesurer l’audience publique.
+
+## Centre de contrôle des notifications push
+
+- `components/admin/PushNotificationsTab.tsx` présente le sous-onglet dédié, inspiré de la capture fournie : carte d’introduction, cartes de compteurs, activation sur l’appareil admin, interrupteurs d’événements, bouton Enregistrer, abonnements récents et historique des diffusions.
+- `app/api/admin/push/route.ts` retourne exclusivement à l’administration les compteurs d’abonnements, les appareils anonymes/identifiés, les nouveaux abonnements et l’historique des envois.
+- `lib/push.ts` journalise chaque diffusion avec le nombre ciblé, envoyé, en échec et retiré automatiquement lorsqu’un abonnement est expiré.
+- Le tableau de bord est ajouté à la navigation persistée sous « Édition > Notifications push » ; les réglages ne sont plus dupliqués dans « Apparence ».
+- Les données d’abonnement restent limitées à l’administration et les endpoints sont masqués dans l’interface par une forme abrégée.

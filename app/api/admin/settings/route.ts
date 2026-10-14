@@ -209,6 +209,7 @@ export async function PUT(request: NextRequest) {
     data.notify_push_verse_game_reopened
   ) {
     await sendPushToAllSubscribers({
+      notificationType: "verse_game_reopened",
       title: "Le jeu est de retour",
       body: "« Trouve le verset » est de nouveau jouable !",
       url: "/trouve-le-verset",

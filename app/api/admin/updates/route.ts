@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
   const settings = await getSiteSettings();
   if (settings.notify_push_new_update) {
     await sendPushToAllSubscribers({
+      notificationType: "new_update",
       title: "Nouveauté sur le site",
       body: `${icon} ${title}`,
       url: linkHref || "/",

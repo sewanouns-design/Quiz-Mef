@@ -31,6 +31,7 @@ export const ADMIN_NAVIGATION_TAB_IDS = [
   "verse-game-players",
   "verse-game-settings",
   "settings",
+  "push-notifications",
   "updates",
   "navigation",
   "backup",
@@ -72,6 +73,7 @@ export const DEFAULT_ADMIN_NAVIGATION: AdminNavigationConfig = {
       label: "Édition",
       items: [
         { id: "settings", label: "Apparence", group: null },
+        { id: "push-notifications", label: "Notifications push", group: null },
         { id: "updates", label: "Nouveautés", group: null },
         { id: "navigation", label: "Onglets admin", group: null },
       ],

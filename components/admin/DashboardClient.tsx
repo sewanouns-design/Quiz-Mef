@@ -11,6 +11,7 @@ import ResultsTab from "./ResultsTab";
 import LeaderboardTab from "./LeaderboardTab";
 import QuarterlyRankingTab from "./QuarterlyRankingTab";
 import SettingsTab from "./SettingsTab";
+import PushNotificationsTab from "./PushNotificationsTab";
 import LessonQuestionsTab from "./LessonQuestionsTab";
 import SuggestionsTab from "./SuggestionsTab";
 import BackupTab from "./BackupTab";
@@ -63,6 +64,7 @@ const TAB_RENDERERS: Record<string, (onNavigationSaved: () => void) => React.Rea
   "verse-game-players": () => <VerseGamePlayersTab />,
   "verse-game-settings": () => <VerseGameSettingsTab />,
   settings: () => <SettingsTab />,
+  "push-notifications": () => <PushNotificationsTab />,
   updates: () => <UpdatesTab />,
   navigation: (onNavigationSaved) => <NavigationTab onSaved={onNavigationSaved} />,
   backup: () => <BackupTab />,

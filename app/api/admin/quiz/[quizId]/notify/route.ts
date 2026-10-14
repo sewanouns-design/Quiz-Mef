@@ -31,6 +31,7 @@ export async function POST(
   }
 
   const sent = await sendPushToAllSubscribers({
+    notificationType: "manual_quiz",
     title: "Nouveau quiz disponible",
     body: `« ${quiz.title} » — teste tes connaissances dès maintenant !`,
     url: `/quiz?quiz=${encodeURIComponent(quiz.id)}`,

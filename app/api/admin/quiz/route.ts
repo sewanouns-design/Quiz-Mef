@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
     const settings = await getSiteSettings();
     if (settings.notify_push_new_quiz) {
       await sendPushToAllSubscribers({
+        notificationType: "new_quiz",
         title: "Nouveau quiz disponible",
         body: `« ${quiz.title} » — teste tes connaissances dès maintenant !`,
         url: `/quiz?quiz=${encodeURIComponent(quiz.id)}`,

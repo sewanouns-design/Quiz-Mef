@@ -3,6 +3,13 @@ import { getSupabaseAdmin } from "./supabase";
 
 let configured = false;
 
+type PushPayload = {
+  title: string;
+  body: string;
+  url: string;
+  notificationType?: string;
+};
+
 function ensureConfigured(): boolean {
   if (configured) return true;
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -14,14 +21,33 @@ function ensureConfigured(): boolean {
   return true;
 }
 
-/**
- * Envoie une notification push à un participant sur TOUS ses appareils
- * abonnés. Best-effort : un abonnement expiré/révoqué (410/404) est
- * supprimé silencieusement plutôt que de faire échouer l'envoi.
- */
+async function logPushDispatch(payload: PushPayload, stats: {
+  targetCount: number;
+  sentCount: number;
+  failedCount: number;
+  removedCount: number;
+}) {
+  try {
+    await getSupabaseAdmin().from("push_notification_logs").insert({
+      notification_type: payload.notificationType ?? "general",
+      title: payload.title,
+      body: payload.body,
+      url: payload.url,
+      target_count: stats.targetCount,
+      sent_count: stats.sentCount,
+      failed_count: stats.failedCount,
+      removed_count: stats.removedCount,
+    });
+  } catch (error) {
+    // Le journal ne doit jamais bloquer une notification déjà envoyée.
+    console.error("Impossible de journaliser la diffusion push :", error);
+  }
+}
+
+/** Envoie une notification à tous les appareils abonnés d’un participant. */
 export async function sendPushToParticipant(
   participantId: string,
-  payload: { title: string; body: string; url: string }
+  payload: PushPayload
 ): Promise<number> {
   if (!ensureConfigured()) return 0;
 
@@ -32,13 +58,12 @@ export async function sendPushToParticipant(
     .eq("participant_id", participantId);
 
   let sent = 0;
+  let failed = 0;
+  let removed = 0;
   for (const sub of subscriptions ?? []) {
     try {
       await webpush.sendNotification(
-        {
-          endpoint: sub.endpoint,
-          keys: { p256dh: sub.p256dh, auth: sub.auth },
-        },
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
         JSON.stringify(payload)
       );
       sent += 1;
@@ -46,25 +71,25 @@ export async function sendPushToParticipant(
       const statusCode = (err as { statusCode?: number })?.statusCode;
       if (statusCode === 404 || statusCode === 410) {
         await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+        removed += 1;
       } else {
+        failed += 1;
         console.error(`Erreur envoi push (abonnement ${sub.id}) :`, err);
       }
     }
   }
+
+  await logPushDispatch(payload, {
+    targetCount: subscriptions?.length ?? 0,
+    sentCount: sent,
+    failedCount: failed,
+    removedCount: removed,
+  });
   return sent;
 }
 
-/**
- * Diffuse une notification push à TOUS les appareils abonnés (nouveau quiz,
- * nouveauté, réouverture d'un jeu...), indépendamment du participant.
- * Best-effort, même logique de nettoyage des abonnements expirés que
- * sendPushToParticipant.
- */
-export async function sendPushToAllSubscribers(payload: {
-  title: string;
-  body: string;
-  url: string;
-}): Promise<number> {
+/** Diffuse une notification à tous les appareils abonnés. */
+export async function sendPushToAllSubscribers(payload: PushPayload): Promise<number> {
   if (!ensureConfigured()) return 0;
 
   const supabase = getSupabaseAdmin();
@@ -73,13 +98,12 @@ export async function sendPushToAllSubscribers(payload: {
     .select("id, endpoint, p256dh, auth");
 
   let sent = 0;
+  let failed = 0;
+  let removed = 0;
   for (const sub of subscriptions ?? []) {
     try {
       await webpush.sendNotification(
-        {
-          endpoint: sub.endpoint,
-          keys: { p256dh: sub.p256dh, auth: sub.auth },
-        },
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
         JSON.stringify(payload)
       );
       sent += 1;
@@ -87,10 +111,19 @@ export async function sendPushToAllSubscribers(payload: {
       const statusCode = (err as { statusCode?: number })?.statusCode;
       if (statusCode === 404 || statusCode === 410) {
         await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+        removed += 1;
       } else {
+        failed += 1;
         console.error(`Erreur diffusion push (abonnement ${sub.id}) :`, err);
       }
     }
   }
+
+  await logPushDispatch(payload, {
+    targetCount: subscriptions?.length ?? 0,
+    sentCount: sent,
+    failedCount: failed,
+    removedCount: removed,
+  });
   return sent;
 }

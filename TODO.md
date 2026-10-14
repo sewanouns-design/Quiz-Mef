@@ -22,3 +22,11 @@
 - TypeScript, build Next.js et contrôle de formatage passent.
 - La migration Supabase est appliquée au projet de production.
 - La version publiée est vérifiée sur les routes admin, Analytics et collecte d’événements.
+
+## Centre de contrôle des notifications push
+
+- Un sous-onglet admin « Notifications push » est disponible dans la navigation ; il reprend la structure visuelle demandée avec une carte d’introduction, des compteurs, les interrupteurs et le bouton « Enregistrer ».
+- Les compteurs distinguent les abonnements actifs, les participants identifiés, les abonnements anonymes, les abonnements récents et le nombre ciblé/envoyé sur les 30 derniers jours.
+- L’administration affiche les abonnements récents avec un endpoint masqué et l’historique des diffusions avec ciblés, envoyés, échecs et suppressions automatiques.
+- Les diffusions de quiz, nouveautés, réouverture du jeu et relances individuelles sont journalisées sans bloquer l’envoi si l’écriture du journal échoue.
+- Le bloc de réglages push n’est plus dupliqué dans l’onglet Apparence.
