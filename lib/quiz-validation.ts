@@ -56,6 +56,12 @@ export function validateQuizQuestions(
       error: `Un quiz hebdomadaire doit contenir exactement 20 questions (actuellement ${questions.length}).`,
     };
   }
+  if (category === "quarterly" && questions.length !== 20) {
+    return {
+      valid: false,
+      error: `Un examen trimestriel doit contenir exactement 20 questions (actuellement ${questions.length}).`,
+    };
+  }
 
   let totalPoints = 0;
   let advancedTrueFalseCount = 0;
