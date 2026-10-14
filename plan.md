@@ -51,3 +51,5 @@ Permettre au super-administrateur de réorganiser entièrement la navigation d�
 - Le partage WhatsApp conserve le modèle classique et ajoute un modèle « célébration » inspiré de la capture fournie.
 - L’administrateur choisit le modèle dans Apparence, importe un fond personnalisé et règle la position verticale du titre, du nom et du score afin de laisser des espaces propres dans son visuel.
 - Le générateur Canvas superpose automatiquement les données réelles du résultat au modèle choisi ; si le fond personnalisé est absent ou invalide, le modèle célébration sert de repli.
+- Les calques des deux familles de visuels sont enregistrés séparément en JSON : texte libre ou variables, visibilité, position, largeur, taille, couleur, graisse et alignement.
+- Le modèle trimestriel est conçu comme un visuel de distinction sobre : il ne porte pas le mot « certificat », mais présente clairement le rang, la période et les résultats du gagnant.

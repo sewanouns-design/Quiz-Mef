@@ -5,6 +5,7 @@ import { isAdminRequestAuthenticated, isSameOriginRequest } from "@/lib/auth";
 import { getSiteSettings } from "@/lib/site-settings";
 import { logAdminActivity } from "@/lib/admin-activity";
 import { sendPushToAllSubscribers } from "@/lib/push";
+import { shareConfigIsValid, type ShareVisualConfig } from "@/lib/result-share";
 import type { HomeStep, HomeTemplate } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -76,6 +77,8 @@ export async function PUT(request: NextRequest) {
     result_share_custom_title_y,
     result_share_custom_name_y,
     result_share_custom_score_y,
+    result_share_daily_config,
+    result_share_quarterly_config,
     notify_push_new_quiz,
     notify_push_new_update,
     notify_push_verse_game_reopened,
@@ -116,6 +119,22 @@ export async function PUT(request: NextRequest) {
       !/^#[0-9a-fA-F]{6}$/.test(result_share_custom_text_color))
   ) {
     return NextResponse.json({ error: "Couleur du texte du visuel invalide" }, { status: 400 });
+  }
+  const validateShareConfig = (value: unknown, label: string): ShareVisualConfig | undefined => {
+    if (value === undefined) return undefined;
+    if (!shareConfigIsValid(value)) throw new Error(`${label} invalide`);
+    return value;
+  };
+  let dailyShareConfig: ShareVisualConfig | undefined;
+  let quarterlyShareConfig: ShareVisualConfig | undefined;
+  try {
+    dailyShareConfig = validateShareConfig(result_share_daily_config, "Configuration quotidienne");
+    quarterlyShareConfig = validateShareConfig(result_share_quarterly_config, "Configuration trimestrielle");
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Configuration de visuel invalide" },
+      { status: 400 }
+    );
   }
 
   if (steps !== undefined) {
@@ -223,6 +242,8 @@ export async function PUT(request: NextRequest) {
   if (visualTitleY !== undefined) updates.result_share_custom_title_y = visualTitleY;
   if (visualNameY !== undefined) updates.result_share_custom_name_y = visualNameY;
   if (visualScoreY !== undefined) updates.result_share_custom_score_y = visualScoreY;
+  if (dailyShareConfig !== undefined) updates.result_share_daily_config = dailyShareConfig;
+  if (quarterlyShareConfig !== undefined) updates.result_share_quarterly_config = quarterlyShareConfig;
   if (notify_push_new_quiz !== undefined)
     updates.notify_push_new_quiz = Boolean(notify_push_new_quiz);
   if (notify_push_new_update !== undefined)

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { generateResultsImage } from "@/lib/generate-results-image";
 
 interface QuizOption {
   id: string;
@@ -66,6 +67,7 @@ export default function QuarterlyRankingTab() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [sharingWinner, setSharingWinner] = useState<string | null>(null);
 
   const finalQuizzes = useMemo(() => quizzes.filter((quiz) => quiz.category === "quarterly"), [quizzes]);
 
@@ -171,6 +173,53 @@ export default function QuarterlyRankingTab() {
     URL.revokeObjectURL(url);
   }
 
+  async function shareWinnerVisual(entry: RankingEntry) {
+    if (!ranking || !entry.isWinner) return;
+    setSharingWinner(entry.participantId);
+    setError("");
+    try {
+      const brand = await fetch("/api/site-brand", { cache: "no-store" }).then((response) => response.json());
+      const pedagogicalAverage = ranking.publishedQuizCount
+        ? Math.round((entry.officialPedagogicalScore / ranking.publishedQuizCount) * 100) / 100
+        : 0;
+      const blob = await generateResultsImage({
+        participantName: entry.name,
+        score: entry.examScore ?? 0,
+        maxScore: 20,
+        quizTitle: ranking.finalQuiz.title,
+        siteName: brand.siteName || "Quiz Biblique MEF",
+        visual: {
+          mode: "quarterly",
+          config: brand.resultShareQuarterlyConfig,
+          quarterLabel: ranking.competition.title,
+          rank: entry.rank,
+          rankLabel: entry.rank === 1 ? "1er prix" : `${entry.rank ?? ""}e prix`,
+          examScore: entry.examScore,
+          pedagogicalAverage,
+          finalScore: entry.combinedScore,
+          prize: "",
+        },
+      });
+      const file = new File([blob], "gagnant-concours-trimestriel.png", { type: "image/png" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Gagnant du concours trimestriel" });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "gagnant-concours-trimestriel.png";
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      if (!(error instanceof Error && error.name === "AbortError")) {
+        setError(error instanceof Error ? error.message : "Impossible de générer le visuel.");
+      }
+    } finally {
+      setSharingWinner(null);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <section className="card">
@@ -245,7 +294,7 @@ export default function QuarterlyRankingTab() {
             <div className="rounded-xl bg-green-50 p-4"><p className="text-xs font-semibold uppercase text-green-700">Examen</p><p className="mt-1 text-2xl font-bold text-green-900">/ 20</p></div>
           </div>
           {ranking.ranking.length === 0 ? <p className="text-gray-500">Aucun participant n’a encore de résultat sur cette période.</p> : (
-            <div className="overflow-x-auto"><table className="w-full min-w-[900px] text-left text-sm"><thead><tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500"><th className="py-2 pr-3">Rang</th><th className="py-2 pr-3">Participant</th><th className="py-2 pr-3">Participation</th><th className="py-2 pr-3">Pédagogique officiel</th><th className="py-2 pr-3">Meilleure note pédagogique</th><th className="py-2 pr-3">Examen</th><th className="py-2 pr-3">Total officiel</th><th className="py-2">Statut</th></tr></thead><tbody>{ranking.ranking.map((entry) => <tr key={entry.participantId} className={`border-b border-gray-100 ${entry.isWinner ? "bg-yellow-50" : ""}`}><td className="py-3 pr-3 text-lg font-bold text-navy">{entry.rank ? (entry.rank <= 3 ? ["🥇", "🥈", "🥉"][entry.rank - 1] : `#${entry.rank}`) : "—"}</td><td className="py-3 pr-3"><p className="font-semibold text-navy">{entry.name}</p><p className="text-xs text-gray-500">{entry.address || "—"}</p></td><td className="py-3 pr-3"><strong>{entry.participationRate} %</strong><span className="block text-xs text-gray-500">{entry.participationCount}/{entry.publishedQuizCount}</span></td><td className="py-3 pr-3">{entry.officialPedagogicalScore} / {entry.pedagogicalMaxScore}</td><td className="py-3 pr-3">{entry.bestPedagogicalScore} / {entry.pedagogicalMaxScore}</td><td className="py-3 pr-3">{entry.examScore === null ? "—" : `${entry.examScore} / 20`}</td><td className="py-3 pr-3 font-bold text-navy">{entry.combinedScore === null ? "—" : entry.combinedScore}</td><td className="py-3">{entry.isWinner ? <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs font-bold text-yellow-800">À primer</span> : entry.eligible ? <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-700">Éligible</span> : <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">Non éligible</span>}</td></tr>)}</tbody></table></div>
+            <div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-left text-sm"><thead><tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500"><th className="py-2 pr-3">Rang</th><th className="py-2 pr-3">Participant</th><th className="py-2 pr-3">Participation</th><th className="py-2 pr-3">Pédagogique officiel</th><th className="py-2 pr-3">Meilleure note pédagogique</th><th className="py-2 pr-3">Examen</th><th className="py-2 pr-3">Total officiel</th><th className="py-2 pr-3">Statut</th><th className="py-2">Visuel</th></tr></thead><tbody>{ranking.ranking.map((entry) => <tr key={entry.participantId} className={`border-b border-gray-100 ${entry.isWinner ? "bg-yellow-50" : ""}`}><td className="py-3 pr-3 text-lg font-bold text-navy">{entry.rank ? (entry.rank <= 3 ? ["🥇", "🥈", "🥉"][entry.rank - 1] : `#${entry.rank}`) : "—"}</td><td className="py-3 pr-3"><p className="font-semibold text-navy">{entry.name}</p><p className="text-xs text-gray-500">{entry.address || "—"}</p></td><td className="py-3 pr-3"><strong>{entry.participationRate} %</strong><span className="block text-xs text-gray-500">{entry.participationCount}/{entry.publishedQuizCount}</span></td><td className="py-3 pr-3">{entry.officialPedagogicalScore} / {entry.pedagogicalMaxScore}</td><td className="py-3 pr-3">{entry.bestPedagogicalScore} / {entry.pedagogicalMaxScore}</td><td className="py-3 pr-3">{entry.examScore === null ? "—" : `${entry.examScore} / 20`}</td><td className="py-3 pr-3 font-bold text-navy">{entry.combinedScore === null ? "—" : entry.combinedScore}</td><td className="py-3 pr-3">{entry.isWinner ? <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs font-bold text-yellow-800">À primer</span> : entry.eligible ? <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-700">Éligible</span> : <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">Non éligible</span>}</td><td className="py-3">{entry.isWinner && <button type="button" onClick={() => shareWinnerVisual(entry)} disabled={sharingWinner === entry.participantId} className="rounded-lg border border-navy px-2 py-1 text-xs font-semibold text-navy hover:bg-blue-50 disabled:opacity-50">{sharingWinner === entry.participantId ? "Préparation..." : "Créer le visuel"}</button>}</td></tr>)}</tbody></table></div>
           )}
         </section>
       )}

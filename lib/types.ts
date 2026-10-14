@@ -194,6 +194,8 @@ export interface SiteSettings {
   result_share_custom_title_y: number;
   result_share_custom_name_y: number;
   result_share_custom_score_y: number;
+  result_share_daily_config: import("@/lib/result-share").ShareVisualConfig;
+  result_share_quarterly_config: import("@/lib/result-share").ShareVisualConfig;
   notify_push_new_quiz: boolean;
   notify_push_new_update: boolean;
   notify_push_verse_game_reopened: boolean;

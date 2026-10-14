@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import ColorPickerInput from "./ColorPickerInput";
 import HomePreview from "./HomePreview";
+import ShareVisualEditor from "./ShareVisualEditor";
 import LogoIcon, { isImageLogo } from "@/components/LogoIcon";
 import { useToast } from "@/components/Toast";
 import {
@@ -15,7 +16,6 @@ import {
 import type { HomeStep, SiteSettings } from "@/lib/types";
 
 const MAX_LOGO_FILE_BYTES = 250 * 1024;
-const MAX_RESULT_TEMPLATE_BYTES = 1_500 * 1024;
 
 export default function SettingsTab() {
   const toast = useToast();
@@ -23,9 +23,7 @@ export default function SettingsTab() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [logoError, setLogoError] = useState("");
-  const [resultTemplateError, setResultTemplateError] = useState("");
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const resultTemplateInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/admin/settings", { cache: "no-store" })
@@ -58,28 +56,6 @@ export default function SettingsTab() {
     const reader = new FileReader();
     reader.onload = () => updateField("logo_icon", String(reader.result));
     reader.onerror = () => setLogoError("Impossible de lire ce fichier.");
-    reader.readAsDataURL(file);
-  }
-
-  function handleResultTemplateUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    setResultTemplateError("");
-    if (!file.type.startsWith("image/")) {
-      setResultTemplateError("Le modèle doit être une image PNG, JPG ou WebP.");
-      return;
-    }
-    if (file.size > MAX_RESULT_TEMPLATE_BYTES) {
-      setResultTemplateError("Le modèle doit faire moins de 1,5 Mo.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateField("result_share_custom_background", String(reader.result));
-      updateField("result_share_template", "custom");
-    };
-    reader.onerror = () => setResultTemplateError("Impossible de lire cette image.");
     reader.readAsDataURL(file);
   }
 
@@ -507,65 +483,17 @@ export default function SettingsTab() {
           </p>
         </div>
 
-        <div className="mb-6 rounded-xl border border-gray-200 p-4">
-          <h3 className="mb-1 text-sm font-bold text-navy">🖼️ Visuel partagé sur WhatsApp</h3>
-          <p className="mb-4 text-xs leading-5 text-gray-500">
-            Choisis le visuel qui accompagne le résultat partagé. Le nom, le titre du quiz et la note sont toujours remplis automatiquement.
-          </p>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              { value: "celebration" as const, label: "Célébration", description: "Modèle chic inspiré de ta capture." },
-              { value: "classic" as const, label: "Classique", description: "Modèle actuel du site." },
-              { value: "custom" as const, label: "Mon modèle", description: "Ton image avec les textes superposés." },
-            ].map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => updateField("result_share_template", option.value)}
-                className={`rounded-xl border-2 p-3 text-left transition-colors ${settings.result_share_template === option.value ? "border-navy bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}
-              >
-                <p className="font-semibold text-navy">{option.label}</p>
-                <p className="mt-1 text-xs text-gray-500">{option.description}</p>
-              </button>
-            ))}
-          </div>
-          {settings.result_share_template === "custom" && (
-            <div className="mt-4 rounded-xl bg-gray-50 p-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => resultTemplateInputRef.current?.click()}
-                  className="rounded-lg border-2 border-navy px-3 py-2 text-sm font-semibold text-navy hover:bg-navy hover:text-white"
-                >
-                  📤 Importer mon visuel
-                </button>
-                <input ref={resultTemplateInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleResultTemplateUpload} className="hidden" />
-                {settings.result_share_custom_background && <span className="text-xs font-medium text-emerald-700">Modèle importé et prêt</span>}
-              </div>
-              {resultTemplateError && <p className="mt-2 text-xs font-medium text-red-600">{resultTemplateError}</p>}
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="label-field" htmlFor="result_share_custom_text_color">Couleur des textes</label>
-                  <input id="result_share_custom_text_color" type="color" value={settings.result_share_custom_text_color} onChange={(e) => updateField("result_share_custom_text_color", e.target.value)} className="h-10 w-16 cursor-pointer rounded border border-gray-200 bg-white p-1" />
-                </div>
-                <div>
-                  <label className="label-field">Placement des textes (%)</label>
-                  <p className="text-xs text-gray-500">Ajuste les espaces prévus dans ton image importée.</p>
-                </div>
-                {[
-                  ["Titre du quiz", "result_share_custom_title_y", settings.result_share_custom_title_y],
-                  ["Nom du participant", "result_share_custom_name_y", settings.result_share_custom_name_y],
-                  ["Bloc de note", "result_share_custom_score_y", settings.result_share_custom_score_y],
-                ].map(([label, key, value]) => (
-                  <label key={key as string} className="text-xs font-semibold text-gray-600">
-                    {label} : {value}%
-                    <input type="range" min={8} max={key === "result_share_custom_score_y" ? 92 : 90} value={value as number} onChange={(e) => updateField(key as "result_share_custom_title_y" | "result_share_custom_name_y" | "result_share_custom_score_y", Number(e.target.value))} className="mt-2 w-full accent-navy" />
-                  </label>
-                ))}
-              </div>
-              {settings.result_share_custom_background && <img src={settings.result_share_custom_background} alt="Aperçu du modèle partagé" className="mt-4 max-h-72 rounded-xl border border-gray-200 object-contain" />}
-            </div>
-          )}
+        <div className="mb-6 space-y-5">
+          <ShareVisualEditor
+            mode="daily"
+            config={settings.result_share_daily_config}
+            onChange={(config) => updateField("result_share_daily_config", config)}
+          />
+          <ShareVisualEditor
+            mode="quarterly"
+            config={settings.result_share_quarterly_config}
+            onChange={(config) => updateField("result_share_quarterly_config", config)}
+          />
         </div>
 
         <button

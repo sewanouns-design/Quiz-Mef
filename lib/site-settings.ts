@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "./supabase";
 import type { SiteSettings } from "./types";
 import { DEFAULT_ADMIN_NAVIGATION, normalizeAdminNavigation } from "./admin-navigation";
+import { defaultShareVisualConfig, normalizeShareVisualConfig } from "./result-share";
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   id: "default",
@@ -64,6 +65,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   result_share_custom_title_y: 30,
   result_share_custom_name_y: 48,
   result_share_custom_score_y: 69,
+  result_share_daily_config: defaultShareVisualConfig("daily"),
+  result_share_quarterly_config: defaultShareVisualConfig("quarterly"),
   notify_push_new_quiz: true,
   notify_push_new_update: false,
   notify_push_verse_game_reopened: false,
@@ -179,6 +182,8 @@ function mergeWithDefaults(row: Partial<SiteSettings> | null): SiteSettings {
         ? row.steps
         : DEFAULT_SITE_SETTINGS.steps,
     admin_navigation: normalizeAdminNavigation(row.admin_navigation),
+    result_share_daily_config: normalizeShareVisualConfig(row.result_share_daily_config, "daily"),
+    result_share_quarterly_config: normalizeShareVisualConfig(row.result_share_quarterly_config, "quarterly"),
   };
 }
 

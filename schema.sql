@@ -358,6 +358,9 @@ create table if not exists site_settings (
   result_share_custom_title_y integer not null default 30 check (result_share_custom_title_y between 8 and 90),
   result_share_custom_name_y integer not null default 48 check (result_share_custom_name_y between 8 and 90),
   result_share_custom_score_y integer not null default 69 check (result_share_custom_score_y between 8 and 92),
+  -- Calques éditables séparément pour le quotidien et les gagnants trimestriels.
+  result_share_daily_config jsonb not null default '{}'::jsonb,
+  result_share_quarterly_config jsonb not null default '{}'::jsonb,
 
   -- Notifications push diffusées à tous les abonnés (voir push_subscriptions) :
   -- chaque case détermine si cet événement envoie une notification.

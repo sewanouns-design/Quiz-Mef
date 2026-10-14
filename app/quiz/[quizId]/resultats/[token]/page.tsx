@@ -220,10 +220,12 @@ export default function ResultsPage() {
 
     let shareLink = "https://quiz.mefzogbadje.org/";
     let resultVisual: Parameters<typeof generateResultsImage>[0]["visual"];
+    let siteName = "Quiz Biblique MEF";
     try {
       const brandRes = await fetch("/api/site-brand");
       if (brandRes.ok) {
         const brand = await brandRes.json();
+        siteName = brand.siteName || siteName;
         if (brand.quizShareDirectLinkEnabled) {
           shareLink = `https://quiz.mefzogbadje.org/quiz?quiz=${encodeURIComponent(data.quiz.id)}`;
         }
@@ -234,6 +236,8 @@ export default function ResultsPage() {
           customTitleY: brand.resultShareCustomTitleY,
           customNameY: brand.resultShareCustomNameY,
           customScoreY: brand.resultShareCustomScoreY,
+          mode: "daily",
+          config: brand.resultShareDailyConfig,
         };
       }
     } catch {
@@ -248,6 +252,7 @@ export default function ResultsPage() {
         maxScore: data.maxScore,
         quizTitle: data.quiz.title,
         attemptNumber: data.attemptNumber,
+        siteName,
         visual: resultVisual,
       });
       const file = new File([blob], "quiz-biblique.png", { type: "image/png" });

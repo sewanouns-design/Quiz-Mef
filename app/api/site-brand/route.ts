@@ -25,5 +25,7 @@ export async function GET() {
     resultShareCustomTitleY: settings.result_share_custom_title_y,
     resultShareCustomNameY: settings.result_share_custom_name_y,
     resultShareCustomScoreY: settings.result_share_custom_score_y,
+    resultShareDailyConfig: settings.result_share_daily_config,
+    resultShareQuarterlyConfig: settings.result_share_quarterly_config,
   });
 }
