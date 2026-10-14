@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { attemptsRemaining, isPassingScore, MAX_ATTEMPTS, shouldRevealAnswers } from "@/lib/scoring";
+import { MAX_ATTEMPTS, shouldRevealAnswers } from "@/lib/scoring";
 import { redactAnswersIfHidden } from "@/lib/grading";
 import { computeStreakDays } from "@/lib/streak";
 import type { CorrectedAnswer, DailyQuestion } from "@/lib/types";
@@ -71,9 +71,10 @@ export async function GET(
     // comptent jamais comme de vraies tentatives.
     supabase
       .from("daily_submissions")
-      .select("score, max_score, cancelled")
+      .select("id, score, max_score, cancelled, attempt_number")
       .eq("quiz_id", params.quizId)
-      .eq("participant_id", submission.participant_id),
+      .eq("participant_id", submission.participant_id)
+      .order("attempt_number", { ascending: true }),
     supabase.from("participants").select("name").eq("id", submission.participant_id).maybeSingle(),
     // Série (streak) : jours consécutifs avec au moins une vraie soumission,
     // tous quiz confondus (un par jour) — pas seulement celui-ci.
@@ -98,9 +99,10 @@ export async function GET(
   }
 
   const realAttempts = (allAttempts ?? []).filter((s) => !s.cancelled);
-  const passedAny = realAttempts.some((s) => isPassingScore(s.score, s.max_score));
-  const canRetry = !passedAny && realAttempts.length < MAX_ATTEMPTS;
-  const remaining = attemptsRemaining(realAttempts.length, passedAny);
+  const officialAttempt = realAttempts[0] ?? null;
+  const maxAllowedAttempts = quiz.category === "quarterly" ? 1 : MAX_ATTEMPTS;
+  const canRetry = realAttempts.length < maxAllowedAttempts;
+  const remaining = Math.max(0, maxAllowedAttempts - realAttempts.length);
 
   const streakDays = computeStreakDays((streakSubmissions ?? []).map((s) => s.submitted_at));
 
@@ -145,6 +147,9 @@ export async function GET(
     participantName: participant?.name ?? "",
     score: submission.score,
     maxScore: submission.max_score,
+    officialScore: officialAttempt?.score ?? null,
+    officialMaxScore: officialAttempt?.max_score ?? null,
+    isOfficialAttempt: !submission.cancelled && officialAttempt?.id === submission.id,
     openScore: submission.open_score,
     cancelled: submission.cancelled,
     cancelReason: submission.cancel_reason,

@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { isSameOriginRequest } from "@/lib/auth";
-import { attemptsRemaining, isPassingScore, MAX_ATTEMPTS, shouldRevealAnswers } from "@/lib/scoring";
+import { isPassingScore, MAX_ATTEMPTS, shouldRevealAnswers } from "@/lib/scoring";
 import { gradeAnswer, isAutoGraded, normalizeName, redactAnswersIfHidden } from "@/lib/grading";
 import { checkAndRecordRateLimit, getClientIp } from "@/lib/rate-limit";
 import type { AnswerInput, CorrectedAnswer, DailyQuestion } from "@/lib/types";
@@ -89,11 +89,11 @@ export async function POST(
   // compte jamais comme une vraie tentative : elle ne doit ni bloquer un
   // nouvel essai, ni faire perdre au participant l'une de ses chances.
   const realAttempts = (existingSubmissions ?? []).filter((s) => !s.cancelled);
-  const passedAny = realAttempts.some((s) => isPassingScore(s.score, s.max_score));
-
-  // Une nouvelle tentative n'est permise que si aucune précédente n'a atteint
-  // 60 % et que le nombre maximum de tentatives réelles n'est pas atteint.
-  if (passedAny || realAttempts.length >= MAX_ATTEMPTS) {
+  // La première tentative réelle est officielle. Les suivantes restent
+  // autorisées comme entraînement pour les quiz quotidiens/hebdomadaires.
+  // L'examen trimestriel n'autorise qu'une seule tentative valide.
+  const maxAllowedAttempts = quiz.category === "quarterly" ? 1 : MAX_ATTEMPTS;
+  if (realAttempts.length >= maxAllowedAttempts) {
     return NextResponse.json(
       { error: "Tu as déjà soumis ce quiz." },
       { status: 409 }
@@ -212,7 +212,9 @@ export async function POST(
   const passed = isPassingScore(score, maxScore);
   const reveal = isCancelled || shouldRevealAnswers(score, maxScore, attemptNumber);
   const visibleAnswers = redactAnswersIfHidden(corrected, reveal);
-  const remaining = isCancelled ? MAX_ATTEMPTS - realAttempts.length : attemptsRemaining(attemptNumber, passed);
+  const remaining = isCancelled
+    ? maxAllowedAttempts - realAttempts.length
+    : maxAllowedAttempts - attemptNumber;
 
   return NextResponse.json({
     submissionId: submission.id,

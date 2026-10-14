@@ -18,6 +18,7 @@ interface QuizData {
     is_active: boolean;
     duration_seconds: number | null;
     quiz_mode: QuizMode;
+    category: "daily" | "weekly" | "quarterly";
   };
   questions: PublicQuestion[];
   alreadySubmitted: boolean;
@@ -467,6 +468,7 @@ export default function QuizPage() {
   if (!data) return null;
 
   const participantName = getStoredParticipant()?.name ?? "";
+  const isPedagogicalQuiz = data.quiz.category === "daily" || data.quiz.category === "weekly";
 
   // Écran de départ : aucune question visible, le chrono ne démarre qu'au
   // clic sur "Commencer le test" (voir handleBegin).
@@ -499,6 +501,33 @@ export default function QuizPage() {
           <p className="mt-4 text-sm text-gray-500">
             {data.questions.length} questions · {totalPoints} points
           </p>
+          <div className="mt-5 rounded-2xl border-2 border-amber-200 bg-amber-50 px-4 py-4 text-left text-sm text-amber-950">
+            <p className="font-bold text-amber-900">À lire avant de commencer</p>
+            {isPedagogicalQuiz ? (
+              <ul className="mt-2 space-y-2 leading-relaxed">
+                <li>
+                  📖 Il est fortement conseillé de lire attentivement le livret et la leçon du jour avant de commencer.
+                </li>
+                <li>
+                  🏅 La première tentative non annulée est ta <strong>note officielle</strong>. Elle compte pour ta moyenne pédagogique et, le cas échéant, pour l&apos;examen trimestriel.
+                </li>
+                <li>
+                  🔁 Les tentatives suivantes sont des <strong>tentatives d&apos;entraînement</strong> : elles peuvent t&apos;aider à progresser, mais elles ne remplacent pas la note officielle.
+                </li>
+                <li>
+                  ⚠️ Une tentative annulée pour une interruption technique reconnue ne compte pas comme tentative officielle.
+                </li>
+              </ul>
+            ) : (
+              <ul className="mt-2 space-y-2 leading-relaxed">
+                <li>📖 Lis attentivement le livret trimestriel avant de commencer cet examen.</li>
+                <li>🏅 La première tentative non annulée est la note officielle de l&apos;examen.</li>
+                <li>🔒 Il n&apos;y a pas de reprise pédagogique après une tentative valide.</li>
+                <li>⚠️ Ne commence que lorsque tu es prêt(e) à aller jusqu&apos;au bout sans quitter la page.</li>
+              </ul>
+            )}
+            <p className="mt-3 font-semibold text-amber-900">Conseil : commence seulement après avoir lu et compris la leçon.</p>
+          </div>
           {data.quiz.duration_seconds ? (
             <p className="mt-3 text-sm text-gray-600">
               ⏱️ Ce quiz est chronométré : <strong>{formatTime(data.quiz.duration_seconds)}</strong>.

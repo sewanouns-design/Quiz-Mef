@@ -185,8 +185,9 @@ create table if not exists daily_submissions (
   max_score int not null,
   cancelled boolean not null default false,
   cancel_reason text,
-  -- 1 = premier essai. Une 2e tentative (attempt_number = 2) n'est autorisée
-  -- que si le 1er essai n'a pas atteint 60% (voir app/api/quiz/[quizId]/submit).
+  -- 1 = première tentative valide officielle. Les tentatives suivantes sont
+  -- pédagogiques et ne remplacent jamais la première note pour le classement.
+  -- Une tentative annulée ne compte pas comme tentative valide.
   attempt_number int not null default 1,
   -- Score des questions ouvertes, saisi manuellement, distinct du score
   -- auto-corrigé (QCM/réponse courte) ci-dessus. Nul tant que non corrigé.

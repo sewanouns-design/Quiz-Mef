@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { attemptsRemaining, isPassingScore, MAX_ATTEMPTS } from "@/lib/scoring";
+import { MAX_ATTEMPTS } from "@/lib/scoring";
 import type { PublicQuestion } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ export async function GET(
   ] = await Promise.all([
     supabase
       .from("daily_quizzes")
-      .select("id, title, subtitle, is_active, duration_seconds, quiz_mode")
+      .select("id, title, subtitle, is_active, duration_seconds, quiz_mode, category")
       .eq("id", params.quizId)
       .maybeSingle(),
     supabase
@@ -61,16 +61,15 @@ export async function GET(
     // compte jamais comme une vraie tentative : elle ne doit ni bloquer un
     // nouvel essai, ni le faire passer pour une tentative supplémentaire.
     const realAttempts = (submissions ?? []).filter((s) => !s.cancelled);
+    const maxAllowedAttempts = quiz.category === "quarterly" ? 1 : MAX_ATTEMPTS;
     if (realAttempts.length > 0) {
-      const passedAny = realAttempts.some((s) => isPassingScore(s.score, s.max_score));
-
-      if (passedAny || realAttempts.length >= MAX_ATTEMPTS) {
+      if (realAttempts.length >= maxAllowedAttempts) {
         alreadySubmitted = true;
-        // La tentative réelle la plus récente est la définitive.
-        resultToken = realAttempts[realAttempts.length - 1].result_token;
+        // La première tentative valide est la note officielle.
+        resultToken = realAttempts[0].result_token;
       } else {
         isRetry = true;
-        remaining = attemptsRemaining(realAttempts.length, passedAny);
+        remaining = Math.max(0, maxAllowedAttempts - realAttempts.length);
       }
     }
   }

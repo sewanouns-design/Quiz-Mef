@@ -39,6 +39,9 @@ interface ResultsData {
   cancelled: boolean;
   cancelReason: string | null;
   attemptNumber: number;
+  officialScore: number | null;
+  officialMaxScore: number | null;
+  isOfficialAttempt: boolean;
   canRetry: boolean;
   attemptsRemaining: number;
   streakDays: number;
@@ -443,6 +446,22 @@ export default function ResultsPage() {
             ⏱️ Ton test a été envoyé automatiquement car le temps était écoulé.
           </div>
         )}
+        {!data.cancelled && data.isOfficialAttempt && (
+          <div className="mb-6 rounded-xl border-2 border-green-200 bg-green-50 px-4 py-4 text-center text-sm text-green-900">
+            <p className="font-bold">✅ Cette note est ta note officielle</p>
+            <p className="mt-1">
+              C&apos;est la première tentative non annulée. Elle est retenue pour ta moyenne pédagogique et, le cas échéant, pour le classement trimestriel.
+            </p>
+          </div>
+        )}
+        {!data.cancelled && !data.isOfficialAttempt && data.officialScore !== null && (
+          <div className="mb-6 rounded-xl border-2 border-blue-200 bg-blue-50 px-4 py-4 text-center text-sm text-blue-900">
+            <p className="font-bold">📘 Tentative d&apos;entraînement</p>
+            <p className="mt-1">
+              Ta note officielle reste <strong>{data.officialScore}/{data.officialMaxScore}</strong>. Cette reprise sert à apprendre et ne remplace pas la première note.
+            </p>
+          </div>
+        )}
         <div className="mb-8 text-center">
           {passed ? (
             <div
@@ -519,7 +538,7 @@ export default function ResultsPage() {
               {data.canRetry && (
                 <div className="mx-auto mt-6 max-w-sm rounded-2xl border-2 border-dashed border-navy/20 bg-navy/5 px-6 py-5">
                   <p className="text-sm text-navy">
-                    Tu n&apos;as pas encore atteint la moyenne. Il te reste{" "}
+                    Tu peux encore t&apos;entraîner. Il te reste{" "}
                     <strong>
                       {data.attemptsRemaining} tentative{data.attemptsRemaining > 1 ? "s" : ""}
                     </strong>{" "}

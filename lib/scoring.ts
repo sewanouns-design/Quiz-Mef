@@ -22,8 +22,9 @@ export function shouldRevealAnswers(
   return attemptNumber >= MAX_ATTEMPTS;
 }
 
-/** Nombre de tentatives réelles encore disponibles pour ce participant. */
-export function attemptsRemaining(realAttemptsCount: number, passed: boolean): number {
-  if (passed) return 0;
+/** Nombre de tentatives réelles encore disponibles, y compris après réussite.
+ * La première tentative valide est officielle ; les suivantes sont pédagogiques.
+ */
+export function attemptsRemaining(realAttemptsCount: number): number {
   return Math.max(0, MAX_ATTEMPTS - realAttemptsCount);
 }
