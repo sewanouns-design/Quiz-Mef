@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * "Mes stats" : historique du participant identifié par son appareil (pas de
- * compte) — nombre de quiz passés, score moyen, série en cours, meilleur
- * score. Uniquement les vraies tentatives (annulées exclues).
+ * compte) — la première tentative valide de chaque quiz est officielle ; les
+ * suivantes sont conservées séparément comme reprises pédagogiques.
  */
 export async function GET(request: NextRequest) {
   const deviceKey = request.nextUrl.searchParams.get("deviceKey");
@@ -33,38 +33,75 @@ export async function GET(request: NextRequest) {
 
   const { data: submissions, error: submissionsError } = await supabase
     .from("daily_submissions")
-    .select("score, max_score, submitted_at, result_token, quiz_id, quiz:daily_quizzes(title)")
+    .select(
+      "score, max_score, submitted_at, result_token, quiz_id, attempt_number, cancelled, quiz:daily_quizzes(title, subtitle, category)"
+    )
     .eq("participant_id", participant.id)
-    .eq("cancelled", false)
-    .order("submitted_at", { ascending: false });
+    .order("attempt_number", { ascending: true })
+    .order("submitted_at", { ascending: true });
 
   if (submissionsError) {
     return NextResponse.json({ error: submissionsError.message }, { status: 500 });
   }
 
-  const rows = submissions ?? [];
-  const history = rows.map((s) => {
-    const quiz = s.quiz as unknown as { title: string } | null;
-    return {
-      quizId: s.quiz_id,
-      quizTitle: quiz?.title ?? "Quiz supprimé",
-      score: s.score,
-      maxScore: s.max_score,
-      submittedAt: s.submitted_at,
-      resultToken: s.result_token,
-    };
-  });
-  const quizzesCount = rows.length;
-  const passedCount = rows.filter((s) => isPassingScore(s.score, s.max_score)).length;
+  const rows = (submissions ?? []).filter((s) => !s.cancelled);
+  const byQuiz = new Map<string, typeof rows>();
+  for (const row of rows) {
+    if (!row.quiz_id) continue;
+    const current = byQuiz.get(row.quiz_id) ?? [];
+    current.push(row);
+    byQuiz.set(row.quiz_id, current);
+  }
+
+  const history = Array.from(byQuiz.entries())
+    .map(([quizId, quizRows]) => {
+      const ordered = [...quizRows].sort(
+        (a, b) => (a.attempt_number ?? 0) - (b.attempt_number ?? 0) ||
+          new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime()
+      );
+      const official = ordered[0];
+      const quiz = official.quiz as unknown as {
+        title: string;
+        subtitle: string | null;
+        category: "daily" | "weekly" | "quarterly";
+      } | null;
+      return {
+        quizId,
+        quizTitle: quiz?.title ?? "Quiz supprimé",
+        quizSubtitle: quiz?.subtitle ?? null,
+        category: quiz?.category ?? "daily",
+        official: {
+          score: official.score,
+          maxScore: official.max_score,
+          submittedAt: official.submitted_at,
+          resultToken: official.result_token,
+        },
+        training: ordered.slice(1).reverse().map((attempt) => ({
+          score: attempt.score,
+          maxScore: attempt.max_score,
+          attemptNumber: attempt.attempt_number,
+          submittedAt: attempt.submitted_at,
+          resultToken: attempt.result_token,
+        })),
+        latestSubmittedAt: ordered[ordered.length - 1].submitted_at,
+      };
+    })
+    .sort((a, b) => new Date(b.latestSubmittedAt).getTime() - new Date(a.latestSubmittedAt).getTime());
+
+  const officialRows = history.map((h) => h.official);
+  const quizzesCount = history.length;
+  const passedCount = officialRows.filter((s) => isPassingScore(s.score, s.maxScore)).length;
   const averagePercent =
     quizzesCount > 0
-      ? Math.round((rows.reduce((sum, s) => sum + s.score / s.max_score, 0) / quizzesCount) * 100)
+      ? Math.round((officialRows.reduce((sum, s) => sum + s.score / s.maxScore, 0) / quizzesCount) * 100)
       : null;
   const bestScorePercent =
     quizzesCount > 0
-      ? Math.round(Math.max(...rows.map((s) => s.score / s.max_score)) * 100)
+      ? Math.round(Math.max(...officialRows.map((s) => s.score / s.maxScore)) * 100)
       : null;
-  const streakDays = computeStreakDays(rows.map((s) => s.submitted_at));
+  const pedagogicalBestPercent =
+    rows.length > 0 ? Math.round(Math.max(...rows.map((s) => s.score / s.max_score)) * 100) : null;
+  const streakDays = computeStreakDays(officialRows.map((s) => s.submittedAt));
 
   return NextResponse.json({
     participant: { name: participant.name },
@@ -72,6 +109,7 @@ export async function GET(request: NextRequest) {
     passedCount,
     averagePercent,
     bestScorePercent,
+    pedagogicalBestPercent,
     streakDays,
     history,
   });
