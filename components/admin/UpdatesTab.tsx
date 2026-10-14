@@ -10,6 +10,7 @@ export default function UpdatesTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("🆕");
@@ -40,30 +41,55 @@ export default function UpdatesTab() {
       .finally(() => setLoading(false));
   }
 
-  async function handleAdd(e: React.FormEvent) {
+  function resetForm() {
+    setEditingId(null);
+    setTitle("");
+    setDescription("");
+    setIcon("🆕");
+    setLinkHref("");
+    setLinkLabel("");
+    setFormError("");
+  }
+
+  function startEditing(update: SiteUpdate) {
+    setEditingId(update.id);
+    setTitle(update.title);
+    setDescription(update.description);
+    setIcon(update.icon || "🆕");
+    setLinkHref(update.link_href || "");
+    setLinkLabel(update.link_label || "");
+    setFormError("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !description.trim()) return;
 
     setSubmitting(true);
     setFormError("");
+    const isEditing = Boolean(editingId);
     try {
-      const res = await fetch("/api/admin/updates", {
-        method: "POST",
+      const endpoint = isEditing ? `/api/admin/updates/${editingId}` : "/api/admin/updates";
+      const res = await fetch(endpoint, {
+        method: isEditing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
         body: JSON.stringify({ title, description, icon, linkHref, linkLabel }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.error || "Erreur lors de l'ajout.");
+        throw new Error(data.error || (isEditing ? "Erreur lors de la modification." : "Erreur lors de l'ajout."));
       }
-      setUpdates((prev) => [data.update, ...prev]);
-      setTitle("");
-      setDescription("");
-      setIcon("🆕");
-      setLinkHref("");
-      setLinkLabel("");
-      toast.success("Nouveauté ajoutée.");
+
+      if (isEditing) {
+        setUpdates((prev) => prev.map((update) => (update.id === data.update.id ? data.update : update)));
+        toast.success("Nouveauté modifiée.");
+      } else {
+        setUpdates((prev) => [data.update, ...prev]);
+        toast.success("Nouveauté ajoutée.");
+      }
+      resetForm();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Une erreur est survenue.";
       setFormError(message);
@@ -82,6 +108,7 @@ export default function UpdatesTab() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Erreur lors de la suppression.");
       }
+      if (editingId === id) resetForm();
       toast.success("Nouveauté supprimée.");
     } catch (err) {
       setUpdates(previous);
@@ -98,8 +125,17 @@ export default function UpdatesTab() {
         La plus récente en haut.
       </p>
 
-      <form onSubmit={handleAdd} className="card mb-6 space-y-3">
-        <h3 className="text-sm font-bold text-navy">Ajouter une nouveauté</h3>
+      <form onSubmit={handleSubmit} className="card mb-6 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-sm font-bold text-navy">
+            {editingId ? "Modifier la nouveauté" : "Ajouter une nouveauté"}
+          </h3>
+          {editingId && (
+            <button type="button" onClick={resetForm} className="text-xs font-semibold text-gray-500 hover:text-navy">
+              Annuler la modification
+            </button>
+          )}
+        </div>
         <div>
           <label className="label-field" htmlFor="update-title">
             Titre
@@ -169,7 +205,7 @@ export default function UpdatesTab() {
           disabled={submitting || !title.trim() || !description.trim()}
           className="btn-accent"
         >
-          {submitting ? "Ajout..." : "Ajouter"}
+          {submitting ? "Enregistrement..." : editingId ? "Enregistrer les modifications" : "Ajouter"}
         </button>
       </form>
 
@@ -195,7 +231,9 @@ export default function UpdatesTab() {
             {updates.map((u) => (
               <li
                 key={u.id}
-                className="flex items-start justify-between gap-3 rounded-xl border border-gray-200 p-3"
+                className={`flex items-start justify-between gap-3 rounded-xl border p-3 ${
+                  editingId === u.id ? "border-accent bg-accent/5" : "border-gray-200"
+                }`}
               >
                 <div className="min-w-0">
                   <p className="font-semibold text-navy">
@@ -205,18 +243,26 @@ export default function UpdatesTab() {
                   <p className="text-sm text-gray-600">{u.description}</p>
                   {u.link_href && (
                     <p className="mt-1 text-xs text-gray-400">
-                      Lien : <span className="font-semibold text-accent-dark">{u.link_href}</span> (
-                      {u.link_label})
+                      Lien : <span className="font-semibold text-accent-dark">{u.link_href}</span> ({u.link_label})
                     </p>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(u.id)}
-                  className="shrink-0 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50"
-                >
-                  Supprimer
-                </button>
+                <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => startEditing(u)}
+                    className="rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50"
+                  >
+                    Modifier
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(u.id)}
+                    className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50"
+                  >
+                    Supprimer
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
