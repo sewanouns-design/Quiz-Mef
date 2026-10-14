@@ -355,6 +355,8 @@ create table if not exists site_settings (
   notify_push_new_quiz boolean not null default true,
   notify_push_new_update boolean not null default false,
   notify_push_verse_game_reopened boolean not null default false,
+  -- Organisation personnalisable des onglets de l'administration.
+  admin_navigation jsonb not null default '{}'::jsonb,
   updated_at timestamptz default now()
 );
 
@@ -709,6 +711,38 @@ create table if not exists site_updates (
 create index if not exists idx_site_updates_created_at on site_updates (created_at desc);
 
 -- ------------------------------------------------------------
+-- Analytics pseudonymisées du site public
+-- ------------------------------------------------------------
+create table if not exists analytics_events (
+  id uuid primary key default gen_random_uuid(),
+  event_type text not null check (event_type in ('page_view', 'click', 'page_exit', 'session_start')),
+  visitor_id text not null,
+  session_id text not null,
+  path text not null,
+  page_title text,
+  referrer text,
+  target_path text,
+  event_name text,
+  label text,
+  device_type text not null default 'unknown',
+  browser text not null default 'unknown',
+  operating_system text not null default 'unknown',
+  country_code text,
+  region text,
+  city text,
+  screen_width integer,
+  screen_height integer,
+  duration_ms integer,
+  metadata jsonb,
+  is_bot boolean not null default false,
+  occurred_at timestamptz not null default now()
+);
+create index if not exists idx_analytics_events_occurred_at on analytics_events (occurred_at desc);
+create index if not exists idx_analytics_events_path on analytics_events (path, occurred_at desc);
+create index if not exists idx_analytics_events_session on analytics_events (session_id, occurred_at);
+create index if not exists idx_analytics_events_country on analytics_events (country_code, occurred_at desc);
+
+-- ------------------------------------------------------------
 -- Row Level Security
 -- L'application n'accède à Supabase que via la clé service_role
 -- côté serveur (routes API Next.js). On active RLS sans policy
@@ -734,3 +768,4 @@ alter table verse_game_progress enable row level security;
 alter table verse_game_activity enable row level security;
 alter table bible_verse_stats enable row level security;
 alter table site_updates enable row level security;
+alter table analytics_events enable row level security;

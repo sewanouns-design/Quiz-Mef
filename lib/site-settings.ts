@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "./supabase";
 import type { SiteSettings } from "./types";
+import { DEFAULT_ADMIN_NAVIGATION, normalizeAdminNavigation } from "./admin-navigation";
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   id: "default",
@@ -60,6 +61,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   notify_push_new_quiz: true,
   notify_push_new_update: false,
   notify_push_verse_game_reopened: false,
+  admin_navigation: DEFAULT_ADMIN_NAVIGATION,
   updated_at: "",
 };
 
@@ -170,6 +172,7 @@ function mergeWithDefaults(row: Partial<SiteSettings> | null): SiteSettings {
       Array.isArray(row.steps) && row.steps.length > 0
         ? row.steps
         : DEFAULT_SITE_SETTINGS.steps,
+    admin_navigation: normalizeAdminNavigation(row.admin_navigation),
   };
 }
 

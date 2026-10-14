@@ -191,6 +191,7 @@ export interface SiteSettings {
   notify_push_new_quiz: boolean;
   notify_push_new_update: boolean;
   notify_push_verse_game_reopened: boolean;
+  admin_navigation: import("@/lib/admin-navigation").AdminNavigationConfig;
   updated_at: string;
 }
 
