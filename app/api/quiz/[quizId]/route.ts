@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { MAX_ATTEMPTS } from "@/lib/scoring";
+import { isPassingScore, MAX_ATTEMPTS } from "@/lib/scoring";
 import type { PublicQuestion } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +11,7 @@ export async function GET(
 ) {
   const supabase = getSupabaseAdmin();
   const deviceKey = request.nextUrl.searchParams.get("deviceKey");
+  const explicitRetry = request.nextUrl.searchParams.get("retry") === "1";
 
   // Le quiz et ses questions sont indépendants : les charger en parallèle
   // évite un aller-retour réseau supplémentaire à chaque ouverture du quiz.
@@ -61,15 +62,25 @@ export async function GET(
     // compte jamais comme une vraie tentative : elle ne doit ni bloquer un
     // nouvel essai, ni le faire passer pour une tentative supplémentaire.
     const realAttempts = (submissions ?? []).filter((s) => !s.cancelled);
-    const maxAllowedAttempts = quiz.category === "quarterly" ? 1 : MAX_ATTEMPTS;
+    const officialAttempt = realAttempts[0];
+    const passedOfficialAttempt = officialAttempt
+      ? isPassingScore(officialAttempt.score, officialAttempt.max_score)
+      : false;
+    const maxAllowedAttempts = quiz.category === "quarterly"
+      ? 1
+      : passedOfficialAttempt
+        ? Number.POSITIVE_INFINITY
+        : MAX_ATTEMPTS;
     if (realAttempts.length > 0) {
-      if (realAttempts.length >= maxAllowedAttempts) {
+      if ((!explicitRetry && passedOfficialAttempt) || realAttempts.length >= maxAllowedAttempts) {
         alreadySubmitted = true;
-        // La première tentative valide est la note officielle.
+        // La première tentative valide est officielle.
         resultToken = realAttempts[0].result_token;
       } else {
         isRetry = true;
-        remaining = Math.max(0, maxAllowedAttempts - realAttempts.length);
+        remaining = Number.isFinite(maxAllowedAttempts)
+          ? Math.max(0, maxAllowedAttempts - realAttempts.length)
+          : null;
       }
     }
   }

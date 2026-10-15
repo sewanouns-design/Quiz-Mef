@@ -43,7 +43,7 @@ interface StatsData {
 }
 
 interface ResultDetail {
-  quiz: { id: string; title: string };
+  quiz: { id: string; title: string; category?: "daily" | "weekly" | "quarterly" };
   participantName: string;
   score: number;
   maxScore: number;
@@ -52,6 +52,8 @@ interface ResultDetail {
   officialScore: number | null;
   officialMaxScore: number | null;
   isOfficialAttempt: boolean;
+  showAnswerReview: boolean;
+  answerReviewMessage: string | null;
   answers: CorrectedAnswer[];
 }
 
@@ -250,9 +252,15 @@ export default function MesStatsPage() {
                   {!detail.cancelled && !detail.isOfficialAttempt && detail.officialScore !== null && (
                     <p className="mt-4 rounded-xl bg-blue-50 p-3 text-sm text-blue-900">Ta note officielle reste <strong>{detail.officialScore}/{detail.officialMaxScore}</strong>.</p>
                   )}
-                  <div className="mt-5 space-y-3">
-                    {detail.answers.map((answer, index) => <DetailAnswer key={answer.questionId} answer={answer} index={index} />)}
-                  </div>
+                  {detail.showAnswerReview ? (
+                    <div className="mt-5 space-y-3">
+                      {detail.answers.map((answer, index) => <DetailAnswer key={answer.questionId} answer={answer} index={index} />)}
+                    </div>
+                  ) : (
+                    <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+                      🔒 {detail.answerReviewMessage || "La correction détaillée n'est pas disponible pour cette tentative."}
+                    </p>
+                  )}
                 </section>
               )}
               {detailError && <p className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{detailError}</p>}

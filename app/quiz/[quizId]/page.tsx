@@ -145,7 +145,11 @@ export default function QuizPage() {
     const key = getOrCreateDeviceKey();
     setDeviceKey(key);
 
-    fetch(`/api/quiz/${quizId}?deviceKey=${encodeURIComponent(key)}`, {
+    const retryQuery = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("retry") === "1"
+      ? "&retry=1"
+      : "";
+
+    fetch(`/api/quiz/${quizId}?deviceKey=${encodeURIComponent(key)}${retryQuery}`, {
       cache: "no-store",
     })
       .then(async (res) => {
@@ -479,7 +483,7 @@ export default function QuizPage() {
           {data.isRetry && (
             <div className="mb-5 rounded-xl border-2 border-navy/20 bg-navy/5 px-4 py-3 text-sm font-medium text-navy">
               🔁 Nouvelle tentative
-              {data.attemptsRemaining !== null && data.attemptsRemaining !== undefined && (
+              {data.attemptsRemaining !== null && data.attemptsRemaining !== undefined ? (
                 <>
                   {" "}
                   — il te reste{" "}
@@ -487,6 +491,10 @@ export default function QuizPage() {
                     {data.attemptsRemaining} tentative{data.attemptsRemaining > 1 ? "s" : ""}
                   </strong>{" "}
                   au total pour ce quiz.
+                </>
+              ) : (
+                <>
+                  {" "}— reprise libre d&apos;entraînement après ta réussite officielle. Ta première note reste la note officielle.
                 </>
               )}
             </div>
@@ -545,6 +553,13 @@ export default function QuizPage() {
   }
 
   const answeredCount = Object.keys(answers).length;
+  const allQuestionsAnswered = shuffledQuestions.every((question) => {
+    const answer = answers[question.id];
+    if (question.type === "mcq" || question.type === "true_false") {
+      return answer?.selectedOption !== undefined;
+    }
+    return Boolean(answer?.answerText?.trim());
+  });
   const isSequential = data.quiz.quiz_mode === "sequential";
   const visibleQuestions = isSequential
     ? shuffledQuestions.slice(currentIndex, currentIndex + 1)
@@ -689,7 +704,12 @@ export default function QuizPage() {
 
         {(!isSequential || isLastQuestion) && (
           <div className="mt-8">
-            <button onClick={() => handleSubmit()} disabled={submitting} className="btn-primary w-full">
+            {!allQuestionsAnswered && (
+              <p className="mb-3 text-center text-sm font-medium text-amber-700">
+                Réponds à toutes les questions avant de voir tes résultats.
+              </p>
+            )}
+            <button onClick={() => handleSubmit()} disabled={submitting || !allQuestionsAnswered} className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50">
               {submitting ? "Envoi en cours..." : "Soumettre mes réponses"}
             </button>
           </div>

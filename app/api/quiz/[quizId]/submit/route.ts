@@ -89,10 +89,19 @@ export async function POST(
   // compte jamais comme une vraie tentative : elle ne doit ni bloquer un
   // nouvel essai, ni faire perdre au participant l'une de ses chances.
   const realAttempts = (existingSubmissions ?? []).filter((s) => !s.cancelled);
-  // La première tentative réelle est officielle. Les suivantes restent
-  // autorisées comme entraînement pour les quiz quotidiens/hebdomadaires.
-  // L'examen trimestriel n'autorise qu'une seule tentative valide.
-  const maxAllowedAttempts = quiz.category === "quarterly" ? 1 : MAX_ATTEMPTS;
+  // La première tentative réelle est officielle. Après une réussite
+  // officielle, les reprises restent possibles librement comme entraînement,
+  // sans jamais remplacer cette note. Un participant sous 12/20 conserve
+  // exactement trois tentatives pédagogiques autorisées.
+  const officialAttempt = realAttempts[0];
+  const passedOfficialAttempt = officialAttempt
+    ? isPassingScore(officialAttempt.score, officialAttempt.max_score)
+    : false;
+  const maxAllowedAttempts = quiz.category === "quarterly"
+    ? 1
+    : passedOfficialAttempt
+      ? Number.POSITIVE_INFINITY
+      : MAX_ATTEMPTS;
   if (realAttempts.length >= maxAllowedAttempts) {
     return NextResponse.json(
       { error: "Tu as déjà soumis ce quiz." },
@@ -106,6 +115,22 @@ export async function POST(
   }
   if (!questions || questions.length === 0) {
     return NextResponse.json({ error: "Ce quiz n'a pas de questions." }, { status: 400 });
+  }
+
+  if (cancelled !== true) {
+    const complete = (questions as DailyQuestion[]).every((question) => {
+      const input = (answers as AnswerInput[]).find((item) => item.questionId === question.id);
+      if (question.type === "mcq" || question.type === "true_false") {
+        return input?.selectedOption !== undefined && input?.selectedOption !== null;
+      }
+      return Boolean(input?.answerText?.trim());
+    });
+    if (!complete) {
+      return NextResponse.json(
+        { error: "Réponds à toutes les questions avant d'obtenir la page de résultats." },
+        { status: 400 }
+      );
+    }
   }
 
   const answersByQuestionId = new Map<string, AnswerInput>(
@@ -210,11 +235,13 @@ export async function POST(
   // cachées (une soumission annulée les révèle toujours, ce n'est pas une
   // vraie tentative comptabilisée).
   const passed = isPassingScore(score, maxScore);
-  const reveal = isCancelled || shouldRevealAnswers(score, maxScore, attemptNumber);
+  const reveal = isCancelled || shouldRevealAnswers(score, maxScore, attemptNumber, quiz.category);
   const visibleAnswers = redactAnswersIfHidden(corrected, reveal);
-  const remaining = isCancelled
-    ? maxAllowedAttempts - realAttempts.length
-    : maxAllowedAttempts - attemptNumber;
+  const remaining = Number.isFinite(maxAllowedAttempts)
+    ? isCancelled
+      ? maxAllowedAttempts - realAttempts.length
+      : maxAllowedAttempts - attemptNumber
+    : null;
 
   return NextResponse.json({
     submissionId: submission.id,

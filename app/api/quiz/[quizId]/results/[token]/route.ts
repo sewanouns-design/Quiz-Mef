@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { MAX_ATTEMPTS, shouldRevealAnswers } from "@/lib/scoring";
+import { isPassingScore, MAX_ATTEMPTS, shouldRevealAnswers } from "@/lib/scoring";
 import { redactAnswersIfHidden } from "@/lib/grading";
 import { computeStreakDays } from "@/lib/streak";
 import type { CorrectedAnswer, DailyQuestion } from "@/lib/types";
@@ -100,9 +100,18 @@ export async function GET(
 
   const realAttempts = (allAttempts ?? []).filter((s) => !s.cancelled);
   const officialAttempt = realAttempts[0] ?? null;
-  const maxAllowedAttempts = quiz.category === "quarterly" ? 1 : MAX_ATTEMPTS;
-  const canRetry = realAttempts.length < maxAllowedAttempts;
-  const remaining = Math.max(0, maxAllowedAttempts - realAttempts.length);
+  const passedOfficialAttempt = officialAttempt
+    ? isPassingScore(officialAttempt.score, officialAttempt.max_score)
+    : false;
+  const maxAllowedAttempts = quiz.category === "quarterly"
+    ? 1
+    : passedOfficialAttempt
+      ? Number.POSITIVE_INFINITY
+      : MAX_ATTEMPTS;
+  const canRetry = quiz.category !== "quarterly" && (passedOfficialAttempt || realAttempts.length < maxAllowedAttempts);
+  const remaining = Number.isFinite(maxAllowedAttempts)
+    ? Math.max(0, maxAllowedAttempts - realAttempts.length)
+    : null;
 
   const streakDays = computeStreakDays((streakSubmissions ?? []).map((s) => s.submitted_at));
 
@@ -127,7 +136,12 @@ export async function GET(
   });
 
   const reveal =
-    submission.cancelled || shouldRevealAnswers(submission.score, submission.max_score, submission.attempt_number);
+    submission.cancelled || shouldRevealAnswers(
+      submission.score,
+      submission.max_score,
+      submission.attempt_number,
+      quiz.category
+    );
 
   const lessonQuestionThreads = (lessonQuestions ?? []).map((q) => {
     const replies = (q as unknown as { replies: { id: string; sender: string; message: string; created_at: string }[] })
@@ -143,7 +157,7 @@ export async function GET(
   });
 
   return NextResponse.json({
-    quiz: { id: quiz.id, title: quiz.title },
+    quiz: { id: quiz.id, title: quiz.title, category: quiz.category },
     participantName: participant?.name ?? "",
     score: submission.score,
     maxScore: submission.max_score,
@@ -157,7 +171,15 @@ export async function GET(
     canRetry,
     attemptsRemaining: remaining,
     streakDays,
-    answers: redactAnswersIfHidden(corrected, reveal),
+    showAnswerReview: quiz.category !== "quarterly" && reveal,
+    answerReviewMessage: quiz.category === "quarterly"
+      ? "La correction détaillée n'est pas affichée pour l'examen trimestriel."
+      : !reveal && !submission.cancelled
+        ? "Cette tentative est inférieure à 12/20. Pour préserver l'équité, les questions et les corrections restent masquées tant qu'une tentative est encore possible."
+        : null,
+    answers: quiz.category === "quarterly" || !reveal
+      ? []
+      : redactAnswersIfHidden(corrected, reveal),
     lessonQuestions: lessonQuestionThreads,
   });
 }

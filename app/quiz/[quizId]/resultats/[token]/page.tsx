@@ -43,7 +43,7 @@ interface ResultsData {
   officialMaxScore: number | null;
   isOfficialAttempt: boolean;
   canRetry: boolean;
-  attemptsRemaining: number;
+  attemptsRemaining: number | null;
   streakDays: number;
   answers: CorrectedAnswer[];
   lessonQuestions: LessonQuestionThread[];
@@ -553,13 +553,16 @@ export default function ResultsPage() {
               {data.canRetry && (
                 <div className="mx-auto mt-6 max-w-sm rounded-2xl border-2 border-dashed border-navy/20 bg-navy/5 px-6 py-5">
                   <p className="text-sm text-navy">
-                    Tu peux encore t&apos;entraîner. Il te reste{" "}
-                    <strong>
-                      {data.attemptsRemaining} tentative{data.attemptsRemaining > 1 ? "s" : ""}
-                    </strong>{" "}
-                    pour ce quiz !
+                    {data.attemptsRemaining === null
+                      ? "Tu peux reprendre ce quiz librement pour t'entraîner. Ta première note reste la note officielle."
+                      : <>Tu peux encore t&apos;entraîner. Il te reste{" "}
+                          <strong>
+                            {data.attemptsRemaining} tentative{data.attemptsRemaining > 1 ? "s" : ""}
+                          </strong>{" "}
+                          pour ce quiz !
+                        </>}
                   </p>
-                  <Link href={`/quiz/${quizId}`} className="btn-primary mt-4 inline-flex">
+                  <Link href={`/quiz/${quizId}?retry=1`} className="btn-primary mt-4 inline-flex">
                     🔁 Reprendre le quiz
                   </Link>
                 </div>
@@ -593,7 +596,7 @@ export default function ResultsPage() {
 
         <div className="mb-8 flex flex-wrap justify-center gap-3">
           <Link href={`/quiz/${quizId}/classement`} className="btn-secondary">🏆 Voir le classement</Link>
-          {data.canRetry && <Link href={`/quiz/${quizId}`} className="btn-primary">🔁 Reprendre le quiz</Link>}
+          {data.canRetry && <Link href={`/quiz/${quizId}?retry=1`} className="btn-primary">🔁 Reprendre le quiz</Link>}
           <button type="button" onClick={handleCopyLink} className="btn-secondary">
             {linkCopied ? "✅ Lien copié" : "🔗 Copier le lien du résultat"}
           </button>

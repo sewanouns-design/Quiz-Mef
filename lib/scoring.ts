@@ -8,22 +8,24 @@ export function isPassingScore(score: number, maxScore: number): boolean {
 }
 
 /**
- * Tant qu'il reste au moins une tentative réelle et que le participant n'a
- * pas atteint la moyenne, la bonne réponse et sa justification restent
- * cachées pour ses erreurs — seule la dernière tentative (échouée) les
- * révèle, pour forcer à revoir la leçon plutôt qu'à mémoriser la correction.
+ * Pour un quiz pédagogique, les corrections d'un échec restent masquées tant
+ * qu'il reste une tentative autorisée. L'examen trimestriel ne révèle jamais
+ * sa correction détaillée aux participants.
  */
 export function shouldRevealAnswers(
   score: number,
   maxScore: number,
-  attemptNumber: number
+  attemptNumber: number,
+  category: "daily" | "weekly" | "quarterly" = "daily"
 ): boolean {
+  if (category === "quarterly") return false;
   if (isPassingScore(score, maxScore)) return true;
   return attemptNumber >= MAX_ATTEMPTS;
 }
 
-/** Nombre de tentatives réelles encore disponibles, y compris après réussite.
- * La première tentative valide est officielle ; les suivantes sont pédagogiques.
+/** Nombre de tentatives réelles encore disponibles pour un participant qui
+ * n'a pas encore atteint la moyenne. Après réussite, les reprises sont libres
+ * et cette fonction n'est pas utilisée pour bloquer le parcours.
  */
 export function attemptsRemaining(realAttemptsCount: number): number {
   return Math.max(0, MAX_ATTEMPTS - realAttemptsCount);
