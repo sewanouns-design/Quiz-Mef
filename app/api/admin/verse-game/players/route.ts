@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const { data: matches, error: matchError } = await supabase
       .from("participants")
       .select("device_key")
-      .or(`name.ilike.%${escaped}%,email.ilike.%${escaped}%`);
+      .or(`name.ilike.%${escaped}%,email.ilike.%${escaped}%,device_key.ilike.%${escaped}%`);
     if (matchError) {
       return NextResponse.json({ error: matchError.message }, { status: 500 });
     }

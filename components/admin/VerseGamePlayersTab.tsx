@@ -26,6 +26,7 @@ export default function VerseGamePlayersTab() {
   const [error, setError] = useState("");
 
   const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
   const [editLevel, setEditLevel] = useState("");
   const [editPoints, setEditPoints] = useState("");
   const [editSubmitting, setEditSubmitting] = useState(false);
@@ -70,6 +71,7 @@ export default function VerseGamePlayersTab() {
 
   function startEdit(p: Player) {
     setEditingKey(p.deviceKey);
+    setEditName(p.name ?? "");
     setEditLevel(String(p.currentLevel));
     setEditPoints(String(p.totalPoints));
     setEditError("");
@@ -86,7 +88,7 @@ export default function VerseGamePlayersTab() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ currentLevel: Number(editLevel), totalPoints: Number(editPoints) }),
+        body: JSON.stringify({ name: editName.trim(), currentLevel: Number(editLevel), totalPoints: Number(editPoints) }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -95,7 +97,12 @@ export default function VerseGamePlayersTab() {
       setPlayers((prev) =>
         prev.map((p) =>
           p.deviceKey === editingKey
-            ? { ...p, currentLevel: data.player.current_level, totalPoints: data.player.total_points }
+            ? {
+                ...p,
+                name: data.player.name ?? editName.trim(),
+                currentLevel: data.player.current_level,
+                totalPoints: data.player.total_points,
+              }
             : p
         )
       );
@@ -134,8 +141,11 @@ export default function VerseGamePlayersTab() {
     <section>
       <h2 className="mb-1 text-lg font-bold text-navy">🎮 Joueurs de &quot;Trouve le verset&quot;</h2>
       <p className="mb-4 text-sm text-gray-500">
-        Tous les appareils ayant déjà joué, avec leur niveau et leurs points cumulés.{" "}
+        Tous les appareils ayant déjà joué, avec l’identité enregistrée, le niveau et les points cumulés.{" "}
         {total > 0 && <span className="font-semibold text-navy">{total} joueur(s).</span>}
+      </p>
+      <p className="mb-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-900">
+        L’admin voit ici le nom complet réellement enregistré, même si un ancien réglage l’avait masqué au public. Si un joueur était véritablement anonyme, aucun nom réel n’est récupérable automatiquement : tu peux enregistrer le nom qu’il te communique, après sa demande, pour qu’il apparaisse ensuite dans tous les classements.
       </p>
 
       <form onSubmit={handleSearchSubmit} className="mb-3 flex gap-2">
@@ -189,6 +199,16 @@ export default function VerseGamePlayersTab() {
                   <p className="text-sm font-semibold text-navy">
                     {p.name ?? <span className="text-gray-400">Anonyme</span>}
                   </p>
+                  <div>
+                    <label className="label-field">Nom public affiché dans les classements</label>
+                    <input
+                      className="input-field"
+                      placeholder="Prénom et nom du joueur"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">Le site affichera automatiquement le prénom et l’initiale du nom.</p>
+                  </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="label-field">Niveau (1-{MAX_LEVEL})</label>
@@ -238,9 +258,10 @@ export default function VerseGamePlayersTab() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-navy">
-                      {p.name ?? <span className="italic text-gray-400">Anonyme (jamais identifié)</span>}
+                      {p.name ?? <span className="italic text-gray-400">Anonyme (identité non enregistrée)</span>}
                     </p>
                     {p.email && <p className="text-xs text-gray-500">{p.email}</p>}
+                    {!p.name && <p className="mt-1 break-all text-[10px] text-gray-400">Appareil : {p.deviceKey}</p>}
                     <p className="mt-1 text-sm text-gray-600">
                       Niveau <span className="font-semibold text-navy">{p.currentLevel}</span> ·{" "}
                       <span className="font-semibold text-accent-dark">{p.totalPoints} points</span>
