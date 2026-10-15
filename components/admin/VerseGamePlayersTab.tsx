@@ -11,6 +11,8 @@ interface Player {
   updatedAt: string;
   name: string | null;
   email: string | null;
+  legacyOnly?: boolean;
+  legacyBestScore?: number | null;
 }
 
 const PAGE_SIZE = 50;
@@ -262,6 +264,7 @@ export default function VerseGamePlayersTab() {
                     </p>
                     {p.email && <p className="text-xs text-gray-500">{p.email}</p>}
                     {!p.name && <p className="mt-1 break-all text-[10px] text-gray-400">Appareil : {p.deviceKey}</p>}
+                    {p.legacyOnly && <p className="mt-1 text-[11px] font-semibold text-amber-700">Ancien profil de scores récupéré</p>}
                     <p className="mt-1 text-sm text-gray-600">
                       Niveau <span className="font-semibold text-navy">{p.currentLevel}</span> ·{" "}
                       <span className="font-semibold text-accent-dark">{p.totalPoints} points</span>

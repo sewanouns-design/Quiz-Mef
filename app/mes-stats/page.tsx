@@ -132,11 +132,108 @@ function DetailAnswer({ answer, index }: { answer: CorrectedAnswer; index: numbe
   );
 }
 
+function ResultDetailModal({
+  detail,
+  loading,
+  error,
+  onClose,
+}: {
+  detail: ResultDetail | null;
+  loading: boolean;
+  error: string;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    if (!detail && !loading && !error) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [detail, loading, error, onClose]);
+
+  if (!detail && !loading && !error) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-navy/65 p-3 backdrop-blur-sm sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="result-detail-title"
+      onClick={onClose}
+    >
+      <div
+        className="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-[#f7f9ff] shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex shrink-0 items-start justify-between gap-4 bg-navy px-5 py-4 text-white sm:px-7">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-200">Détail du résultat</p>
+            <h2 id="result-detail-title" className="mt-1 truncate text-lg font-extrabold sm:text-xl">
+              {detail?.quiz.title ?? "Chargement du résultat…"}
+            </h2>
+          </div>
+          <button type="button" onClick={onClose} className="shrink-0 rounded-full bg-white/10 px-3 py-2 text-lg leading-none text-white hover:bg-white/20" aria-label="Fermer le détail">×</button>
+        </div>
+        <div className="min-h-0 overflow-y-auto p-4 sm:p-7">
+          {loading && <p className="py-10 text-center text-sm text-gray-500">Chargement du détail…</p>}
+          {!loading && error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">{error}</div>}
+          {!loading && !error && detail && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl border border-green-200 bg-green-50 p-4"><p className="text-[10px] font-bold uppercase tracking-wide text-green-700">Note obtenue</p><p className="mt-1 text-2xl font-black text-green-900">{detail.score}/{detail.maxScore}</p></div>
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4"><p className="text-[10px] font-bold uppercase tracking-wide text-blue-700">Statut</p><p className="mt-1 text-base font-extrabold text-blue-900">{detail.cancelled ? "Annulée" : detail.isOfficialAttempt ? "Officielle" : "Entraînement"}</p></div>
+              </div>
+              {!detail.cancelled && !detail.isOfficialAttempt && detail.officialScore !== null && <p className="mt-4 rounded-xl bg-blue-50 p-3 text-sm text-blue-900">Ta note officielle reste <strong>{detail.officialScore}/{detail.officialMaxScore}</strong>.</p>}
+              {detail.showAnswerReview ? (
+                <div className="mt-5 space-y-3"><p className="text-sm font-bold text-navy">Réponses et explications</p>{detail.answers.map((answer, index) => <DetailAnswer key={answer.questionId} answer={answer} index={index} />)}</div>
+              ) : (
+                <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">🔒 {detail.answerReviewMessage || "La correction détaillée n'est pas disponible pour cette tentative."}</p>
+              )}
+            </>
+          )}
+        </div>
+        <div className="flex shrink-0 justify-end border-t border-gray-200 bg-white px-4 py-3 sm:px-7"><button type="button" onClick={onClose} className="btn-primary">Fermer</button></div>
+      </div>
+    </div>
+  );
+}
+
 export default function MesStatsPage() {
   const [data, setData] = useState<StatsData | null>(null);
   const [detail, setDetail] = useState<ResultDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
   const [detailError, setDetailError] = useState("");
+
+  async function openDetail(quizId: string, token: string) {
+    setDetail(null);
+    setDetailError("");
+    setDetailLoading(true);
+    try {
+      const res = await fetch(`/api/quiz/${encodeURIComponent(quizId)}/results/${encodeURIComponent(token)}`, { cache: "no-store" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "Impossible de charger le détail de cette tentative.");
+      setDetail(json as ResultDetail);
+      window.history.replaceState({}, "", `/mes-stats?quizId=${encodeURIComponent(quizId)}&token=${encodeURIComponent(token)}`);
+    } catch (err) {
+      setDetailError(err instanceof Error ? err.message : "Détail indisponible.");
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
+  function closeDetail() {
+    setDetail(null);
+    setDetailError("");
+    setDetailLoading(false);
+    window.history.replaceState({}, "", "/mes-stats");
+  }
 
   useEffect(() => {
     const deviceKey = getOrCreateDeviceKey();
@@ -236,41 +333,12 @@ export default function MesStatsPage() {
                 </section>
               )}
 
-              {detail && (
-                <section className="mt-8 rounded-3xl border-2 border-accent/20 bg-accent/5 p-5 sm:p-6">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wide text-accent-dark">Détail de la tentative</p>
-                      <h2 className="mt-1 text-xl font-extrabold text-navy">{detail.quiz.title}</h2>
-                    </div>
-                    <Link href="/mes-stats" className="text-sm font-semibold text-accent-dark hover:underline">Fermer le détail</Link>
-                  </div>
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl bg-white p-4"><p className="text-xs font-bold uppercase text-gray-500">Note obtenue</p><p className="mt-1 text-2xl font-black text-navy">{detail.score}/{detail.maxScore}</p></div>
-                    <div className="rounded-2xl bg-white p-4"><p className="text-xs font-bold uppercase text-gray-500">Statut</p><p className="mt-1 text-lg font-extrabold text-navy">{detail.cancelled ? "Annulée" : detail.isOfficialAttempt ? "Officielle" : "Entraînement"}</p></div>
-                  </div>
-                  {!detail.cancelled && !detail.isOfficialAttempt && detail.officialScore !== null && (
-                    <p className="mt-4 rounded-xl bg-blue-50 p-3 text-sm text-blue-900">Ta note officielle reste <strong>{detail.officialScore}/{detail.officialMaxScore}</strong>.</p>
-                  )}
-                  {detail.showAnswerReview ? (
-                    <div className="mt-5 space-y-3">
-                      {detail.answers.map((answer, index) => <DetailAnswer key={answer.questionId} answer={answer} index={index} />)}
-                    </div>
-                  ) : (
-                    <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-                      🔒 {detail.answerReviewMessage || "La correction détaillée n'est pas disponible pour cette tentative."}
-                    </p>
-                  )}
-                </section>
-              )}
-              {detailError && <p className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{detailError}</p>}
-
               {data.history && data.history.length > 0 && (
                 <section className="mt-8">
                   <div className="mb-3 flex items-end justify-between gap-3">
                     <div>
                       <h2 className="text-xl font-extrabold text-navy">Historique des quiz</h2>
-                      <p className="mt-1 text-sm text-gray-600">Ouvre un quiz pour afficher toutes ses réponses et explications ici.</p>
+                      <p className="mt-1 text-sm text-gray-600">Ouvre un quiz pour afficher ses détails dans une fenêtre dédiée.</p>
                     </div>
                   </div>
                   <ul className="space-y-4">
@@ -282,7 +350,13 @@ export default function MesStatsPage() {
                             {h.quizSubtitle && <p className="mt-1 text-xs text-gray-500">{h.quizSubtitle}</p>}
                             <span className="mt-2 inline-flex rounded-full bg-navy/5 px-2.5 py-1 text-[11px] font-semibold text-navy">{categoryLabel(h.category)}</span>
                           </div>
-                          <Link href={`/mes-stats?quizId=${encodeURIComponent(h.quizId)}&token=${encodeURIComponent(h.official.resultToken)}`} className="shrink-0 rounded-xl bg-navy px-3 py-2 text-xs font-bold text-white hover:opacity-90">Voir le détail</Link>
+                          <button
+                            type="button"
+                            onClick={() => openDetail(h.quizId, h.official.resultToken)}
+                            className="shrink-0 rounded-xl bg-navy px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-navy/90"
+                          >
+                            Afficher les détails
+                          </button>
                         </div>
                         <div className="mt-4 grid grid-cols-2 gap-3">
                           <div className="rounded-2xl border-2 border-green-200 bg-green-50 px-4 py-3">
@@ -309,6 +383,7 @@ export default function MesStatsPage() {
           </div>
         </div>
       </main>
+      <ResultDetailModal detail={detail} loading={detailLoading} error={detailError} onClose={closeDetail} />
     </>
   );
 }
