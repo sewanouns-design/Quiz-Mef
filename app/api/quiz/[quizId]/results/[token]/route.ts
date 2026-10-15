@@ -171,13 +171,15 @@ export async function GET(
     canRetry,
     attemptsRemaining: remaining,
     streakDays,
-    showAnswerReview: quiz.category !== "quarterly" && reveal,
+    showAnswerReview: quiz.category === "daily" && reveal,
     answerReviewMessage: quiz.category === "quarterly"
       ? "La correction détaillée n'est pas affichée pour l'examen trimestriel."
+      : quiz.category === "weekly"
+        ? "La correction détaillée n'est pas affichée pour le quiz hebdomadaire."
       : !reveal && !submission.cancelled
         ? "Cette tentative est inférieure à 12/20. Pour préserver l'équité, les questions et les corrections restent masquées tant qu'une tentative est encore possible."
         : null,
-    answers: quiz.category === "quarterly" || !reveal
+    answers: quiz.category !== "daily" || !reveal
       ? []
       : redactAnswersIfHidden(corrected, reveal),
     lessonQuestions: lessonQuestionThreads,

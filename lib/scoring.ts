@@ -8,9 +8,9 @@ export function isPassingScore(score: number, maxScore: number): boolean {
 }
 
 /**
- * Pour un quiz pédagogique, les corrections d'un échec restent masquées tant
- * qu'il reste une tentative autorisée. L'examen trimestriel ne révèle jamais
- * sa correction détaillée aux participants.
+ * Le quiz hebdomadaire et l'examen trimestriel ne révèlent jamais leur
+ * correction détaillée. Pour le quotidien, les corrections d'un échec restent
+ * masquées tant qu'il reste une tentative autorisée.
  */
 export function shouldRevealAnswers(
   score: number,
@@ -18,7 +18,7 @@ export function shouldRevealAnswers(
   attemptNumber: number,
   category: "daily" | "weekly" | "quarterly" = "daily"
 ): boolean {
-  if (category === "quarterly") return false;
+  if (category === "quarterly" || category === "weekly") return false;
   if (isPassingScore(score, maxScore)) return true;
   return attemptNumber >= MAX_ATTEMPTS;
 }

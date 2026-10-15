@@ -251,6 +251,6 @@ export async function POST(
     cancelled: isCancelled,
     attemptNumber,
     attemptsRemaining: remaining,
-    answers: visibleAnswers,
+    answers: quiz.category === "daily" && reveal ? visibleAnswers : [],
   });
 }
