@@ -11,7 +11,11 @@ const PREFIX = "quiz-mef-scroll:";
  */
 export default function ScrollRestoration() {
   useEffect(() => {
-    const key = `${PREFIX}${window.location.pathname}${window.location.search}`;
+    const url = new URL(window.location.href);
+    const adminKey = url.pathname.startsWith("/admin/dashboard")
+      ? `${url.pathname}?tab=${url.searchParams.get("tab") || ""}&subtab=${url.searchParams.get("subtab") || ""}`
+      : url.pathname;
+    const key = `${PREFIX}${adminKey}`;
     const restore = () => {
       const saved = Number(window.sessionStorage.getItem(key));
       if (Number.isFinite(saved) && saved > 0) {
@@ -28,11 +32,12 @@ export default function ScrollRestoration() {
     });
     window.addEventListener("scroll", save, { passive: true });
     window.addEventListener("beforeunload", save);
+    window.addEventListener("pagehide", save);
     return () => {
       window.cancelAnimationFrame(frame);
-      save();
       window.removeEventListener("scroll", save);
       window.removeEventListener("beforeunload", save);
+      window.removeEventListener("pagehide", save);
     };
   }, []);
 
