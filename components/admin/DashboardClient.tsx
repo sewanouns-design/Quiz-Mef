@@ -98,12 +98,24 @@ function flatTabs(cat: Category): SubTab[] {
   return cat.groups?.flatMap((group) => group.tabs) ?? [];
 }
 
+const ADMIN_SELECTION_KEY = "quiz-mef-admin-selection";
+
 export default function DashboardClient() {
   const router = useRouter();
   const [navigation, setNavigation] = useState<AdminNavigationConfig>(DEFAULT_ADMIN_NAVIGATION);
   const [navigationError, setNavigationError] = useState("");
   const [activeCatId, setActiveCatId] = useState(DEFAULT_ADMIN_NAVIGATION.categories[0].id);
   const [activeSubId, setActiveSubId] = useState(DEFAULT_ADMIN_NAVIGATION.categories[0].items[0].id);
+  const [requestedSelection, setRequestedSelection] = useState<{ categoryId: string; tabId: string } | null>(null);
+
+  function persistSelection(categoryId: string, tabId: string) {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", categoryId);
+    url.searchParams.set("subtab", tabId);
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    window.sessionStorage.setItem(ADMIN_SELECTION_KEY, JSON.stringify({ categoryId, tabId }));
+  }
 
   async function loadNavigation() {
     try {
@@ -121,6 +133,21 @@ export default function DashboardClient() {
     void loadNavigation();
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    let saved: { categoryId?: string; tabId?: string } = {};
+    try {
+      saved = JSON.parse(window.sessionStorage.getItem(ADMIN_SELECTION_KEY) || "{}");
+    } catch {
+      saved = {};
+    }
+    const categoryId = params.get("tab") || saved.categoryId;
+    const tabId = params.get("subtab") || saved.tabId;
+    if (categoryId || tabId) {
+      setRequestedSelection({ categoryId: categoryId || "", tabId: tabId || "" });
+    }
+  }, []);
+
   const categories = useMemo(() => buildCategories(navigation, loadNavigation), [navigation]);
 
   useEffect(() => {
@@ -131,6 +158,20 @@ export default function DashboardClient() {
     if (!tabs.some((tab) => tab.id === activeSubId)) setActiveSubId(tabs[0].id);
   }, [categories, activeCatId, activeSubId]);
 
+  useEffect(() => {
+    if (!requestedSelection || !categories.length) return;
+    const requestedCategory = categories.find((category) => category.id === requestedSelection.categoryId)
+      ?? categories.find((category) => flatTabs(category).some((tab) => tab.id === requestedSelection.tabId))
+      ?? categories[0];
+    const tabs = flatTabs(requestedCategory);
+    const requestedTab = tabs.find((tab) => tab.id === requestedSelection.tabId) ?? tabs[0];
+    if (!requestedTab) return;
+    setActiveCatId(requestedCategory.id);
+    setActiveSubId(requestedTab.id);
+    persistSelection(requestedCategory.id, requestedTab.id);
+    setRequestedSelection(null);
+  }, [categories, requestedSelection]);
+
   async function handleLogout() {
     await fetch("/api/admin/logout", { method: "POST", cache: "no-store" });
     router.push("/admin");
@@ -138,8 +179,15 @@ export default function DashboardClient() {
   }
 
   function selectCategory(category: Category) {
+    const firstTab = flatTabs(category)[0];
     setActiveCatId(category.id);
-    setActiveSubId(flatTabs(category)[0].id);
+    setActiveSubId(firstTab.id);
+    persistSelection(category.id, firstTab.id);
+  }
+
+  function selectSubTab(tabId: string) {
+    setActiveSubId(tabId);
+    persistSelection(activeCatId, tabId);
   }
 
   const activeCat = categories.find((category) => category.id === activeCatId) ?? categories[0];
@@ -177,7 +225,7 @@ export default function DashboardClient() {
               <div key={`${group.label ?? "none"}-${groupIndex}`} className="flex flex-wrap items-center gap-2">
                 {group.label && <span className="pl-0.5 pr-1 text-xs font-extrabold uppercase tracking-wide text-gray-400">{group.label}</span>}
                 {group.tabs.map((tab) => (
-                  <button key={tab.id} onClick={() => setActiveSubId(tab.id)} className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${activeSubId === tab.id ? "border-accent bg-accent text-white" : "border-gray-200 bg-white text-gray-600 hover:border-accent-light"}`}>
+                  <button key={tab.id} onClick={() => selectSubTab(tab.id)} className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${activeSubId === tab.id ? "border-accent bg-accent text-white" : "border-gray-200 bg-white text-gray-600 hover:border-accent-light"}`}>
                     {tab.label}
                   </button>
                 ))}

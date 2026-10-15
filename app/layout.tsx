@@ -6,6 +6,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import PushAutoSubscribe from "@/components/PushAutoSubscribe";
 import PushOptIn from "@/components/PushOptIn";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
+import ScrollRestoration from "@/components/ScrollRestoration";
 import { ToastProvider } from "@/components/Toast";
 
 const title = "Quiz Biblique";
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PushAutoSubscribe />
           <PushOptIn />
           <AnalyticsTracker />
+          <ScrollRestoration />
         </ToastProvider>
       </body>
     </html>
