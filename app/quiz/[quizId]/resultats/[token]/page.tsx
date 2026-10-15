@@ -577,209 +577,26 @@ export default function ResultsPage() {
           </div>
         )}
 
+        <section className="mb-8 rounded-3xl border-2 border-blue-100 bg-blue-50/70 p-6 text-center shadow-sm sm:p-8">
+          <p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-700">Résultat enregistré</p>
+          <h2 className="mt-2 text-2xl font-black text-navy">Retrouve tous tes détails dans ton tableau de bord</h2>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-700">
+            Tu y trouveras ton historique complet, tes notes officielles et d&apos;entraînement, tes statistiques et la correction détaillée de cette tentative.
+          </p>
+          <Link
+            href={`/mes-stats?quizId=${encodeURIComponent(quizId)}&token=${encodeURIComponent(token)}`}
+            className="mt-5 inline-flex items-center justify-center rounded-2xl bg-navy px-6 py-4 text-base font-extrabold text-white shadow-lg transition-opacity hover:opacity-90"
+          >
+            📊 Aller sur mon tableau de bord
+          </Link>
+        </section>
+
         <div className="mb-8 flex flex-wrap justify-center gap-3">
-          <ActionCard icon="🏆" label="Classement" href={`/quiz/${quizId}/classement`} />
-          <ActionCard icon="📊" label="Mes stats" href="/mes-stats" />
-          <ActionCard
-            icon={linkCopied ? "✅" : "🔗"}
-            label={linkCopied ? "Lien copié" : "Copier le lien"}
-            onClick={handleCopyLink}
-          />
-          <ActionCard
-            icon="❓"
-            label={lessonQuestions.length > 0 ? `Question (${lessonQuestions.length})` : "Question sur la leçon"}
-            active={showLessonQuestionPanel}
-            onClick={() => setActivePanel((p) => (p === "question" ? null : "question"))}
-          />
-          <ActionCard
-            icon="💡"
-            label="Suggestion"
-            active={showSuggestionPanel}
-            onClick={() => setActivePanel((p) => (p === "suggestion" ? null : "suggestion"))}
-          />
-        </div>
-
-        {showLessonQuestionPanel && (
-          <div className="mb-8">
-            {lessonQuestions.length > 0 && (
-              <div className="space-y-4">
-                {lessonQuestions.map((q) => (
-                  <div key={q.id} className="card">
-                    <p className="mb-1 text-xs text-gray-400">
-                      {new Date(q.createdAt).toLocaleString("fr-FR")}
-                    </p>
-                    <p className="text-sm font-medium text-navy">{q.questionText}</p>
-
-                    {q.replies.length > 0 && (
-                      <ul className="mt-3 space-y-2 border-t border-gray-100 pt-3">
-                        {q.replies.map((r) => (
-                          <li
-                            key={r.id}
-                            className={`rounded-lg p-2.5 text-sm ${
-                              r.sender === "admin" ? "bg-navy/5 text-navy" : "bg-gray-50 text-gray-700"
-                            }`}
-                          >
-                            <p className="mb-0.5 text-xs font-semibold text-gray-500">
-                              {r.sender === "admin" ? "Un admin" : "Toi"} ·{" "}
-                              {new Date(r.createdAt).toLocaleString("fr-FR")}
-                            </p>
-                            {r.message}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-
-                    <div className="mt-3 flex items-center gap-2">
-                      <input
-                        className="input-field flex-1 text-sm"
-                        placeholder="Répondre..."
-                        value={replyDrafts[q.id] || ""}
-                        onChange={(e) =>
-                          setReplyDrafts((prev) => ({ ...prev, [q.id]: e.target.value }))
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleSendReply(q.id);
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleSendReply(q.id)}
-                        disabled={replySending === q.id || !(replyDrafts[q.id] || "").trim()}
-                        className="btn-secondary shrink-0 px-3 py-2 text-sm"
-                      >
-                        {replySending === q.id ? "..." : "Envoyer"}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {replyError && <p className="mt-2 text-sm font-medium text-red-600">{replyError}</p>}
-
-            <div className="card mt-4">
-              <h3 className="mb-1 text-sm font-bold text-navy">Une question sur la leçon du jour ?</h3>
-              <p className="mb-3 text-xs text-gray-500">
-                Pose-la ici, elle sera transmise à l&apos;équipe et la réponse apparaîtra sur cette page.
-              </p>
-              <textarea
-                className="input-field min-h-[80px]"
-                placeholder="Écris ta question ici..."
-                value={askQuestionText}
-                onChange={(e) => setAskQuestionText(e.target.value)}
-              />
-              {askQuestionError && (
-                <p className="mt-2 text-sm font-medium text-red-600">{askQuestionError}</p>
-              )}
-              <button
-                type="button"
-                onClick={handleAskQuestion}
-                disabled={askQuestionSubmitting || !askQuestionText.trim()}
-                className="btn-secondary mt-3"
-              >
-                {askQuestionSubmitting ? "Envoi..." : "Envoyer ma question"}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {showSuggestionPanel && (
-          <div className="mb-8 rounded-2xl border-2 border-accent/25 bg-accent/5 p-5 sm:p-6">
-            <h2 className="text-lg font-bold text-navy sm:text-xl">
-              💡 Une idée pour améliorer le site ?
-            </h2>
-
-            {pastSuggestions.length > 0 && (
-              <ul className="mt-4 space-y-3">
-                {pastSuggestions.map((s) => (
-                  <li key={s.id} className="rounded-xl bg-white p-3 shadow-sm">
-                    <p className="text-sm text-gray-700">{s.message}</p>
-                    <div className="mt-2 flex items-center gap-2">
-                      {s.acknowledged ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
-                          ✅ Prise en compte
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500">
-                          ⏳ En attente
-                        </span>
-                      )}
-                    </div>
-                    {s.adminResponse && (
-                      <div className="mt-2 rounded-lg bg-navy/5 p-2.5 text-sm text-navy">
-                        <p className="mb-0.5 text-xs font-semibold text-gray-500">Réponse de l&apos;équipe</p>
-                        {s.adminResponse}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {suggestionSent ? (
-              <p className="mt-4 text-sm font-medium text-green-700">
-                Merci, ta suggestion a bien été envoyée !
-              </p>
-            ) : (
-              <>
-                <textarea
-                  className="input-field mt-4 w-full text-base"
-                  rows={3}
-                  placeholder="Dis-nous ce qu'on pourrait améliorer..."
-                  value={suggestionText}
-                  onChange={(e) => setSuggestionText(e.target.value)}
-                />
-                {suggestionError && (
-                  <p className="mt-1 text-sm font-medium text-red-600">{suggestionError}</p>
-                )}
-                <button
-                  type="button"
-                  onClick={handleSendSuggestion}
-                  disabled={suggestionSending || !suggestionText.trim()}
-                  className="btn-accent mt-3"
-                >
-                  {suggestionSending ? "Envoi..." : "Envoyer ma suggestion"}
-                </button>
-              </>
-            )}
-          </div>
-        )}
-
-        <div className="space-y-4">
-          {data.answers.map((answer, index) => (
-            <div key={answer.questionId} className="card">
-              <div className="mb-2 flex items-start justify-between gap-4">
-                <p className="font-semibold text-navy">
-                  {answer.type === "open" ? "✍️" : answer.isCorrect ? "✅" : "❌"}{" "}
-                  {index + 1}. {answer.question}
-                </p>
-                <span className="whitespace-nowrap rounded-full bg-navy/10 px-2.5 py-1 text-xs font-semibold text-navy">
-                  {answer.pointsAwarded}/{answer.points} pt
-                </span>
-              </div>
-
-              <p className="text-sm text-gray-700">
-                <strong>Ta réponse :</strong> {formatParticipantAnswer(answer)}
-              </p>
-
-              {answer.isCorrect === false && answer.correctOption === null && answer.correctText === null ? (
-                <p className="text-sm italic text-gray-400">
-                  🔒 Réessaie pour découvrir la bonne réponse
-                </p>
-              ) : (
-                answer.type !== "open" && (
-                  <p className="text-sm text-gray-700">
-                    <strong>Bonne réponse :</strong> {formatCorrectAnswer(answer)}
-                  </p>
-                )
-              )}
-
-              {answer.justification && (
-                <p className="mt-2 rounded-lg bg-navy/5 p-3 text-sm text-gray-600">
-                  <strong>Justification :</strong> {answer.justification}
-                </p>
-              )}
-            </div>
-          ))}
+          <Link href={`/quiz/${quizId}/classement`} className="btn-secondary">🏆 Voir le classement</Link>
+          {data.canRetry && <Link href={`/quiz/${quizId}`} className="btn-primary">🔁 Reprendre le quiz</Link>}
+          <button type="button" onClick={handleCopyLink} className="btn-secondary">
+            {linkCopied ? "✅ Lien copié" : "🔗 Copier le lien du résultat"}
+          </button>
         </div>
 
         <div className="mt-10 flex justify-center">

@@ -91,6 +91,14 @@ export async function GET(request: NextRequest) {
   const officialRows = history.map((h) => h.official);
   const quizzesCount = history.length;
   const passedCount = officialRows.filter((s) => isPassingScore(s.score, s.maxScore)).length;
+  const trainingAttemptsCount = history.reduce((sum, item) => sum + item.training.length, 0);
+  const categoryCounts = history.reduce(
+    (counts, item) => {
+      counts[item.category] = (counts[item.category] ?? 0) + 1;
+      return counts;
+    },
+    { daily: 0, weekly: 0, quarterly: 0 } as Record<"daily" | "weekly" | "quarterly", number>
+  );
   const averagePercent =
     quizzesCount > 0
       ? Math.round((officialRows.reduce((sum, s) => sum + s.score / s.maxScore, 0) / quizzesCount) * 100)
@@ -107,6 +115,10 @@ export async function GET(request: NextRequest) {
     participant: { name: participant.name },
     quizzesCount,
     passedCount,
+    passRatePercent: quizzesCount > 0 ? Math.round((passedCount / quizzesCount) * 100) : null,
+    attemptsCount: rows.length,
+    trainingAttemptsCount,
+    categoryCounts,
     averagePercent,
     bestScorePercent,
     pedagogicalBestPercent,
