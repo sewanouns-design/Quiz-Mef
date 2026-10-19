@@ -19,21 +19,33 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const MONTHS = {
+  jan: 0,
+  janv: 0,
   janvier: 0,
+  fev: 1,
+  févr: 1,
+  fevr: 1,
   fevrier: 1,
   février: 1,
   mars: 2,
   avril: 3,
+  avr: 3,
   mai: 4,
   juin: 5,
   juillet: 6,
+  juil: 6,
   aout: 7,
   août: 7,
   septembre: 8,
+  sept: 8,
+  sep: 8,
+  oct: 9,
   octobre: 9,
   novembre: 10,
+  nov: 10,
   decembre: 11,
   décembre: 11,
+  dec: 11,
 };
 
 const WEEKDAYS = [
