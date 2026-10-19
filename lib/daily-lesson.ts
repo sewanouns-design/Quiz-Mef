@@ -47,7 +47,8 @@ const WEEKDAYS = [
   ["dimanche", 0],
 ] as const;
 
-const PRAYER_MARKER = /(?:Axe|Astre)\s*(?:de\s*)?prière\s*:/i;
+const ESSENTIAL_MARKER = /Point\s+(?:Essentiel|important)\s*:/i;
+const PRAYER_MARKER = /(?:Axe|Astre|Point)\s*(?:de\s*)?prière\s*:/i;
 const ANNUAL_MARKER = /Lire\s+la\s+Bible(?:\s+en\s+entier)?\s+en\s+un\s+an\s*:/i;
 
 function isPdfNoiseLine(line: string): boolean {
@@ -324,12 +325,12 @@ export function extractDailyLesson(
     titleIsOpen = (continuation.match(/\(/g) ?? []).length > (continuation.match(/\)/g) ?? []).length;
   }
   const content = sectionLines.join("\n").trim();
-  const essential = valueBetween(content, /Point Essentiel\s*:/i, PRAYER_MARKER);
+  const essential = valueBetween(content, ESSENTIAL_MARKER, PRAYER_MARKER);
   const prayer = valueBetween(content, PRAYER_MARKER, ANNUAL_MARKER);
   const body = compact(
     content
-      .replace(/Point Essentiel\s*:[\s\S]*?(?=(?:Axe|Astre)\s*(?:de\s*)?prière\s*:|$)/i, "")
-      .replace(/(?:Axe|Astre)\s*(?:de\s*)?prière\s*:[\s\S]*?(?=Lire\s+la\s+Bible(?:\s+en\s+entier)?\s+en\s+un\s+an\s*:|$)/i, "")
+      .replace(/Point\s+(?:Essentiel|important)\s*:[\s\S]*?(?=(?:Axe|Astre|Point)\s*(?:de\s*)?prière\s*:|$)/i, "")
+      .replace(/(?:Axe|Astre|Point)\s*(?:de\s*)?prière\s*:[\s\S]*?(?=Lire\s+la\s+Bible(?:\s+en\s+entier)?\s+en\s+un\s+an\s*:|$)/i, "")
       .replace(/Lire\s+la\s+Bible(?:\s+en\s+entier)?\s+en\s+un\s+an\s*:[\s\S]*$/i, "")
   );
   const reference = section.title.match(/\(([^()]+)\)\s*$/)?.[1]?.trim() ?? "";

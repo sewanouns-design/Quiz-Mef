@@ -94,8 +94,8 @@ function normalizeLine(line) {
     .trim();
 }
 
-const PRAYER_MARKER = /(?:Axe|Astre)\s*(?:de\s*)?prière\s*:/i;
-const ESSENTIAL_MARKER = /Point\s+Essentiel\s*:/i;
+const PRAYER_MARKER = /(?:Axe|Astre|Point)\s*(?:de\s*)?prière\s*:/i;
+const ESSENTIAL_MARKER = /Point\s+(?:Essentiel|important)\s*:/i;
 const ANNUAL_MARKER = /Lire\s+la\s+Bible(?:\s+en\s+entier)?\s+en\s+un\s+an\s*:/i;
 
 function isPdfNoiseLine(line) {
