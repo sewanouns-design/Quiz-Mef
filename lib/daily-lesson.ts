@@ -264,10 +264,29 @@ function normalizeBookName(value: string): string {
   return alias ?? cleaned;
 }
 
+function normalizeReferenceGroups(reference: string): string {
+  let previousBook = "";
+  return reference
+    .replace(/[;]/g, ",")
+    .split(",")
+    .map((part) => {
+      const cleaned = part.replace(/\s+/g, " ").trim();
+      const fullReference = cleaned.match(/^((?:[1-3]\s+)?[A-Za-zÀ-ÿ.]+(?:\s+[A-Za-zÀ-ÿ.]+)?)\s+\d+\s*:/);
+      if (fullReference) {
+        previousBook = fullReference[1];
+        return cleaned;
+      }
+      const shorthand = cleaned.match(/^(\d+\s*:\s*\d+(?:\s*[-–—]\s*\d+)?)/);
+      return shorthand && previousBook ? `${previousBook} ${shorthand[1]}` : cleaned;
+    })
+    .filter(Boolean)
+    .join(", ");
+}
+
 function expandReference(reference: string): string[] {
   const refs: string[] = [];
   const pattern = /((?:[1-3]\s+)?[A-Za-zÀ-ÿ.]+(?:\s+[A-Za-zÀ-ÿ.]+)?)\s+(\d+)\s*:\s*(\d+)(?:\s*[-–—]\s*(\d+))?/g;
-  for (const match of reference.replace(/[;]/g, ",").matchAll(pattern)) {
+  for (const match of normalizeReferenceGroups(reference).matchAll(pattern)) {
     const book = normalizeBookName(match[1]);
     const chapter = Number(match[2]);
     const firstVerse = Number(match[3]);
@@ -281,7 +300,7 @@ function expandReference(reference: string): string[] {
 
 function splitReferenceGroups(reference: string): string[] {
   const pattern = /((?:[1-3]\s+)?[A-Za-zÀ-ÿ.]+(?:\s+[A-Za-zÀ-ÿ.]+)?)\s+\d+\s*:\s*\d+(?:\s*[-–—]\s*\d+)?/g;
-  return [...reference.matchAll(pattern)].map((match) => match[0].replace(/\s+/g, " ").trim());
+  return [...normalizeReferenceGroups(reference).matchAll(pattern)].map((match) => match[0].replace(/\s+/g, " ").trim());
 }
 
 function buildScripturePassages(
