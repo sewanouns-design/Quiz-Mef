@@ -313,10 +313,12 @@ function findDaySections(block) {
         if (/^(INTRIGUE DU TEXTE DE REFERENCE|LES GRANDES ARTICULATIONS DU TEXTE DE REFERENCE|EVALUATION FORMATIVE|CONCLUSION)$/i.test(continuation)) break;
         const hasOpenParenthesis = (title.match(/\(/g) ?? []).length > (title.match(/\)/g) ?? []).length;
         const looksLikeReferenceContinuation = hasOpenParenthesis || /[-–—:]\s*$/.test(title);
-        if (!looksLikeReferenceContinuation) break;
+        const standaloneReference = /^\([^()]+\)/.test(continuation);
+        if (!looksLikeReferenceContinuation && !standaloneReference) break;
         title = `${title} ${continuation}`
           .replace(/\s+([),.:;])/g, "$1")
           .replace(/-\s+(?=\d)/g, "-");
+        if (standaloneReference) break;
         if ((title.match(/\(/g) ?? []).length <= (title.match(/\)/g) ?? []).length) break;
       }
       if (current) current.endLine = index;
