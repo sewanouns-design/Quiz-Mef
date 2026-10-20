@@ -314,7 +314,8 @@ function findDaySections(block) {
         const hasOpenParenthesis = (title.match(/\(/g) ?? []).length > (title.match(/\)/g) ?? []).length;
         const looksLikeReferenceContinuation = hasOpenParenthesis || /[-–—:]\s*$/.test(title);
         const standaloneReference = /^\([^()]+\)/.test(continuation);
-        if (!looksLikeReferenceContinuation && !standaloneReference) break;
+        const lowercaseContinuation = /^[a-zà-ÿ]/.test(continuation);
+        if (!looksLikeReferenceContinuation && !standaloneReference && !lowercaseContinuation) break;
         title = `${title} ${continuation}`
           .replace(/\s+([),.:;])/g, "$1")
           .replace(/-\s+(?=\d)/g, "-");

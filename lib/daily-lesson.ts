@@ -240,7 +240,8 @@ function findDaySections(block: { raw: string; sunday: Date }): DaySection[] {
       const openParenthesis = (title.match(/\(/g) ?? []).length > (title.match(/\)/g) ?? []).length;
       const endsWithReference = /[-–—:]\s*$/.test(title);
       const standaloneReference = /^\([^()]+\)/.test(continuation);
-      if (!openParenthesis && !endsWithReference && !standaloneReference) break;
+      const lowercaseContinuation = /^[a-zà-ÿ]/.test(continuation);
+      if (!openParenthesis && !endsWithReference && !standaloneReference && !lowercaseContinuation) break;
       title = `${title} ${continuation}`.replace(/\s+([),.:;])/g, "$1").replace(/-\s+(?=\d)/g, "-");
       if (standaloneReference) break;
       if ((title.match(/\(/g) ?? []).length <= (title.match(/\)/g) ?? []).length) break;
