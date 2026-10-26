@@ -128,7 +128,8 @@ function cleanText(value: string): string {
 function parseDate(day: string, month: string, year: number): Date | null {
   const monthIndex = MONTHS[month.toLowerCase().replace(/\.$/, "")];
   if (monthIndex === undefined) return null;
-  const date = new Date(Date.UTC(year, monthIndex, Number(day), 12));
+  const numericDay = day.replace(/(?:er|ème|eme)$/i, "");
+  const date = new Date(Date.UTC(year, monthIndex, Number(numericDay), 12));
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
@@ -172,7 +173,7 @@ function dayHeader(line: string, defaultYear: number) {
   if (!weekday) return null;
 
   const match = normalized.match(
-    /^(?:Lun|Lundi|Mar|Mardi|Mer|Mercredi|Jeu|Jeudi|Ven|Vendredi|Sam|Samedi|Dim|Dimanche)\.?\s*(\d{1,2})\s*([A-ZÀ-Ÿa-zà-ÿ]+)\.?\s*(\d{4})?\s*:\s*(.*)$/i
+    /^(?:Lun|Lundi|Mar|Mardi|Mer|Mercredi|Jeu|Jeudi|Ven|Vendredi|Sam|Samedi|Dim|Dimanche)\.?\s*(\d{1,2}(?:er|ème|eme)?)\s*([A-ZÀ-Ÿa-zà-ÿ]+)\.?\s*(\d{4})?\s*:\s*(.*)$/i
   );
   if (!match) return null;
   const date = parseDate(match[1], match[2], match[3] ? Number(match[3]) : defaultYear);
@@ -204,7 +205,7 @@ function findLessonBlock(sourceText: string, targetDate: Date, lessonStart: numb
     const end = matches[index + 1]?.index ?? text.length;
     const raw = text.slice(start, end);
     const header = raw.slice(0, 2600);
-    const sundayMatch = header.match(/DIMANCHE\s+(\d{1,2})\s+([A-ZÀ-Ÿa-zà-ÿ]+)\.?\s+(\d{4})/i);
+    const sundayMatch = header.match(/DIMANCHE\s+(\d{1,2}(?:er|ème|eme)?)\s+([A-ZÀ-Ÿa-zà-ÿ]+)\.?\s+(\d{4})/i);
     if (!sundayMatch) continue;
     const sunday = parseDate(sundayMatch[1], sundayMatch[2], Number(sundayMatch[3]));
     if (!sunday || !isInWeek(targetDate, sunday)) continue;

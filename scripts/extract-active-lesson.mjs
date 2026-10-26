@@ -133,7 +133,8 @@ function removeAnnualReading(value) {
 }
 
 function extractDailyParts(value) {
-  const text = removeAnnualReading(value);
+  const beforeAnnualReading = value.split(new RegExp(ANNUAL_MARKER.source, "i"))[0];
+  const text = removeAnnualReading(beforeAnnualReading);
   const essentialMatch = text.match(new RegExp(`${ESSENTIAL_MARKER.source}([\\s\\S]*?)(?=${PRAYER_MARKER.source}|$)`, "i"));
   const prayerMatch = text.match(new RegExp(`${PRAYER_MARKER.source}([\\s\\S]*?)$`, "i"));
   const essential = essentialMatch?.[1]?.replace(/\s+/g, " ").trim() ?? "";
@@ -149,7 +150,8 @@ function extractDailyParts(value) {
 function parseDate(day, month, year) {
   const monthIndex = MONTHS[month.toLowerCase()];
   if (monthIndex === undefined) return null;
-  const date = new Date(Date.UTC(Number(year), monthIndex, Number(day), 12));
+  const numericDay = String(day).replace(/(?:er|ème|eme)$/i, "");
+  const date = new Date(Date.UTC(Number(year), monthIndex, Number(numericDay), 12));
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
@@ -216,7 +218,7 @@ function findLessonBlocks(rawText) {
     const rawBlock = text.slice(start, end);
     const header = rawBlock.slice(0, Math.min(rawBlock.length, 2400));
     const sundayMatch = header.match(
-      /DIMANCHE\s+(\d{1,2})\s+([A-ZÀ-Ÿa-zà-ÿ]+)\.?\s+(\d{4})/i
+      /DIMANCHE\s+(\d{1,2}(?:er|ème|eme)?)\s+([A-ZÀ-Ÿa-zà-ÿ]+)\.?\s+(\d{4})/i
     );
     if (!sundayMatch) continue;
     const sunday = parseDate(sundayMatch[1], sundayMatch[2].replace(/\.$/, ""), sundayMatch[3]);
@@ -279,7 +281,7 @@ function findDayHeader(line, defaultYear) {
   const weekday = WEEKDAYS.find(([label]) => new RegExp(`^${label}\\.?\\s`, "i").test(normalized));
   if (!weekday) return null;
   const match = normalized.match(
-    /^(?:Lun|Lundi|Mar|Mardi|Mer|Mercredi|Jeu|Jeudi|Ven|Vendredi|Sam|Samedi|Dim|Dimanche)\.?\s*(\d{1,2})\s*([A-ZÀ-Ÿa-zà-ÿ]+)\.?\s*(\d{4})?\s*:\s*(.+)$/i
+    /^(?:Lun|Lundi|Mar|Mardi|Mer|Mercredi|Jeu|Jeudi|Ven|Vendredi|Sam|Samedi|Dim|Dimanche)\.?\s*(\d{1,2}(?:er|ème|eme)?)\s*([A-ZÀ-Ÿa-zà-ÿ]+)\.?\s*(\d{4})?\s*:\s*(.+)$/i
   );
   if (!match) return { weekday: weekday[1], label: normalized, date: null, title: normalized };
   const year = match[3] ? Number(match[3]) : defaultYear;
