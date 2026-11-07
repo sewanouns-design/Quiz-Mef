@@ -285,7 +285,7 @@ function findDayHeader(line, defaultYear) {
   );
   if (!match) return { weekday: weekday[1], label: normalized, date: null, title: normalized };
   const year = match[3] ? Number(match[3]) : defaultYear;
-  const title = match[4].trim();
+  const title = match[4].trim().replace(/^nvestissons\b/, "Investissons");
   return {
     weekday: weekday[1],
     label: normalized,

@@ -178,7 +178,11 @@ function dayHeader(line: string, defaultYear: number) {
   if (!match) return null;
   const date = parseDate(match[1], match[2], match[3] ? Number(match[3]) : defaultYear);
   if (!date) return null;
-  return { date, weekday: normalized.split(/[ .:]/)[0], title: match[4].trim() };
+  return {
+    date,
+    weekday: normalized.split(/[ .:]/)[0],
+    title: match[4].trim().replace(/^nvestissons\b/, "Investissons"),
+  };
 }
 
 function findLessonTitle(header: string[], lessonNumber: number): string {
