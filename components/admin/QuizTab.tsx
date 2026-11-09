@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import QuestionBuilder, { type EditableQuestion } from "./QuestionBuilder";
 import LessonQuestionsModal from "./LessonQuestionsModal";
+import QuizPreviewModal from "./QuizPreviewModal";
 import { parseQuizQuestionsInput, type QuizImportMetadata } from "@/lib/quiz-import-parser";
 import { GENERATION_PROMPTS } from "@/lib/quiz-generation-prompts";
 import { useToast } from "@/components/Toast";
@@ -206,6 +207,7 @@ export default function QuizTab() {
     id: string;
     title: string;
   } | null>(null);
+  const [previewQuizId, setPreviewQuizId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -1056,6 +1058,13 @@ export default function QuizTab() {
                     <td className="py-3 pr-4">
                       <div className="flex items-center gap-3">
                         <button
+                          onClick={() => setPreviewQuizId(quiz.id)}
+                          className="text-sm font-semibold text-navy hover:underline"
+                          title="Voir le quiz tel qu'un participant le verrait, avec les bonnes réponses"
+                        >
+                          👁️ Aperçu
+                        </button>
+                        <button
                           onClick={() => handleEdit(quiz.id)}
                           className="text-sm font-semibold text-navy hover:underline"
                         >
@@ -1132,6 +1141,10 @@ export default function QuizTab() {
           quizTitle={lessonQuestionsQuiz.title}
           onClose={() => setLessonQuestionsQuiz(null)}
         />
+      )}
+
+      {previewQuizId && (
+        <QuizPreviewModal quizId={previewQuizId} onClose={() => setPreviewQuizId(null)} />
       )}
     </div>
   );
