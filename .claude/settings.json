@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Supabase__execute_sql",
+      "mcp__Supabase__apply_migration",
+      "mcp__Vercel__list_deployments",
+      "mcp__Vercel__get_runtime_errors",
+      "mcp__Vercel__get_deployment"
+    ]
+  }
+}
