@@ -139,7 +139,7 @@ export default function TesteurPage() {
         <SiteHeader />
         <main className="mx-auto max-w-2xl px-6 py-10">
           <div className="mb-6 rounded-xl bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-800">
-            🧪 Mode testeur — ces quiz n'apparaissent pas pour les autres participants et tes
+            🧪 Mode testeur — ces quiz n&apos;apparaissent pas pour les autres participants et tes
             résultats ne comptent jamais dans les vrais classements.
           </div>
           <h1 className="mb-6 text-2xl font-bold text-navy">Tous les quiz à tester</h1>
