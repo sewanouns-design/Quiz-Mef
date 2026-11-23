@@ -170,7 +170,15 @@ export default function TesteurPage() {
             🧪 Mode testeur — ces quiz n&apos;apparaissent pas pour les autres participants et tes
             résultats ne comptent jamais dans les vrais classements.
           </div>
-          <h1 className="mb-6 text-2xl font-bold text-navy">Tous les quiz à tester</h1>
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <h1 className="text-2xl font-bold text-navy">Tous les quiz à tester</h1>
+            <Link
+              href="/testeur/retour"
+              className="shrink-0 rounded-full bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy/90"
+            >
+              💬 Laisser un retour
+            </Link>
+          </div>
 
           {(["daily", "weekly", "quarterly"] as const).map((category) =>
             byCategory[category]?.length ? (

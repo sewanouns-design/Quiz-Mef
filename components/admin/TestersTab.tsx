@@ -15,6 +15,13 @@ interface Tester {
   totalMaxScore: number;
 }
 
+interface Feedback {
+  id: string;
+  message: string;
+  createdAt: string;
+  testerName: string;
+}
+
 const PROFILE_LABEL: Record<string, string> = {
   assidu: "🏆 Assidu",
   moyen: "📊 Moyen",
@@ -24,6 +31,7 @@ const PROFILE_LABEL: Record<string, string> = {
 
 export default function TestersTab() {
   const [testers, setTesters] = useState<Tester[]>([]);
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -34,6 +42,7 @@ export default function TestersTab() {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || "Erreur lors du chargement.");
         setTesters(data.testers ?? []);
+        setFeedback(data.feedback ?? []);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Une erreur est survenue."))
       .finally(() => setLoading(false));
@@ -92,6 +101,25 @@ export default function TestersTab() {
           </table>
         </div>
       )}
+
+      <div className="mt-8">
+        <h3 className="mb-3 text-lg font-bold text-navy">💬 Retours des testeurs</h3>
+        {feedback.length === 0 ? (
+          <p className="text-gray-400">Aucun retour reçu pour l&apos;instant.</p>
+        ) : (
+          <div className="space-y-3">
+            {feedback.map((f) => (
+              <div key={f.id} className="rounded-xl border border-gray-200 bg-white px-4 py-3">
+                <div className="mb-1 flex items-center justify-between text-xs text-gray-400">
+                  <span className="font-semibold text-navy">{f.testerName}</span>
+                  <span>{new Date(f.createdAt).toLocaleString("fr-FR")}</span>
+                </div>
+                <p className="whitespace-pre-wrap text-sm text-gray-700">{f.message}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

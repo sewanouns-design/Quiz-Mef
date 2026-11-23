@@ -29,6 +29,27 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: testersError.message }, { status: 500 });
   }
 
+  const testerIdsForFeedback = (testers ?? []).map((t) => t.id);
+  const { data: feedback, error: feedbackError } = testerIdsForFeedback.length
+    ? await supabase
+        .from("suggestions")
+        .select("id, message, created_at, participant_id")
+        .in("participant_id", testerIdsForFeedback)
+        .order("created_at", { ascending: false })
+    : { data: [], error: null };
+
+  if (feedbackError) {
+    return NextResponse.json({ error: feedbackError.message }, { status: 500 });
+  }
+
+  const nameById = new Map((testers ?? []).map((t) => [t.id, t.name]));
+  const feedbackResult = (feedback ?? []).map((f) => ({
+    id: f.id,
+    message: f.message,
+    createdAt: f.created_at,
+    testerName: nameById.get(f.participant_id ?? "") ?? "Testeur inconnu",
+  }));
+
   const testerIds = (testers ?? []).map((t) => t.id);
   const { data: submissions, error: submissionsError } = testerIds.length
     ? await supabase
@@ -74,5 +95,5 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  return NextResponse.json({ testers: result });
+  return NextResponse.json({ testers: result, feedback: feedbackResult });
 }
