@@ -30,11 +30,14 @@ export interface DailyQuestion {
   position: number;
 }
 
-/** Question sans les champs de correction, envoyée au participant avant soumission. */
+/** Question sans les champs de correction, envoyée au participant avant soumission.
+ * `correct_option` est réintroduit en optionnel : jamais rempli pour un
+ * participant normal, mais renvoyé par l'API pour un compte testeur
+ * (is_test=true) afin d'afficher la bonne réponse pendant le test. */
 export type PublicQuestion = Omit<
   DailyQuestion,
   "correct_option" | "correct_text" | "justification"
->;
+> & { correct_option?: number | null };
 
 /** Ancien champ à 3 paliers, conservé en base mais plus utilisé par le jeu
  * (remplacé par `level`, 1 à 100 — voir lib/verse-level.ts). */

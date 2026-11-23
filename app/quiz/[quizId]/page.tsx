@@ -634,26 +634,42 @@ export default function QuizPage() {
                   <div className="space-y-2">
                     {question.options.map((option) => {
                       const selected = answers[question.id]?.selectedOption === option.originalIndex;
+                      // correct_option n'est jamais renvoyé par l'API pour un
+                      // participant normal (voir app/api/quiz/[quizId]/route.ts) :
+                      // ce surlignage n'existe donc que pour un compte testeur.
+                      const isCorrectForTester =
+                        question.correct_option != null && question.correct_option === option.originalIndex;
                       return (
                         <button
                           type="button"
                           key={option.originalIndex}
                           onClick={() => setSelectedOption(question.id, option.originalIndex)}
                           className={`flex w-full items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-colors ${
-                            selected
-                              ? "border-blue-400 bg-blue-50 font-semibold text-navy"
-                              : "border-gray-200 text-gray-700 hover:border-blue-200"
+                            isCorrectForTester
+                              ? "border-green-500 bg-green-50 font-semibold text-green-800"
+                              : selected
+                                ? "border-blue-400 bg-blue-50 font-semibold text-navy"
+                                : "border-gray-200 text-gray-700 hover:border-blue-200"
                           }`}
                         >
                           <span
                             className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                              selected ? "border-blue-500" : "border-gray-300"
+                              isCorrectForTester ? "border-green-600" : selected ? "border-blue-500" : "border-gray-300"
                             }`}
                             aria-hidden="true"
                           >
-                            {selected && <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />}
+                            {isCorrectForTester ? (
+                              <span className="text-[10px] font-bold text-green-600">✓</span>
+                            ) : (
+                              selected && <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+                            )}
                           </span>
                           <span>{option.label}</span>
+                          {isCorrectForTester && (
+                            <span className="ml-auto whitespace-nowrap rounded-full bg-green-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                              🧪 bonne réponse
+                            </span>
+                          )}
                         </button>
                       );
                     })}

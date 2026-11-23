@@ -13,6 +13,19 @@ export async function GET(
   const deviceKey = request.nextUrl.searchParams.get("deviceKey");
   const explicitRetry = request.nextUrl.searchParams.get("retry") === "1";
 
+  // Un compte testeur voit la bonne réponse directement (pour accélérer le
+  // parcours de test sur des dizaines de quiz) : jamais le cas pour un
+  // participant normal, dont la requête ne sélectionne pas correct_option.
+  let isTestParticipant = false;
+  if (deviceKey) {
+    const { data: testerCheck } = await supabase
+      .from("participants")
+      .select("is_test")
+      .eq("device_key", deviceKey)
+      .maybeSingle();
+    isTestParticipant = testerCheck?.is_test === true;
+  }
+
   // Le quiz et ses questions sont indépendants : les charger en parallèle
   // évite un aller-retour réseau supplémentaire à chaque ouverture du quiz.
   const [
@@ -24,11 +37,17 @@ export async function GET(
       .select("id, title, subtitle, is_active, duration_seconds, quiz_mode, category")
       .eq("id", params.quizId)
       .maybeSingle(),
-    supabase
-      .from("daily_questions")
-      .select("id, quiz_id, type, question, options, points, position")
-      .eq("quiz_id", params.quizId)
-      .order("position", { ascending: true }),
+    isTestParticipant
+      ? supabase
+          .from("daily_questions")
+          .select("id, quiz_id, type, question, options, points, position, correct_option")
+          .eq("quiz_id", params.quizId)
+          .order("position", { ascending: true })
+      : supabase
+          .from("daily_questions")
+          .select("id, quiz_id, type, question, options, points, position")
+          .eq("quiz_id", params.quizId)
+          .order("position", { ascending: true }),
   ]);
 
   if (quizError) {

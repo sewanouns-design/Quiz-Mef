@@ -6,6 +6,7 @@ import Link from "next/link";
 import { generateResultsImage } from "@/lib/generate-results-image";
 import { isPassingScore } from "@/lib/scoring";
 import { clearQuizProgress, getStoredParticipant } from "@/lib/participant-storage";
+import TesteurNextQuizButton from "@/components/TesteurNextQuizButton";
 import SiteHeader from "@/components/SiteHeader";
 import type { CorrectedAnswer } from "@/lib/types";
 
@@ -450,6 +451,7 @@ export default function ResultsPage() {
       <SiteHeader />
       <main className="min-h-screen px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-2xl">
+        <TesteurNextQuizButton currentQuizId={quizId} />
         {data.cancelled && (
           <div className="mb-6 rounded-xl border-2 border-accent bg-accent/10 px-4 py-3 text-center text-sm font-medium text-accent-dark">
             ⚠️ Ce test a été annulé automatiquement : la page a été quittée à plusieurs reprises
