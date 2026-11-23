@@ -19,6 +19,7 @@ export const ADMIN_NAVIGATION_TAB_IDS = [
   "overview",
   "analytics",
   "participants",
+  "testers",
   "quiz",
   "daily-lesson",
   "lesson-source",
@@ -42,6 +43,7 @@ export const DEFAULT_ADMIN_NAVIGATION: AdminNavigationConfig = {
     { id: "dashboard", icon: "📊", label: "Tableau de bord", items: [{ id: "overview", label: "Vue d'ensemble", group: null }] },
     { id: "analytics", icon: "📈", label: "Analytics", items: [{ id: "analytics", label: "Analytics", group: null }] },
     { id: "participants", icon: "👥", label: "Participants", items: [{ id: "participants", label: "Participants", group: null }] },
+    { id: "testers", icon: "🧪", label: "Testeurs", items: [{ id: "testers", label: "Testeurs", group: null }] },
     {
       id: "quiz",
       icon: "📝",

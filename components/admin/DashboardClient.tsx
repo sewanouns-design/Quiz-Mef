@@ -7,6 +7,7 @@ import OverviewTab from "./OverviewTab";
 import AnalyticsTab from "./AnalyticsTab";
 import QuizTab from "./QuizTab";
 import ParticipantsTab from "./ParticipantsTab";
+import TestersTab from "./TestersTab";
 import ResultsTab from "./ResultsTab";
 import LeaderboardTab from "./LeaderboardTab";
 import QuarterlyRankingTab from "./QuarterlyRankingTab";
@@ -52,6 +53,7 @@ const TAB_RENDERERS: Record<string, (onNavigationSaved: () => void) => React.Rea
   overview: () => <OverviewTab />,
   analytics: () => <AnalyticsTab />,
   participants: () => <ParticipantsTab />,
+  testers: () => <TestersTab />,
   quiz: () => <QuizTab />,
   "daily-lesson": () => <DailyLessonTab />,
   "lesson-source": () => <LessonSourceTab />,
