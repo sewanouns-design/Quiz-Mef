@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { deviceKey, name, address, email, whatsapp } = body ?? {};
+  const { deviceKey, name, address, email, whatsapp, isTest } = body ?? {};
 
   if (!deviceKey || !name || !email) {
     return NextResponse.json(
@@ -113,6 +113,9 @@ export async function POST(request: NextRequest) {
     // L’affichage public est désormais la règle commune : prénom + initiale
     // du nom dans les classements, jamais le nom complet.
     show_in_leaderboard: true,
+    // Un compte testeur ne redevient jamais un compte normal via ce champ :
+    // on ne pose le drapeau que lorsque la page /testeur l’envoie à true.
+    ...(isTest === true ? { is_test: true } : {}),
   };
 
   const { data, error } = targetId

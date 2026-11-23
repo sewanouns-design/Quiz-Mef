@@ -17,9 +17,10 @@ export async function GET(
 
   const { data: submissions, error } = await supabase
     .from("daily_submissions")
-    .select("score, max_score, participant:participants!inner(name)")
+    .select("score, max_score, participant:participants!inner(name, is_test)")
     .eq("quiz_id", params.quizId)
-    .eq("cancelled", false);
+    .eq("cancelled", false)
+    .eq("participant.is_test", false);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

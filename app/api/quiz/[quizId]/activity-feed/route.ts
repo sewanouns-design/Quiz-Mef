@@ -22,9 +22,10 @@ export async function GET(
 
   const { data, error } = await supabase
     .from("daily_submissions")
-    .select("submitted_at, participant:participants!inner(name)")
+    .select("submitted_at, participant:participants!inner(name, is_test)")
     .eq("quiz_id", params.quizId)
     .eq("cancelled", false)
+    .eq("participant.is_test", false)
     .gte("submitted_at", startOfTodayUTC.toISOString())
     .order("submitted_at", { ascending: false })
     .limit(MAX_ENTRIES);
