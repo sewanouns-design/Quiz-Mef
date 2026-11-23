@@ -28,6 +28,29 @@ const CATEGORY_LABEL: Record<TesteurQuiz["category"], string> = {
   quarterly: "Examen trimestriel",
 };
 
+const TEST_PROFILES = [
+  {
+    value: "assidu",
+    label: "🏆 Assidu",
+    description: "Je vise à faire tous les quiz sérieusement, en cherchant les meilleurs scores.",
+  },
+  {
+    value: "moyen",
+    label: "📊 Moyen",
+    description: "Je fais une bonne partie des quiz, sans viser la perfection ni tout terminer.",
+  },
+  {
+    value: "presse",
+    label: "⚡ Pressé",
+    description: "Je fais le minimum (par exemple seulement les hebdo), en espérant un bon classement quand même.",
+  },
+  {
+    value: "abandon",
+    label: "🙈 Abandon en cours de route",
+    description: "Je commence plusieurs quiz mais j'en laisse tomber une partie avant la fin.",
+  },
+] as const;
+
 export default function TesteurPage() {
   const [deviceKey, setDeviceKey] = useState("");
   const [isTester, setIsTester] = useState<boolean | null>(null);
@@ -35,6 +58,7 @@ export default function TesteurPage() {
   const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [testProfile, setTestProfile] = useState("");
   const [phoneInputKey, setPhoneInputKey] = useState("initial");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -87,6 +111,10 @@ export default function TesteurPage() {
       setError("Le format du numéro WhatsApp n'est pas valide.");
       return;
     }
+    if (!testProfile) {
+      setError("Merci de choisir ton profil de test.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -94,7 +122,7 @@ export default function TesteurPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ deviceKey, name, address, email, whatsapp, isTest: true }),
+        body: JSON.stringify({ deviceKey, name, address, email, whatsapp, isTest: true, testProfile }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -255,6 +283,30 @@ export default function TesteurPage() {
                 initialValue={whatsapp}
                 onChange={setWhatsapp}
               />
+            </div>
+
+            <div>
+              <label className="label-field">Ton profil de test</label>
+              <p className="mb-2 text-xs text-gray-400">
+                Pour que le test couvre des comportements variés, choisis celui qui te correspond le mieux.
+              </p>
+              <div className="space-y-2">
+                {TEST_PROFILES.map((profile) => (
+                  <button
+                    key={profile.value}
+                    type="button"
+                    onClick={() => setTestProfile(profile.value)}
+                    className={`flex w-full flex-col items-start gap-0.5 rounded-xl border-2 px-4 py-3 text-left transition-colors ${
+                      testProfile === profile.value
+                        ? "border-accent bg-accent/10"
+                        : "border-gray-200 hover:border-accent/50"
+                    }`}
+                  >
+                    <span className="font-semibold text-navy">{profile.label}</span>
+                    <span className="text-xs text-gray-500">{profile.description}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {error && <p className="text-sm font-medium text-red-600">{error}</p>}

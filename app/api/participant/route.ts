@@ -46,7 +46,8 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { deviceKey, name, address, email, whatsapp, isTest } = body ?? {};
+  const { deviceKey, name, address, email, whatsapp, isTest, testProfile } = body ?? {};
+  const VALID_TEST_PROFILES = ["assidu", "moyen", "presse", "abandon"];
 
   if (!deviceKey || !name || !email) {
     return NextResponse.json(
@@ -116,6 +117,9 @@ export async function POST(request: NextRequest) {
     // Un compte testeur ne redevient jamais un compte normal via ce champ :
     // on ne pose le drapeau que lorsque la page /testeur l’envoie à true.
     ...(isTest === true ? { is_test: true } : {}),
+    ...(isTest === true && VALID_TEST_PROFILES.includes(testProfile)
+      ? { test_profile: testProfile }
+      : {}),
   };
 
   const { data, error } = targetId
