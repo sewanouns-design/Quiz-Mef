@@ -3,9 +3,28 @@
     "allow": [
       "mcp__Supabase__execute_sql",
       "mcp__Supabase__apply_migration",
+      "mcp__Supabase__list_extensions",
       "mcp__Vercel__list_deployments",
       "mcp__Vercel__get_runtime_errors",
-      "mcp__Vercel__get_deployment"
+      "mcp__Vercel__get_deployment",
+      "mcp__Vercel__list_deployment_events",
+      "mcp__Vercel__list_teams",
+      "mcp__Vercel__create_project_env",
+      "Agent",
+      "SendMessage",
+      "ListAgents",
+      "TaskCreate",
+      "TaskUpdate",
+      "ToolSearch",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(npx next lint *)",
+      "Bash(git status*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git log*)",
+      "Bash(git diff*)"
     ]
   }
 }
